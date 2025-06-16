@@ -1,0 +1,19 @@
+﻿  main.cpp
+  Plot3DWindow.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
+  (编译源文件“ui/Plot3DWindow.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
+  (编译源文件“ui/Plot3DWindow.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(168,30): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(168,30): warning C4244:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(168,30): warning C4244:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(168,30): warning C4244:             _Ty=float
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(168,30): warning C4244:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(256,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+  sheetdata.cpp
+  正在生成代码...
+  Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU3dProject\mygui_docking\Project1\x64\Debug\Project1.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。

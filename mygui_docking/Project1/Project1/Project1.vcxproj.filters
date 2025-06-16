@@ -1,0 +1,381 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Auto.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imconfig.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_impl_opengl3.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_impl_opengl3_loader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_impl_win32.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_internal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imstb_rectpack.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imstb_textedit.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imstb_truetype.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Implot\implot.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Implot\implot_internal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Implot3d\implot3d.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Implot3d\implot3d_internal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\Plot3DWindow.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="file\ReadFile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\fstream.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\windows.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\utf8_codecvt.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\utf.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\system.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\stackstring.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\scoped_ptr.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\iostream.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\filebuf.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\encoding_utf.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\encoding_errors.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\cstdlib.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\cstdio.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\convert.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\config.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\cenv.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\nowide\nowide\args.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\pugixml\pugiconfig.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\pugixml\pugixml.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\external\zippy\zippy.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLCell.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLCellIterator.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLCellRange.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLCellReference.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLCellValue.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLColor.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLColumn.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLCommandQuery.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLConstants.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLContentTypes.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLDateTime.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLDocument.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLException.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLFormula.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLIterator.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLProperties.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLRelationships.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLRow.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLRowData.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLSharedStrings.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLSheet.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLWorkbook.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLXmlData.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLXmlFile.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLXmlParser.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLZipArchive.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\OpenXLSX.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\OpenXLSX-Exports.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\sources\utilities\XLUtilities.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\IZipArchive.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLComments.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLDrawing.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLMergeCells.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLStyles.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenXLSX\headers\XLTables.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\sheetdata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ADXL355\ADXL355Parser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Imgui\imgui.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_demo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_draw.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_impl_win32.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_tables.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_widgets.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_impl_opengl3.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot\implot.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot\implot_demo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot\implot_items.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot3d\implot3d.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot3d\implot3d_demo.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot3d\implot3d_items.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Implot3d\implot3d_meshes.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\Plot3DWindow.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="file\ReadFile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\external\pugixml\pugixml.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLCell.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLCellIterator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLCellRange.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLCellReference.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLCellValue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLColor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLColumn.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLContentTypes.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLDateTime.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLDocument.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLFormula.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLProperties.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLRelationships.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLRow.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLRowData.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLSharedStrings.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLSheet.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLWorkbook.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLXmlData.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLXmlFile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLZipArchive.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLComments.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLDrawing.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLMergeCells.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLStyles.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLTables.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenXLSX\sources\XLXmlParser.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\sheetdata.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Implot\implot-master.zip" />
+  </ItemGroup>
+</Project>
