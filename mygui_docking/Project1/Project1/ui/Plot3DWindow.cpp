@@ -7,6 +7,8 @@
 #include "OpenXLSX/OpenXLSX.hpp"
 #include "file/ReadFile.h"
 #include"ui/sheetdata.h"
+#include"RS485/RS485Manager.h"
+#include"RS485/ADXL355Parser.h"
 #include<iostream>
 #include<vector>
 #include <regex>
@@ -212,6 +214,79 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
     return ports;
 }
 
+void Application::ShowADXL355()
+{
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 0;
+
+    // 串口选择下拉框
+    if (ImGui::Begin(u8"ADXL355串口设置")) {
+        if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+            for (int n = 0; n < availablePorts.size(); n++) {
+                bool isSelected = (selectedPortIndex == n);
+                if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+                    selectedPortIndex = n;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        // 波特率选择下拉框
+        if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+            for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+                bool isSelected = (selectedBaudIndex == n);
+                if (ImGui::Selectable(baudRates[n], isSelected))
+                    selectedBaudIndex = n;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        // 连接按钮
+        static RS485Manager serialManager;
+        ADXL355Parser parser;
+        static bool isConnected = false;
+
+        if (!isConnected) {
+            if (ImGui::Button(u8"连接")) {
+                try {
+                    DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                    serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                    isConnected = true;
+
+                    // 发送命令
+                    auto cmd = parser.generateReadAccelerationCommand();
+                    serialManager.send(cmd);
+
+                    // 接收响应
+                    auto response = serialManager.receiveADXL355Response();
+
+                    // 解析数据
+                    auto data = parser.parseAccelerationResponse(response);
+                    // 处理数据...
+                }
+                catch (const std::exception& e) {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+                }
+            }
+        }
+        else {
+            if (ImGui::Button(u8"断开")) {
+                serialManager.close();
+                isConnected = false;
+            }
+        }
+
+        ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+        ImGui::End();
+    }
+
+}
+
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -327,31 +402,10 @@ void Application::ShowWindow()
 
 
 
-    // 3D Plot 1
+    // ADXL355
     if (ADXL355) {
-        static float xs1[1001], ys1[1001], zs1[1001];
-        for (int i = 0; i < 1001; i++) {
-            xs1[i] = i * 0.001f;
-            ys1[i] = 0.5f + 0.5f * cosf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
-            zs1[i] = 0.5f + 0.5f * sinf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
-        }
-        static double xs2[20], ys2[20], zs2[20];
-        for (int i = 0; i < 20; i++) {
-            xs2[i] = i * 1 / 19.0f;
-            ys2[i] = xs2[i] * xs2[i];
-            zs2[i] = xs2[i] * ys2[i];
-        }
-        if (ImPlot3D::BeginPlot("Line Plots", ImVec2(1000, 800), 0)) {
-            ImPlot3D::SetupAxes("x", "y", "z");
-            ImPlot3D::PlotLine("f(x)", xs1, ys1, zs1, 1001);
-            ImPlot3D::EndPlot();
-        }
+		Application::ShowADXL355();
     }
-    /*if (show_plot3d_2)
-    {
-        Application::CylinderPlots();
-    }*/
-
     ImGui::End(); // 主窗口结束
 
     // 独立窗口：3D Plot 2

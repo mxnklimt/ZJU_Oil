@@ -1,6 +1,6 @@
 #ifndef RS485MANAGER_H
 #define RS485MANAGER_H
-
+#define NOMINMAX
 #include <windows.h>
 #include <string>
 #include <vector>
