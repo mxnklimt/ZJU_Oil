@@ -191,6 +191,10 @@ void Application::CylinderPlots() {
     }
 }
 
+void Application::ExcelGetData()
+{
+
+}
 std::vector<std::string> Application::listAvailableSerialPorts() {
     std::vector<std::string> ports;
     for (int i = 1; i <= 255; ++i) {
@@ -250,7 +254,6 @@ void Application::ShowADXL355()
         static RS485Manager serialManager;
         ADXL355Parser parser;
         static bool isConnected = false;
-
         if (!isConnected) {
             if (ImGui::Button(u8"连接")) {
                 try {
@@ -258,15 +261,7 @@ void Application::ShowADXL355()
                     serialManager.open(availablePorts[selectedPortIndex], baudRate);
                     isConnected = true;
 
-                    // 发送命令
-                    auto cmd = parser.generateReadAccelerationCommand();
-                    serialManager.send(cmd);
-
-                    // 接收响应
-                    auto response = serialManager.receiveADXL355Response();
-
-                    // 解析数据
-                    auto data = parser.parseAccelerationResponse(response);
+                    
                     // 处理数据...
                 }
                 catch (const std::exception& e) {
@@ -279,8 +274,21 @@ void Application::ShowADXL355()
                 serialManager.close();
                 isConnected = false;
             }
-        }
+            // 发送命令
+            auto cmd = parser.generateReadAccelerationCommand();
+            serialManager.send(cmd);
 
+            // 接收响应
+            auto response = serialManager.receiveADXL355Response();
+
+            // 解析数据
+            auto data = parser.parseAccelerationResponse(response);
+            std::cout << "Acceleration Data:" << std::endl;
+            std::cout << "X: " << data.x << " g" << std::endl;
+            std::cout << "Y: " << data.y << " g" << std::endl;
+            std::cout << "Z: " << data.z << " g" << std::endl;
+        }
+        
         ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
         ImGui::End();
     }
@@ -293,7 +301,7 @@ void Application::ShowWindow()
     static bool ADXL355 = false;
     static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
     static bool show_plot3d_2 = true;
-
+    //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -315,9 +323,9 @@ void Application::ShowWindow()
         }
         ImGui::EndMenuBar();
     }
-
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // 读取excel数据
     bool readfile = false;
-    //get data
     std::vector<float> dValues, eValues;
     std::vector<std::tm> times;
     if (!readfile)
@@ -341,6 +349,8 @@ void Application::ShowWindow()
         }*/
     }
 
+    //--------------------------------------------------------------------------------------------------------------------------------
+	// 绘制管道位移和岸坡沉降的2D图形
     if (show_plot2d) {
         static std::vector<float> time_xf;
         static std::vector<float> y_d, y_e;
@@ -399,22 +409,22 @@ void Application::ShowWindow()
             }
         }
     }
-
-
-
+    //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
     if (ADXL355) {
 		Application::ShowADXL355();
     }
     ImGui::End(); // 主窗口结束
 
-    // 独立窗口：3D Plot 2
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // 独立窗口：3D管道图像，光源建模
     if (show_plot3d_2_window) {
         //ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
         ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // 可关闭窗口
         Application::CylinderPlots();
         ImGui::End();
     }
+    //--------------------------------------------------------------------------------------------------------------------------------
 }
 
 void Application::ShowWindow2()

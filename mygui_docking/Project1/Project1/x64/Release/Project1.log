@@ -10,23 +10,12 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Pl
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(174,30): warning C4244:         [
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(174,30): warning C4244:             _Ty=float
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(174,30): warning C4244:         ]
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(261,46): error C2039: "generateReadAccelerationCommand": 不是 "RS485Manager" 的成员
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(9,7):
-      参见“RS485Manager”的声明
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(262,40): error C3536: “cmd”: 初始化之前无法使用
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(262,35): error C2664: “void RS485Manager::send(const std::vector<uint8_t,std::allocator<uint8_t>> &)”: 无法将参数 1 从“int”转换为“const std::vector<uint8_t,std::allocator<uint8_t>> &”
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(262,40):
-      原因如下: 无法从“int”转换为“const std::vector<uint8_t,std::allocator<uint8_t>>”
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(262,40):
-      class“std::vector<uint8_t,std::allocator<uint8_t>>”的构造函数声明为“explicit”
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(89,10):
-      参见“RS485Manager::send”的声明
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(262,35):
-      尝试匹配参数列表“(int)”时
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(268,47): error C2039: "parseAccelerationResponse": 不是 "RS485Manager" 的成员
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(9,7):
-      参见“RS485Manager”的声明
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(355,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(367,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+  正在生成代码
+  2 of 7616 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    160 functions had inline decision re-evaluated but remain unchanged
+  已完成代码的生成
+  Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Release\Project1.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。
