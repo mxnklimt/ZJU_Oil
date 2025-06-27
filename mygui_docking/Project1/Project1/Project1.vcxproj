@@ -204,6 +204,8 @@
     <ClInclude Include="OpenXLSX\OpenXLSX-Exports.hpp" />
     <ClInclude Include="OpenXLSX\OpenXLSX.hpp" />
     <ClInclude Include="OpenXLSX\sources\utilities\XLUtilities.hpp" />
+    <ClInclude Include="RS485\ADXL355Parser.h" />
+    <ClInclude Include="RS485\RS485Manager.h" />
     <ClInclude Include="ui\Plot3DWindow.h" />
     <ClInclude Include="ui\sheetdata.h" />
   </ItemGroup>

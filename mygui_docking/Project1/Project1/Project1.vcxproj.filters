@@ -234,6 +234,12 @@
     <ClInclude Include="ADXL355\ADXL355Parser.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="RS485\ADXL355Parser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RS485\RS485Manager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">

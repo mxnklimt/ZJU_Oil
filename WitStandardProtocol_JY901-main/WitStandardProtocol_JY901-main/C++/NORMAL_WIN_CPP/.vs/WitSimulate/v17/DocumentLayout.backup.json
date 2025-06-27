@@ -1,0 +1,83 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A806EF20-B095-4FD3-B4D5-290461E931DC}|WitSimulate.vcxproj|C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A806EF20-B095-4FD3-B4D5-290461E931DC}|WitSimulate.vcxproj|solutionrelative:Main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A806EF20-B095-4FD3-B4D5-290461E931DC}|WitSimulate.vcxproj|C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\wit_c_sdk.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A806EF20-B095-4FD3-B4D5-290461E931DC}|WitSimulate.vcxproj|solutionrelative:wit_c_sdk.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A806EF20-B095-4FD3-B4D5-290461E931DC}|WitSimulate.vcxproj|C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\Com.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A806EF20-B095-4FD3-B4D5-290461E931DC}|WitSimulate.vcxproj|solutionrelative:Com.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "wit_c_sdk.c",
+              "DocumentMoniker": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\wit_c_sdk.c",
+              "RelativeDocumentMoniker": "wit_c_sdk.c",
+              "ToolTip": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\wit_c_sdk.c",
+              "RelativeToolTip": "wit_c_sdk.c",
+              "ViewState": "AgIAAJECAAAAAAAAAAAAAIgAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
+              "WhenOpened": "2025-06-16T08:51:04.777Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Com.cpp",
+              "DocumentMoniker": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\Com.cpp",
+              "RelativeDocumentMoniker": "Com.cpp",
+              "ToolTip": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\Com.cpp",
+              "RelativeToolTip": "Com.cpp",
+              "ViewState": "AgIAAJMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-16T08:50:33.01Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Main.cpp",
+              "DocumentMoniker": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\Main.cpp",
+              "RelativeDocumentMoniker": "Main.cpp",
+              "ToolTip": "C:\\Users\\mxnkilmt\\Documents\\GitHub\\ZJU_Oil\\WitStandardProtocol_JY901-main\\WitStandardProtocol_JY901-main\\C\u002B\u002B\\NORMAL_WIN_CPP\\Main.cpp",
+              "RelativeToolTip": "Main.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-16T08:50:25.43Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 244,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -14,6 +14,10 @@
 #include <iomanip>
 #include <sstream>
 #include<cmath>
+
+#define NOMINMAX
+#include<Windows.h>
+#include<algorithm>
 // V2.0
 struct Vec3 {
     float x, y, z;
@@ -185,23 +189,45 @@ void Application::CylinderPlots() {
     }
 }
 
+std::vector<std::string> Application::listAvailableSerialPorts() {
+    std::vector<std::string> ports;
+    for (int i = 1; i <= 255; ++i) {
+        std::string portName = "COM" + std::to_string(i);
+        std::wstring wPortName = L"\\\\.\\" + std::wstring(portName.begin(), portName.end());
+
+        HANDLE h = CreateFileW(
+            wPortName.c_str(),
+            GENERIC_READ | GENERIC_WRITE,
+            0,
+            NULL,
+            OPEN_EXISTING,
+            0,
+            NULL
+        );
+        if (h != INVALID_HANDLE_VALUE) {
+            ports.push_back(portName);
+            CloseHandle(h);
+        }
+    }
+    return ports;
+}
 
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
-    static bool show_plot3d_1 = false;
+    static bool ADXL355 = false;
     static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
     static bool show_plot3d_2 = true;
 
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
-    ImGui::Begin("3D Plot Demo", nullptr, ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("2D Plot", nullptr, ImGuiWindowFlags_MenuBar);
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("View")) {
-            ImGui::MenuItem("Show ImPlot3D Demo", nullptr, &show_plot2d);
-            ImGui::MenuItem("Show Custom 3D Plot 1", nullptr, &show_plot3d_1);
+            ImGui::MenuItem(u8"管道位移/岸坡沉降", nullptr, &show_plot2d);
+            ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
             ImGui::EndMenu();
@@ -298,72 +324,11 @@ void Application::ShowWindow()
             }
         }
     }
-//if (show_plot2d) {
-//    static std::vector<float> time_xf;
-//    static std::vector<float> y_d, y_e;
-//
-//    if (time_xf.size() != times.size()) {
-//        size_t n = times.size();
-//        time_xf.resize(n);
-//        y_d.resize(n);
-//        y_e.resize(n);
-//
-//        for (size_t i = 0; i < n; ++i) {
-//            const std::tm& t = times[i];
-//            float seconds = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
-//            time_xf[i] = seconds;
-//            y_d[i] = dValues[i];
-//            y_e[i] = eValues[i];
-//        }
-//    }
-//
-//    // 时间格式化，显示 HH:MM:SS
-//    ImPlotFormatter TimeFormatter = [](double seconds, char* buffer, int size, void*) -> int {
-//        int h = static_cast<int>(seconds) / 3600;
-//        int m = (static_cast<int>(seconds) % 3600) / 60;
-//        int s = static_cast<int>(seconds) % 60;
-//        return snprintf(buffer, size, "%02d:%02d:%02d", h, m, s);
-//        };
-//
-//    int count = static_cast<int>(time_xf.size());
-//
-//    if (ImGui::CollapsingHeader(u8"管道水平位移")) {
-//        if (ImPlot::BeginPlot(u8"管道水平位移图")) {
-//            ImPlot::SetupAxes(u8"时间", u8"管道水平位移");
-//
-//            ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
-//
-//            //// 限制X轴范围为0~86400秒
-//            //ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86400.0, ImGuiCond_Always);
-//            //
-//            ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
-//            ImPlot::PlotLine(u8"管道水平位移##line", time_xf.data(), y_d.data(), count);
-//            ImPlot::PopStyleColor();
-//
-//            ImPlot::EndPlot();
-//        }
-//    }
-//
-//    if (ImGui::CollapsingHeader(u8"岸坡沉降位移")) {
-//        if (ImPlot::BeginPlot(u8"岸坡沉降位移图")) {
-//            ImPlot::SetupAxes(u8"时间", u8"岸坡沉降位移");
-//            ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
-//
-//            ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86400.0, ImGuiCond_Always);
-//
-//            ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.6f, 0.1f, 1.0f));
-//            ImPlot::PlotLine(u8"岸坡沉降位移##line", time_xf.data(), y_e.data(), count);
-//            ImPlot::PopStyleColor();
-//
-//            ImPlot::EndPlot();
-//        }
-//    }
-//}
 
 
 
     // 3D Plot 1
-    if (show_plot3d_1) {
+    if (ADXL355) {
         static float xs1[1001], ys1[1001], zs1[1001];
         for (int i = 0; i < 1001; i++) {
             xs1[i] = i * 0.001f;

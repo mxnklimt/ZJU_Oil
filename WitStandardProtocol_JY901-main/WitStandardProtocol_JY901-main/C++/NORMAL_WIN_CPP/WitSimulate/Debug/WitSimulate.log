@@ -1,0 +1,8 @@
+﻿  Com.cpp
+  Main.cpp
+  正在生成代码...
+  wit_c_sdk.c
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\WitStandardProtocol_JY901-main\WitStandardProtocol_JY901-main\C++\NORMAL_WIN_CPP\wit_c_sdk.c(181,35): warning C4018: “<”: 有符号/无符号不匹配
+  WitSimulate.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\WitStandardProtocol_JY901-main\WitStandardProtocol_JY901-main\C++\NORMAL_WIN_CPP\Debug\WitSimulate.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。

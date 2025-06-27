@@ -12,7 +12,6 @@ public:
     };
 
     ADXL355Parser(uint8_t deviceId = 0x00) : deviceId_(deviceId) {}
-
     void setDeviceId(uint8_t id) { deviceId_ = id; }
     uint8_t getDeviceId() const { return deviceId_; }
 
