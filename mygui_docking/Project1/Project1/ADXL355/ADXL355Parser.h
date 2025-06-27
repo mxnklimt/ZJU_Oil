@@ -1,3 +1,5 @@
+//ADXL355
+#pragma once
 #include <vector>
 #include <cstdint>
 #include <cmath>

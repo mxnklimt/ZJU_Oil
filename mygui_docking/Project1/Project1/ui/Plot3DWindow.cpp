@@ -7,8 +7,7 @@
 #include "OpenXLSX/OpenXLSX.hpp"
 #include "file/ReadFile.h"
 #include"ui/sheetdata.h"
-#include"RS485/RS485Manager.h"
-#include"RS485/ADXL355Parser.h"
+#include"data/Data.h"
 #include<iostream>
 #include<vector>
 #include <regex>
@@ -197,7 +196,7 @@ void Application::ExcelGetData()
 }
 std::vector<std::string> Application::listAvailableSerialPorts() {
     std::vector<std::string> ports;
-    for (int i = 1; i <= 255; ++i) {
+    for (int i = 1; i <= 20; ++i) {
         std::string portName = "COM" + std::to_string(i);
         std::wstring wPortName = L"\\\\.\\" + std::wstring(portName.begin(), portName.end());
 
@@ -251,18 +250,46 @@ void Application::ShowADXL355()
         }
 
         // 连接按钮
-        static RS485Manager serialManager;
-        ADXL355Parser parser;
+
         static bool isConnected = false;
+
         if (!isConnected) {
             if (ImGui::Button(u8"连接")) {
                 try {
                     DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
                     serialManager.open(availablePorts[selectedPortIndex], baudRate);
                     isConnected = true;
+                    collectingADXL355 = true;
 
-                    
-                    // 处理数据...
+                    // 启动后台线程采集数据
+                    adxl355Thread = std::thread([]() {
+                        while (collectingADXL355) {
+                            try {
+                                auto cmd = parser.generateReadAccelerationCommand();
+                                serialManager.send(cmd);
+                                auto response = serialManager.receiveADXL355Response();
+                                auto data = parser.parseAccelerationResponse(response);
+
+                                {
+                                    std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                                    // 存入你需要的全局队列，例如 dataQue
+                                    // 假设你有一个全局 ADXL355Data 实例：
+                                    extern ADXL355Data adxl355Data;
+                                    adxl355Data.dataQue.push_back(data);
+                                    // 控制队列最大大小
+                                    if (adxl355Data.dataQue.size() > MAX_POINTS) {
+                                        adxl355Data.dataQue.pop_front();
+                                    }
+                                }
+
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 根据采样率调整
+                            }
+                            catch (const std::exception& e) {
+                                // 可以选择打印错误但不终止线程
+                                std::cerr << "ADXL355线程错误: " << e.what() << std::endl;
+                            }
+                        }
+                        });
                 }
                 catch (const std::exception& e) {
                     ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
@@ -271,22 +298,25 @@ void Application::ShowADXL355()
         }
         else {
             if (ImGui::Button(u8"断开")) {
+                collectingADXL355 = false;
+                if (adxl355Thread.joinable())
+                    adxl355Thread.join();
+
                 serialManager.close();
                 isConnected = false;
             }
-            // 发送命令
-            auto cmd = parser.generateReadAccelerationCommand();
-            serialManager.send(cmd);
 
-            // 接收响应
-            auto response = serialManager.receiveADXL355Response();
-
-            // 解析数据
-            auto data = parser.parseAccelerationResponse(response);
-            std::cout << "Acceleration Data:" << std::endl;
-            std::cout << "X: " << data.x << " g" << std::endl;
-            std::cout << "Y: " << data.y << " g" << std::endl;
-            std::cout << "Z: " << data.z << " g" << std::endl;
+            // 你可以选择在此处显示数据
+            {
+                std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                extern ADXL355Data adxl355Data;
+                if (!adxl355Data.dataQue.empty()) {
+                    const auto& data = adxl355Data.dataQue.back();
+                    ImGui::Text("X: %.4f g", data.x);
+                    ImGui::Text("Y: %.4f g", data.y);
+                    ImGui::Text("Z: %.4f g", data.z);
+                }
+            }
         }
         
         ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");

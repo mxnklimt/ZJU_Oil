@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClInclude Include="ADXL355\ADXL355Parser.h" />
     <ClInclude Include="Auto.h" />
+    <ClInclude Include="data\Data.h" />
     <ClInclude Include="file\ReadFile.h" />
     <ClInclude Include="Imgui\imconfig.h" />
     <ClInclude Include="Imgui\imgui.h" />
@@ -204,12 +205,12 @@
     <ClInclude Include="OpenXLSX\OpenXLSX-Exports.hpp" />
     <ClInclude Include="OpenXLSX\OpenXLSX.hpp" />
     <ClInclude Include="OpenXLSX\sources\utilities\XLUtilities.hpp" />
-    <ClInclude Include="RS485\ADXL355Parser.h" />
     <ClInclude Include="RS485\RS485Manager.h" />
     <ClInclude Include="ui\Plot3DWindow.h" />
     <ClInclude Include="ui\sheetdata.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="data\Data.cpp" />
     <ClCompile Include="file\ReadFile.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />
     <ClCompile Include="Imgui\imgui_demo.cpp" />

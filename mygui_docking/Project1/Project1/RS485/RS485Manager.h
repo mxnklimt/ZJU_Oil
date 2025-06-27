@@ -1,5 +1,4 @@
-#ifndef RS485MANAGER_H
-#define RS485MANAGER_H
+#pragma once
 #define NOMINMAX
 #include <windows.h>
 #include <string>
@@ -143,5 +142,3 @@ public:
 private:
     HANDLE hSerial;
 };
-
-#endif // RS485MANAGER_H
