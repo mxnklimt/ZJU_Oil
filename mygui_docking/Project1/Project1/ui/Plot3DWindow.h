@@ -10,6 +10,7 @@ public:
 	static void ShowADXL355();
 	static void ShowJY61P();
 	static void ExcelGetData();
+	static void JY61PInit(int port);
 	static std::vector<std::string> listAvailableSerialPorts();
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;

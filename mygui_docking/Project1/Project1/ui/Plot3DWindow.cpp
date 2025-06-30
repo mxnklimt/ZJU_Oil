@@ -1,13 +1,9 @@
-#include "Plot3DWindow.h"
-#include"imgui.h"
-#include"ImPlot3d/implot3d.h"
-#include"ImPlot/implot.h"
-#include"ImPlot/implot_internal.h"
-#include "ImPlot3d/implot3d_internal.h"
-#include "OpenXLSX/OpenXLSX.hpp"
-#include "file/ReadFile.h"
-#include"ui/sheetdata.h"
-#include"data/Data.h"
+
+
+// V2.0
+#undef x  // 取消冲突宏
+
+
 #include<iostream>
 #include<vector>
 #include <regex>
@@ -19,7 +15,19 @@
 #define NOMINMAX
 #include<Windows.h>
 #include<algorithm>
-// V2.0
+
+#include "Plot3DWindow.h"
+#include"imgui.h"
+#include"ImPlot3d/implot3d.h"
+#include"ImPlot/implot.h"
+#include"ImPlot/implot_internal.h"
+#include "ImPlot3d/implot3d_internal.h"
+#include "OpenXLSX/OpenXLSX.hpp"
+#include "file/ReadFile.h"
+#include"ui/sheetdata.h"
+#include"data/Data.h"
+#include"JY61P/REG.h"
+#include"JY61P/Com.h"
 struct Vec3 {
     float x, y, z;
     Vec3() = default;
@@ -107,13 +115,13 @@ void Application::CylinderPlots() {
                     A.y + radius * (cosf(theta2) * U.y + sinf(theta2) * V.y),
                     A.z + radius * (cosf(theta2) * U.z + sinf(theta2) * V.z)
                 };
-                Vec3 q1 = { p1.x + D.x * len, p1.y + D.y * len, p1.z + D.z * len };
-                Vec3 q2 = { p2.x + D.x * len, p2.y + D.y * len, p2.z + D.z * len };
+                Vec3 q1_my = { p1.x + D.x * len, p1.y + D.y * len, p1.z + D.z * len };
+                Vec3 q2_my = { p2.x + D.x * len, p2.y + D.y * len, p2.z + D.z * len };
 
                 xs[j * 4 + 0] = p1.x; ys[j * 4 + 0] = p1.y; zs[j * 4 + 0] = p1.z;
                 xs[j * 4 + 1] = p2.x; ys[j * 4 + 1] = p2.y; zs[j * 4 + 1] = p2.z;
-                xs[j * 4 + 2] = q2.x; ys[j * 4 + 2] = q2.y; zs[j * 4 + 2] = q2.z;
-                xs[j * 4 + 3] = q1.x; ys[j * 4 + 3] = q1.y; zs[j * 4 + 3] = q1.z;
+                xs[j * 4 + 2] = q2_my.x; ys[j * 4 + 2] = q2_my.y; zs[j * 4 + 2] = q2_my.z;
+                xs[j * 4 + 3] = q1_my.x; ys[j * 4 + 3] = q1_my.y; zs[j * 4 + 3] = q1_my.z;
             }
 
             /*for (int j = 0; j < N; ++j) {
@@ -218,180 +226,171 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
 }
 void Application::ShowJY61P()
 {
+    // ImGui::Begin() 返回 false 表示窗口不可见（如被折叠），必须 return
+	// 防止Imgui报错child窗口未结束 
+    if (!ImGui::Begin("JY61P")) {
+        ImGui::End();
+        return;
+    }
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
-    if (ImGui::Begin(u8"JY61P"))
-    {
-        if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-            for (int n = 0; n < availablePorts.size(); n++) {
-                bool isSelected = (selectedPortIndex == n);
-                if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
-                    selectedPortIndex = n;
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
+    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+        for (int n = 0; n < availablePorts.size(); n++) {
+            bool isSelected = (selectedPortIndex == n);
+            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+                selectedPortIndex = n;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
         }
-        // 波特率选择下拉框
-        if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-            for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
-                bool isSelected = (selectedBaudIndex == n);
-                if (ImGui::Selectable(baudRates[n], isSelected))
-                    selectedBaudIndex = n;
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-        ImGui::End();
+        ImGui::EndCombo();
     }
+    // 波特率选择下拉框
+    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+            bool isSelected = (selectedBaudIndex == n);
+            if (ImGui::Selectable(baudRates[n], isSelected))
+                selectedBaudIndex = n;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+       
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+
+    ImGui::End(); //  一定记得调用
 
 }
-void Application::ShowADXL355()
+void Application::JY61PInit(int port)
 {
+
+    OpenCOMDevice(iComPort, iBaud);
+}
+
+void Application::ShowADXL355() {
+    // ImGui::Begin() 返回 false 表示窗口不可见（如被折叠），必须 return
+	// 防止Imgui报错child窗口未结束 
+    if (!ImGui::Begin("ADXL355")) {
+        ImGui::End();
+        return;
+    }
+
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 0;
+    static bool isConnected = false;
 
     // 串口选择下拉框
-    if (ImGui::Begin(u8"ADXL355")) {
-        if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-            for (int n = 0; n < availablePorts.size(); n++) {
-                bool isSelected = (selectedPortIndex == n);
-                if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
-                    selectedPortIndex = n;
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
+    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+        for (int n = 0; n < availablePorts.size(); n++) {
+            bool isSelected = (selectedPortIndex == n);
+            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+                selectedPortIndex = n;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
         }
-
-        // 波特率选择下拉框
-        if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-            for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
-                bool isSelected = (selectedBaudIndex == n);
-                if (ImGui::Selectable(baudRates[n], isSelected))
-                    selectedBaudIndex = n;
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-
-        // 连接按钮
-
-        static bool isConnected = false;
-
-        if (!isConnected) {
-            if (ImGui::Button(u8"连接")) {
-                try {
-                    DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-                    serialManager.open(availablePorts[selectedPortIndex], baudRate);
-                    isConnected = true;
-                    collectingADXL355 = true;
-
-                    // 启动后台线程采集数据
-                    adxl355Thread = std::thread([]() {
-                        while (collectingADXL355) {
-                            try {
-                                auto cmd = parser.generateReadAccelerationCommand();
-                                serialManager.send(cmd);
-                                auto response = serialManager.receiveADXL355Response();
-                                auto data = parser.parseAccelerationResponse(response);
-
-                                {
-                                    std::lock_guard<std::mutex> lock(ADXL355Mutex);
-                                    // 存入你需要的全局队列，例如 dataQue
-                                    // 假设你有一个全局 ADXL355Data 实例：
-                                    extern ADXL355Data adxl355Data;
-                                    adxl355Data.dataQue.push_back(data);
-                                    // 控制队列最大大小
-                                    if (adxl355Data.dataQue.size() > MAX_POINTS) {
-                                        adxl355Data.dataQue.pop_front();
-                                    }
-                                }
-
-                                std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 根据采样率调整
-                            }
-                            catch (const std::exception& e) {
-                                // 可以选择打印错误但不终止线程
-                                std::cerr << "ADXL355线程错误: " << e.what() << std::endl;
-                            }
-                        }
-                        });
-                }
-                catch (const std::exception& e) {
-                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-                }
-            }
-        }
-        else {
-            if (ImGui::Button(u8"断开")) {
-                collectingADXL355 = false;
-                if (adxl355Thread.joinable())
-                    adxl355Thread.join();
-
-                serialManager.close();
-                isConnected = false;
-            }
-
-            // 你可以选择在此处显示数据
-            {
-                std::lock_guard<std::mutex> lock(ADXL355Mutex);
-                //extern ADXL355Data adxl355Data;
-                if (!adxl355Data.dataQue.empty()) {
-                    const auto& data = adxl355Data.dataQue.back();
-                    //ImGui::Text("X: %.4f g", data.x);
-                    //ImGui::Text("Y: %.4f g", data.y);
-                    //ImGui::Text("Z: %.4f g", data.z);
-       
-                    //放大字体
-                    extern ImFont* DataFont;
-                    ImGui::PushFont(DataFont);
-
-                    // 三个卡片一行排列
-                    ImGui::Columns(3, nullptr, false);  // 三列，无边框间隔
-
-                    auto renderAccelCard = [](const char* label, float value) {
-                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-                        // 中间居中
-                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);  // 橙黄色字体
-
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);  // 白色文字
-
-                        ImGui::EndChild();
-                        ImGui::NextColumn();
-                        };
-                    
-                    // 示例调用：假设你已经获取了 X/Y/Z 加速度
-                    renderAccelCard(u8"加速度X", data.x);
-                    renderAccelCard(u8"加速度Y", data.y);
-                    renderAccelCard(u8"加速度Z", data.z);
-                    
-                    ImGui::Columns(1); // 恢复为单列
-                    ImGui::PopFont();  // 恢复默认字体
-                  
-
-
-
-                }
-            }
-        }
-        
-        ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-        ImGui::End();
+        ImGui::EndCombo();
     }
 
+    // 波特率选择下拉框
+    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+            bool isSelected = (selectedBaudIndex == n);
+            if (ImGui::Selectable(baudRates[n], isSelected))
+                selectedBaudIndex = n;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    // 连接或断开
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                isConnected = true;
+                collectingADXL355 = true;
+
+                adxl355Thread = std::thread([] {
+                    while (collectingADXL355) {
+                        try {
+                            auto cmd = parser.generateReadAccelerationCommand();
+                            serialManager.send(cmd);
+                            auto response = serialManager.receiveADXL355Response();
+                            auto data = parser.parseAccelerationResponse(response);
+
+                            {
+                                std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                                extern ADXL355Data adxl355Data;
+                                adxl355Data.dataQue.push_back(data);
+                                if (adxl355Data.dataQue.size() > MAX_POINTS) {
+                                    adxl355Data.dataQue.pop_front();
+                                }
+                            }
+
+                            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                        }
+                        catch (const std::exception& e) {
+                            std::cerr << "ADXL355线程错误: " << e.what() << std::endl;
+                        }
+                    }
+                    });
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            collectingADXL355 = false;
+            if (adxl355Thread.joinable())
+                adxl355Thread.join();
+            serialManager.close();
+            isConnected = false;
+        }
+
+        // 显示加速度数据
+        std::lock_guard<std::mutex> lock(ADXL355Mutex);
+        extern ADXL355Data adxl355Data;
+
+        if (!adxl355Data.dataQue.empty()) {
+            const auto& data = adxl355Data.dataQue.back();
+            extern ImFont* DataFont;
+            ImGui::PushFont(DataFont);
+
+            ImGui::Columns(3, nullptr, false);
+
+            auto renderAccelCard = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+
+            renderAccelCard(u8"加速度X", data.x);
+            renderAccelCard(u8"加速度Y", data.y);
+            renderAccelCard(u8"加速度Z", data.z);
+
+            ImGui::Columns(1);
+            ImGui::PopFont();
+        }
+    }
+
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+
+    ImGui::End(); //  一定记得调用
 }
 
 void Application::ShowWindow()
