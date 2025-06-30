@@ -20,8 +20,14 @@ static HANDLE		 hReceiveEvent[TOTAL_PORT_NUM]   ={NULL};
 static volatile char chrUARTBuffers[UARTBufferLength]={0};
 static volatile unsigned long ulUARTBufferStart={0}, ulUARTBufferEnd=0;
 
-
-
+static void DelayMs(uint16_t ms)
+{
+	Sleep(ms);
+}
+static void CopeSensorData(uint32_t uiReg, uint32_t uiRegNum)
+{
+	s_cDataUpdate = 1;
+}
 static void AutoScanSensor(void)
 {
 	const uint32_t c_uiBaud[7] = { 4800, 9600, 19200, 38400, 57600, 115200, 230400 };
