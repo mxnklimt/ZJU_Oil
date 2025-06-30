@@ -240,6 +240,15 @@
     <ClInclude Include="data\Data.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="JY61P\Com.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="JY61P\REG.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="JY61P\wit_c_sdk.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">
@@ -381,6 +390,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="data\Data.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="JY61P\Com.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="JY61P\wit_c_sdk.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

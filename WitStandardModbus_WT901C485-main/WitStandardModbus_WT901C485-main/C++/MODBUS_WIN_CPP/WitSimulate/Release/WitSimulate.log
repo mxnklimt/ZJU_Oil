@@ -1,0 +1,11 @@
+﻿  Com.cpp
+  Main.cpp
+  wit_c_sdk.c
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\WitStandardModbus_WT901C485-main\WitStandardModbus_WT901C485-main\C++\MODBUS_WIN_CPP\wit_c_sdk.c(181,35): warning C4018: “<”: 有符号/无符号不匹配
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 27 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  WitSimulate.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\WitStandardModbus_WT901C485-main\WitStandardModbus_WT901C485-main\C++\MODBUS_WIN_CPP\Release\WitSimulate.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。
