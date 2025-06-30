@@ -88,7 +88,7 @@ int main(int, char**)
     wglMakeCurrent(g_MainWindow.hDC, g_hRC);
 
     // Show the window
-    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
+    ::ShowWindow(hwnd, SW_SHOWMAXIMIZED);  // 强制最大化
     ::UpdateWindow(hwnd);
 
     // Setup Dear ImGui context

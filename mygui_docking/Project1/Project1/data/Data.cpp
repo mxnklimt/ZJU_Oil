@@ -16,8 +16,12 @@ ADXL355Data adxl355Data;         //数据结构
 
 
 //JY61P数据
-static char s_cDataUpdate = 0;
-int iComPort = 4;
+char s_cDataUpdate = 0;
+int iComPort = 7;
 int iBaud = 9600;
 int iAddress = 0x0D;
-float a[3], w[3], Angle[3], h[3];
+std::atomic<bool> collectingJY61P = false;
+std::thread JY61PThread;       //线程
+std::mutex JY61PMutex;
+std::deque<JY61PData> JY61PData_dataQue; // 存储数据的队列
+JY61PData jy61pData;

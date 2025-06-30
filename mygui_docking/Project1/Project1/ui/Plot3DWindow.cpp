@@ -1,7 +1,7 @@
-
+ï»¿
 
 // V2.0
-#undef x  // È¡Ïû³åÍ»ºê
+#undef x  // å–æ¶ˆå†²çªå®
 
 
 #include<iostream>
@@ -28,6 +28,7 @@
 #include"data/Data.h"
 #include"JY61P/REG.h"
 #include"JY61P/Com.h"
+#include"wit_c_sdk.h"
 struct Vec3 {
     float x, y, z;
     Vec3() = default;
@@ -37,7 +38,7 @@ struct Vec3 {
 ////V1.0
 void Application::CylinderPlots() {
     static constexpr int N = 240;
-    static float radius = 381.0f / 1000.0f; // °ë¾¶£¬µ¥Î»×ª»»ÎªÃ×
+    static float radius = 381.0f / 1000.0f; // åŠå¾„ï¼Œå•ä½è½¬æ¢ä¸ºç±³
 
     std::vector<Vec3> centers = {
         {0, 0, 0},
@@ -53,7 +54,7 @@ void Application::CylinderPlots() {
         {4769, -46, 170}
     };
 
-    // µ¥Î»´Ó mm ¡ú m
+    // å•ä½ä» mm â†’ m
     for (auto& p : centers) {
         p.x /= 1000.0f;
         p.y /= 1000.0f;
@@ -62,18 +63,18 @@ void Application::CylinderPlots() {
 
     if (ImPlot3D::BeginPlot("Line Plots", ImVec2(-1, -1), 0)) {
         //ImPlot3D::SetupAxesLimits(0, 5, -1, 1, 0, 2);
-        // ÉèÖÃ×ø±ê·¶Î§£ºÖĞ¼ä¾ÓÖĞÕ¹Ê¾
+        // è®¾ç½®åæ ‡èŒƒå›´ï¼šä¸­é—´å±…ä¸­å±•ç¤º
         ImPlot3D::SetupAxesLimits(
-            -0.2f, 5.4f,  // XÖá·¶Î§£¨0¡«4.8¾ÓÖĞ£©
-            -1.4f, 1.2f,  // YÖá·¶Î§£¨Y±È½ÏĞ¡£©
-            -0.8f, 1.8f   // ZÖá·¶Î§
+            -0.2f, 5.4f,  // Xè½´èŒƒå›´ï¼ˆ0ï½4.8å±…ä¸­ï¼‰
+            -1.4f, 1.2f,  // Yè½´èŒƒå›´ï¼ˆYæ¯”è¾ƒå°ï¼‰
+            -0.8f, 1.8f   // Zè½´èŒƒå›´
         );
         //static ImVec4 colorPipe(0.3f, 0.6f, 0.9f, 0.8f); // color
-        //static ImVec4 colorPipe(0.7f, 0.7f, 0.75f, 0.6f); // ÀàËÆ½ğÊôÂÁ¹Ü
-        static ImVec4 colorPipe(0.75f, 0.75f, 0.78f, 0.8f); // Òø»ÒÉ«£¬ÂÔ´ø·´¹â
-        // ĞâÊ´½ğÊô¹ÜµÀÅäÉ« (RGBÖµ»ùÓÚÍ¼Æ¬ÖĞµÄ»ÆºÖÉ«Ğâ¼£)
+        //static ImVec4 colorPipe(0.7f, 0.7f, 0.75f, 0.6f); // ç±»ä¼¼é‡‘å±é“ç®¡
+        static ImVec4 colorPipe(0.75f, 0.75f, 0.78f, 0.8f); // é“¶ç°è‰²ï¼Œç•¥å¸¦åå…‰
+        // é”ˆèš€é‡‘å±ç®¡é“é…è‰² (RGBå€¼åŸºäºå›¾ç‰‡ä¸­çš„é»„è¤è‰²é”ˆè¿¹)
         //static ImVec4 colorPipe(0.76f, 0.55f, 0.35f, 0.6f);
-        //static ImVec4 colorPipe(0.6f, 0.7f, 0.9f, 0.7f); // À¶»ÒÉ«£¬ÏñË®¹Ü
+        //static ImVec4 colorPipe(0.6f, 0.7f, 0.9f, 0.7f); // è“ç°è‰²ï¼Œåƒæ°´ç®¡
 
 
         ImPlot3D::SetNextFillStyle(colorPipe);
@@ -127,18 +128,18 @@ void Application::CylinderPlots() {
             /*for (int j = 0; j < N; ++j) {
                 ImPlot3D::PlotQuad("PipeSeg", &xs[j * 4], &ys[j * 4], &zs[j * 4], 4);
             }*/
-            // ¼ÙÉèÒ»¸ö¹âÔ´·½Ïò£¬±ÈÈç´ÓÉÏ·½ºÍÓÒÇ°·½Ğ±Éä
+            // å‡è®¾ä¸€ä¸ªå…‰æºæ–¹å‘ï¼Œæ¯”å¦‚ä»ä¸Šæ–¹å’Œå³å‰æ–¹æ–œå°„
             Vec3 lightDir = { 0.5f, 0.5f, 1.0f };
             float lightLen = sqrtf(lightDir.x * lightDir.x + lightDir.y * lightDir.y + lightDir.z * lightDir.z);
             lightDir.x /= lightLen; lightDir.y /= lightLen; lightDir.z /= lightLen;
 
             for (int j = 0; j < N; ++j) {
-                // Ğ¡ÃæÆ¬ÖĞĞÄµã£¨¿ÉÒÔÓÃp1£©
+                // å°é¢ç‰‡ä¸­å¿ƒç‚¹ï¼ˆå¯ä»¥ç”¨p1ï¼‰
                 Vec3 p1 = { xs[j * 4 + 0], ys[j * 4 + 0], zs[j * 4 + 0] };
                 Vec3 p2 = { xs[j * 4 + 1], ys[j * 4 + 1], zs[j * 4 + 1] };
                 Vec3 p3 = { xs[j * 4 + 2], ys[j * 4 + 2], zs[j * 4 + 2] };
 
-                // ÓÃÈı¸öµã¹ÀËã·¨ÏòÁ¿
+                // ç”¨ä¸‰ä¸ªç‚¹ä¼°ç®—æ³•å‘é‡
                 Vec3 u = { p2.x - p1.x, p2.y - p1.y, p2.z - p1.z };
                 Vec3 v = { p3.x - p1.x, p3.y - p1.y, p3.z - p1.z };
                 Vec3 normal = {
@@ -151,11 +152,11 @@ void Application::CylinderPlots() {
                     normal.x /= nLen; normal.y /= nLen; normal.z /= nLen;
                 }
 
-                // ÁÁ¶È = ·¨ÏßºÍ¹âÕÕ·½Ïòµã»ı£¬µ÷Õûµ½ 0.3¡«1.0 Ö®¼ä
+                // äº®åº¦ = æ³•çº¿å’Œå…‰ç…§æ–¹å‘ç‚¹ç§¯ï¼Œè°ƒæ•´åˆ° 0.3ï½1.0 ä¹‹é—´
                 float intensity = (normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z);
                 intensity = 0.3f + 0.7f * std::max(0.0f, intensity);
 
-                // ¸ù¾İÁÁ¶È¶¯Ì¬µ÷ÕûÑÕÉ«
+                // æ ¹æ®äº®åº¦åŠ¨æ€è°ƒæ•´é¢œè‰²
                 ImVec4 shadedColor(
                     colorPipe.x * intensity,
                     colorPipe.y * intensity,
@@ -164,7 +165,7 @@ void Application::CylinderPlots() {
                 );
                 ImPlot3D::SetNextFillStyle(shadedColor);
 
-                // »­Õâ¸öĞ¡ÃæÆ¬
+                // ç”»è¿™ä¸ªå°é¢ç‰‡
                 ImPlot3D::PlotQuad("PipeSeg", &xs[j * 4], &ys[j * 4], &zs[j * 4], 4);
             }
 
@@ -172,25 +173,25 @@ void Application::CylinderPlots() {
 
       
         // ------------------------------
-// ÔÚÃ¿¸öÔ²ĞÄÕıÉÏ·½ radius ¾àÀë´¦»­Ò»¸öºìµã
+// åœ¨æ¯ä¸ªåœ†å¿ƒæ­£ä¸Šæ–¹ radius è·ç¦»å¤„ç”»ä¸€ä¸ªçº¢ç‚¹
 // ------------------------------
         std::vector<float> xs, ys, zs;
         for (const Vec3& c : centers) {
             xs.push_back(c.x);
             ys.push_back(c.y);
-            zs.push_back(c.z + 1.2*radius);  // ZÖáÕıÉÏ·½
+            zs.push_back(c.z + 1.2*radius);  // Zè½´æ­£ä¸Šæ–¹
         }
 
-        // ÉèÖÃºìÉ«ÊµĞÄÔ²µãÑùÊ½
+        // è®¾ç½®çº¢è‰²å®å¿ƒåœ†ç‚¹æ ·å¼
         ImPlot3D::SetNextMarkerStyle(ImPlot3DMarker_Circle,
-            9.0f,                        // ´óĞ¡
-            ImVec4(1, 0, 0, 1),           // Ìî³äÑÕÉ«£ººìÉ«
-            0.0f,                         // ±ß¿ò¿í¶È
-            ImVec4(0, 0, 0, 1));          // ÍâÂÖÀª£ººÚÉ«
+            9.0f,                        // å¤§å°
+            ImVec4(1, 0, 0, 1),           // å¡«å……é¢œè‰²ï¼šçº¢è‰²
+            0.0f,                         // è¾¹æ¡†å®½åº¦
+            ImVec4(0, 0, 0, 1));          // å¤–è½®å»“ï¼šé»‘è‰²
 
-        // Ò»´ÎĞÔ»æÖÆËùÓĞµã
+        // ä¸€æ¬¡æ€§ç»˜åˆ¶æ‰€æœ‰ç‚¹
         ImPlot3D::PlotScatter("TopPoints", xs.data(), ys.data(), zs.data(), (int)xs.size());
-        ImPlot3D::SetNextLineStyle(ImVec4(1, 0, 0, 1), 2.0f); // ºìÉ«Ïß£¬Ïß¿í 2.0
+        ImPlot3D::SetNextLineStyle(ImVec4(1, 0, 0, 1), 2.0f); // çº¢è‰²çº¿ï¼Œçº¿å®½ 2.0
         ImPlot3D::PlotLine("TopLine", xs.data(), ys.data(), zs.data(), (int)xs.size());
 
 
@@ -226,8 +227,8 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
 }
 void Application::ShowJY61P()
 {
-    // ImGui::Begin() ·µ»Ø false ±íÊ¾´°¿Ú²»¿É¼û£¨Èç±»ÕÛµş£©£¬±ØĞë return
-	// ·ÀÖ¹Imgui±¨´íchild´°¿ÚÎ´½áÊø 
+    // ImGui::Begin() è¿”å› false è¡¨ç¤ºçª—å£ä¸å¯è§ï¼ˆå¦‚è¢«æŠ˜å ï¼‰ï¼Œå¿…é¡» return
+	// é˜²æ­¢ImguiæŠ¥é”™childçª—å£æœªç»“æŸ 
     if (!ImGui::Begin("JY61P")) {
         ImGui::End();
         return;
@@ -237,7 +238,7 @@ void Application::ShowJY61P()
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
-    if (ImGui::BeginCombo(u8"´®¿Ú", availablePorts[selectedPortIndex].c_str())) {
+    if (ImGui::BeginCombo(u8"ä¸²å£", availablePorts[selectedPortIndex].c_str())) {
         for (int n = 0; n < availablePorts.size(); n++) {
             bool isSelected = (selectedPortIndex == n);
             if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
@@ -247,8 +248,8 @@ void Application::ShowJY61P()
         }
         ImGui::EndCombo();
     }
-    // ²¨ÌØÂÊÑ¡ÔñÏÂÀ­¿ò
-    if (ImGui::BeginCombo(u8"²¨ÌØÂÊ", baudRates[selectedBaudIndex])) {
+    // æ³¢ç‰¹ç‡é€‰æ‹©ä¸‹æ‹‰æ¡†
+    if (ImGui::BeginCombo(u8"æ³¢ç‰¹ç‡", baudRates[selectedBaudIndex])) {
         for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
             bool isSelected = (selectedBaudIndex == n);
             if (ImGui::Selectable(baudRates[n], isSelected))
@@ -259,20 +260,143 @@ void Application::ShowJY61P()
         ImGui::EndCombo();
     }
        
-    ImGui::Text(u8"Á¬½Ó×´Ì¬: %s", isConnected ? u8"ÒÑÁ¬½Ó" : u8"Î´Á¬½Ó");
+    if (!isConnected)
+    {
+        if (ImGui::Button(u8"è¿æ¥"))
+        {
+			try {
+				DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+				JY61PInit(availablePorts[selectedPortIndex]);
+				isConnected = true;
+				collectingJY61P = true;//é€šè¿‡è¿™ä¸ªå˜é‡æ§åˆ¶çº¿ç¨‹é‡‡é›†æ•°æ®
+				// å¯åŠ¨æ•°æ®é‡‡é›†çº¿ç¨‹
+				JY61PThread = std::thread([] {
+					while (collectingJY61P) {
+						try {
+                            JY61PData::angle tempData;
+							WitReadReg(AX, 15);
+                            Sleep(500); // é‡‡é›†é—´éš”500ms
+                            for (int i = 0; i < 3; i++)
+                            {
+                                tempData.a[i] = (float)sReg[AX + i] / 32768.0f * 16.0f;
+                                tempData.w[i] = (float)sReg[GX + i] / 32768.0f * 2000.0f;
+                                tempData.Angle[i] = (float)sReg[Roll + i] / 32768.0f * 180.0f;
+                                //h[i] = (float)sReg[HX + i];
+                                /*printf("a:%.2f %.2f %.2f\r\n", a[0], a[1], a[2]);
+                                printf("w:%.2f %.2f %.2f\r\n", w[0], w[1], w[2]);
+                                printf("Angle:%.1f %.1f %.1f\r\n", Angle[0], Angle[1], Angle[2]);*/
+                                //printf("h:%.0f %.0f %.0f\r\n\r\n", h[0], h[1], h[2]);
+                            }
+                            {
+                                std::lock_guard<std::mutex> lock(JY61PMutex);
+                                jy61pData.dataQue.push_back(tempData);  // âœ… æ¨å…¥é˜Ÿåˆ—
+                                if (jy61pData.dataQue.size() > MAX_POINTS)
+                                    jy61pData.dataQue.pop_front();
+                            }
+                   
+						}
+						catch (const std::exception& e) {
+							std::cerr << "JY61Pçº¿ç¨‹é”™è¯¯: " << e.what() << std::endl;
+						}
+					}
+					});
+			}
+			catch (const std::exception& e) {
+				ImGui::TextColored(ImVec4(1, 0, 0, 1), "è¿æ¥å¤±è´¥: %s", e.what());
+			}
+		}
+	}
+	else //è¿æ¥ä¸Šäº†
+	{
+		if (ImGui::Button(u8"æ–­å¼€"))
+		{
+			isConnected = false;//æ›´æ–°è¿æ¥çŠ¶æ€
+			collectingJY61P = false;//æ›´æ–°é‡‡é›†çº¿ç¨‹çŠ¶æ€
+            if (JY61PThread.joinable()) {
+                JY61PThread.join(); //
+            }
+			CloseCOMDevice(); // å…³é—­ä¸²å£è®¾å¤‡
+		}
+		// æ˜¾ç¤ºä¼ æ„Ÿå™¨æ•°æ®
+		std::lock_guard<std::mutex> lock(JY61PMutex);
+		extern JY61PData jy61pData;
+        if (!jy61pData.dataQue.empty())
+        {
+			const auto& data = jy61pData.dataQue.back(); // è·å–æœ€æ–°æ•°æ®
+            extern ImFont* DataFont;
+            ImGui::PushFont(DataFont);
+            ImGui::Columns(3, nullptr, false);
+            auto renderAccelCard1 = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+            auto renderAccelCard2 = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f Â°/s", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+            auto renderAccelCard3 = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f Â°", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+                renderAccelCard1(u8"åŠ é€Ÿåº¦X", data.a[0]);
+                renderAccelCard1(u8"åŠ é€Ÿåº¦Y", data.a[1]);
+                renderAccelCard1(u8"åŠ é€Ÿåº¦Z", data.a[2]);
+                renderAccelCard2(u8"è§’é€Ÿåº¦X", data.w[0]);
+                renderAccelCard2(u8"è§’é€Ÿåº¦Y", data.w[1]);
+                renderAccelCard2(u8"è§’é€Ÿåº¦Z", data.w[2]);
+                renderAccelCard3(u8"è§’åº¦X", data.Angle[0]);
+                renderAccelCard3(u8"è§’åº¦Y", data.Angle[1]);
+                renderAccelCard3(u8"è§’åº¦Z", data.Angle[2]);
+           
+            ImGui::PopFont();
+        }
+		
+       
+		//ImGui::Text(u8"åŠ é€Ÿåº¦: %.2f %.2f %.2f m/sÂ²", a[0], a[1], a[2]);
+		//ImGui::Text(u8"è§’é€Ÿåº¦: %.2f %.2f %.2f Â°/s", w[0], w[1], w[2]);
+		//ImGui::Text(u8"è§’åº¦: %.1f %.1f %.1f Â°", Angle[0], Angle[1], Angle[2]);
+		//ImGui::Text(u8"é«˜åº¦: %.0f %.0f %.0f m", h[0], h[1], h[2]);
+	}
+    ImGui::Text(u8"è¿æ¥çŠ¶æ€: %s", isConnected ? u8"å·²è¿æ¥" : u8"æœªè¿æ¥");
 
-    ImGui::End(); //  Ò»¶¨¼ÇµÃµ÷ÓÃ
+    ImGui::End(); //  ä¸€å®šè®°å¾—è°ƒç”¨
 
 }
-void Application::JY61PInit(int port)
+void Application::JY61PInit(const std::string& portName)
 {
 
     OpenCOMDevice(iComPort, iBaud);
+    WitInit(WIT_PROTOCOL_MODBUS, iAddress);
+    WitSerialWriteRegister(SensorUartSend);
+    WitRegisterCallBack(CopeSensorData);
+    WitDelayMsRegister(DelayMs);
+    AutoScanSensor();
 }
 
 void Application::ShowADXL355() {
-    // ImGui::Begin() ·µ»Ø false ±íÊ¾´°¿Ú²»¿É¼û£¨Èç±»ÕÛµş£©£¬±ØĞë return
-	// ·ÀÖ¹Imgui±¨´íchild´°¿ÚÎ´½áÊø 
+    // ImGui::Begin() è¿”å› false è¡¨ç¤ºçª—å£ä¸å¯è§ï¼ˆå¦‚è¢«æŠ˜å ï¼‰ï¼Œå¿…é¡» return
+	// é˜²æ­¢ImguiæŠ¥é”™childçª—å£æœªç»“æŸ 
     if (!ImGui::Begin("ADXL355")) {
         ImGui::End();
         return;
@@ -284,8 +408,8 @@ void Application::ShowADXL355() {
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
 
-    // ´®¿ÚÑ¡ÔñÏÂÀ­¿ò
-    if (ImGui::BeginCombo(u8"´®¿Ú", availablePorts[selectedPortIndex].c_str())) {
+    // ä¸²å£é€‰æ‹©ä¸‹æ‹‰æ¡†
+    if (ImGui::BeginCombo(u8"ä¸²å£", availablePorts[selectedPortIndex].c_str())) {
         for (int n = 0; n < availablePorts.size(); n++) {
             bool isSelected = (selectedPortIndex == n);
             if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
@@ -296,8 +420,8 @@ void Application::ShowADXL355() {
         ImGui::EndCombo();
     }
 
-    // ²¨ÌØÂÊÑ¡ÔñÏÂÀ­¿ò
-    if (ImGui::BeginCombo(u8"²¨ÌØÂÊ", baudRates[selectedBaudIndex])) {
+    // æ³¢ç‰¹ç‡é€‰æ‹©ä¸‹æ‹‰æ¡†
+    if (ImGui::BeginCombo(u8"æ³¢ç‰¹ç‡", baudRates[selectedBaudIndex])) {
         for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
             bool isSelected = (selectedBaudIndex == n);
             if (ImGui::Selectable(baudRates[n], isSelected))
@@ -308,9 +432,9 @@ void Application::ShowADXL355() {
         ImGui::EndCombo();
     }
 
-    // Á¬½Ó»ò¶Ï¿ª
+    // è¿æ¥æˆ–æ–­å¼€
     if (!isConnected) {
-        if (ImGui::Button(u8"Á¬½Ó")) {
+        if (ImGui::Button(u8"è¿æ¥")) {
             try {
                 DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
                 serialManager.open(availablePorts[selectedPortIndex], baudRate);
@@ -337,18 +461,18 @@ void Application::ShowADXL355() {
                             std::this_thread::sleep_for(std::chrono::milliseconds(50));
                         }
                         catch (const std::exception& e) {
-                            std::cerr << "ADXL355Ïß³Ì´íÎó: " << e.what() << std::endl;
+                            std::cerr << "ADXL355çº¿ç¨‹é”™è¯¯: " << e.what() << std::endl;
                         }
                     }
                     });
             }
             catch (const std::exception& e) {
-                ImGui::TextColored(ImVec4(1, 0, 0, 1), "Á¬½ÓÊ§°Ü: %s", e.what());
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "è¿æ¥å¤±è´¥: %s", e.what());
             }
         }
     }
     else {
-        if (ImGui::Button(u8"¶Ï¿ª")) {
+        if (ImGui::Button(u8"æ–­å¼€")) {
             collectingADXL355 = false;
             if (adxl355Thread.joinable())
                 adxl355Thread.join();
@@ -356,7 +480,7 @@ void Application::ShowADXL355() {
             isConnected = false;
         }
 
-        // ÏÔÊ¾¼ÓËÙ¶ÈÊı¾İ
+        // æ˜¾ç¤ºåŠ é€Ÿåº¦æ•°æ®
         std::lock_guard<std::mutex> lock(ADXL355Mutex);
         extern ADXL355Data adxl355Data;
 
@@ -379,36 +503,36 @@ void Application::ShowADXL355() {
                 ImGui::NextColumn();
                 };
 
-            renderAccelCard(u8"¼ÓËÙ¶ÈX", data.x);
-            renderAccelCard(u8"¼ÓËÙ¶ÈY", data.y);
-            renderAccelCard(u8"¼ÓËÙ¶ÈZ", data.z);
+            renderAccelCard(u8"åŠ é€Ÿåº¦X", data.x);
+            renderAccelCard(u8"åŠ é€Ÿåº¦Y", data.y);
+            renderAccelCard(u8"åŠ é€Ÿåº¦Z", data.z);
 
             ImGui::Columns(1);
             ImGui::PopFont();
         }
     }
 
-    ImGui::Text(u8"Á¬½Ó×´Ì¬: %s", isConnected ? u8"ÒÑÁ¬½Ó" : u8"Î´Á¬½Ó");
+    ImGui::Text(u8"è¿æ¥çŠ¶æ€: %s", isConnected ? u8"å·²è¿æ¥" : u8"æœªè¿æ¥");
 
-    ImGui::End(); //  Ò»¶¨¼ÇµÃµ÷ÓÃ
+    ImGui::End(); //  ä¸€å®šè®°å¾—è°ƒç”¨
 }
 
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
     static bool ADXL355 = true;
-	static bool JY61P = true; // Ä¬ÈÏÏÔÊ¾JY61PÊı¾İ
-    static bool show_plot3d_2_window = true;  // ×¢Òâ£º¿ØÖÆµÄÊÇ¶ÀÁ¢´°¿Ú
+	static bool JY61P = true; // é»˜è®¤æ˜¾ç¤ºJY61Pæ•°æ®
+    static bool show_plot3d_2_window = true;  // æ³¨æ„ï¼šæ§åˆ¶çš„æ˜¯ç‹¬ç«‹çª—å£
     static bool show_plot3d_2 = true;
     //--------------------------------------------------------------------------------------------------------------------------------
-    // Ö÷´°¿Ú
+    // ä¸»çª—å£
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
     ImGui::Begin("2D Plot", nullptr, ImGuiWindowFlags_MenuBar);
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("View")) {
-            ImGui::MenuItem(u8"¹ÜµÀÎ»ÒÆ/°¶ÆÂ³Á½µ", nullptr, &show_plot2d);
+            ImGui::MenuItem(u8"ç®¡é“ä½ç§»/å²¸å¡æ²‰é™", nullptr, &show_plot2d);
             ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
             ImGui::MenuItem("JY61P", nullptr, &JY61P);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
@@ -424,7 +548,7 @@ void Application::ShowWindow()
         ImGui::EndMenuBar();
     }
     //--------------------------------------------------------------------------------------------------------------------------------
-    // ¶ÁÈ¡excelÊı¾İ
+    // è¯»å–excelæ•°æ®
     bool readfile = false;
     std::vector<float> dValues, eValues;
     std::vector<std::tm> times;
@@ -435,13 +559,13 @@ void Application::ShowWindow()
         /* for (size_t i = 0; i < dValues.size(); ++i) {
              std::cout << "Row " << (i + 2) << ": D=" << dValues[i] << ", E=" << eValues[i] << std::endl;
          }*/
-		dValues_save = dValues; // ±£´æÊı¾İ
-		eValues_save = eValues; // ±£´æÊı¾İ
+		dValues_save = dValues; // ä¿å­˜æ•°æ®
+		eValues_save = eValues; // ä¿å­˜æ•°æ®
         ReadFile::readColumnCTimeOnly("data.xlsx", "Sheet1", times);
-		times_save = times; // ±£´æÊ±¼äÊı¾İ
-		readfile = true; // Ö»¶ÁÈ¡Ò»´Î
+		times_save = times; // ä¿å­˜æ—¶é—´æ•°æ®
+		readfile = true; // åªè¯»å–ä¸€æ¬¡
         /*for (const auto& t : times) {
-            std::cout << "Ê±¼ä: "
+            std::cout << "æ—¶é—´: "
                 << std::setw(2) << std::setfill('0') << t.tm_hour << ":"
                 << std::setw(2) << std::setfill('0') << t.tm_min << ":"
                 << std::setw(2) << std::setfill('0') << t.tm_sec
@@ -450,12 +574,12 @@ void Application::ShowWindow()
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
-	// »æÖÆ¹ÜµÀÎ»ÒÆºÍ°¶ÆÂ³Á½µµÄ2DÍ¼ĞÎ
+	// ç»˜åˆ¶ç®¡é“ä½ç§»å’Œå²¸å¡æ²‰é™çš„2Då›¾å½¢
     if (show_plot2d) {
         static std::vector<float> time_xf;
         static std::vector<float> y_d, y_e;
 
-        // Ê¹ÓÃÈ«¾Ö±äÁ¿ times_save ¼ÆËãÊ±¼äÖá
+        // ä½¿ç”¨å…¨å±€å˜é‡ times_save è®¡ç®—æ—¶é—´è½´
         if (time_xf.size() != times_save.size()) {
             size_t n = times_save.size();
             time_xf.resize(n);
@@ -471,7 +595,7 @@ void Application::ShowWindow()
             }
         }
 
-        // Ê±¼ä¸ñÊ½»¯£¬ÏÔÊ¾ HH:MM:SS
+        // æ—¶é—´æ ¼å¼åŒ–ï¼Œæ˜¾ç¤º HH:MM:SS
         ImPlotFormatter TimeFormatter = [](double seconds, char* buffer, int size, void*) -> int {
             int h = static_cast<int>(seconds) / 3600;
             int m = (static_cast<int>(seconds) % 3600) / 60;
@@ -481,41 +605,41 @@ void Application::ShowWindow()
 
         int count = static_cast<int>(time_xf.size());
 
-        if (ImGui::CollapsingHeader(u8"¹ÜµÀË®Æ½Î»ÒÆ")) {
-            if (ImPlot::BeginPlot(u8"¹ÜµÀË®Æ½Î»ÒÆÍ¼")) {
-                ImPlot::SetupAxes(u8"Ê±¼ä", u8"¹ÜµÀË®Æ½Î»ÒÆ");
+        if (ImGui::CollapsingHeader(u8"ç®¡é“æ°´å¹³ä½ç§»")) {
+            if (ImPlot::BeginPlot(u8"ç®¡é“æ°´å¹³ä½ç§»å›¾")) {
+                ImPlot::SetupAxes(u8"æ—¶é—´", u8"ç®¡é“æ°´å¹³ä½ç§»");
                 ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
 
                 ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
-                ImPlot::PlotLine(u8"¹ÜµÀË®Æ½Î»ÒÆ##line", time_xf.data(), y_d.data(), count);
+                ImPlot::PlotLine(u8"ç®¡é“æ°´å¹³ä½ç§»##line", time_xf.data(), y_d.data(), count);
                 ImPlot::PopStyleColor();
 
                 ImPlot::EndPlot();
             }
         }
         
-        if (ImGui::CollapsingHeader(u8"°¶ÆÂ³Á½µÎ»ÒÆ")) {
-            if (ImPlot::BeginPlot(u8"°¶ÆÂ³Á½µÎ»ÒÆÍ¼")) {
-                ImPlot::SetupAxes(u8"Ê±¼ä", u8"°¶ÆÂ³Á½µÎ»ÒÆ");
+        if (ImGui::CollapsingHeader(u8"å²¸å¡æ²‰é™ä½ç§»")) {
+            if (ImPlot::BeginPlot(u8"å²¸å¡æ²‰é™ä½ç§»å›¾")) {
+                ImPlot::SetupAxes(u8"æ—¶é—´", u8"å²¸å¡æ²‰é™ä½ç§»");
                 ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
 
                 ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86400.0, ImGuiCond_Always);
 
                 ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.6f, 0.1f, 1.0f));
-                ImPlot::PlotLine(u8"°¶ÆÂ³Á½µÎ»ÒÆ##line", time_xf.data(), y_e.data(), count);
+                ImPlot::PlotLine(u8"å²¸å¡æ²‰é™ä½ç§»##line", time_xf.data(), y_e.data(), count);
                 ImPlot::PopStyleColor();
 
                 ImPlot::EndPlot();
             }
         }
     }
-    ImGui::End(); // Ö÷´°¿Ú½áÊø
+    ImGui::End(); // ä¸»çª—å£ç»“æŸ
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
     if (ADXL355) {
 		Application::ShowADXL355();
     }
-    //ImGui::End(); // Ö÷´°¿Ú½áÊø
+    //ImGui::End(); // ä¸»çª—å£ç»“æŸ
 
 
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -526,10 +650,10 @@ void Application::ShowWindow()
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
-    // ¶ÀÁ¢´°¿Ú£º3D¹ÜµÀÍ¼Ïñ£¬¹âÔ´½¨Ä£
+    // ç‹¬ç«‹çª—å£ï¼š3Dç®¡é“å›¾åƒï¼Œå…‰æºå»ºæ¨¡
     if (show_plot3d_2_window) {
         //ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
-        ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // ¿É¹Ø±Õ´°¿Ú
+        ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // å¯å…³é—­çª—å£
         Application::CylinderPlots();
         ImGui::End();
     }
@@ -545,21 +669,21 @@ void Application::ShowWindow2()
     ImGui::SetNextWindowSize(ImVec2(1200, 800), ImGuiCond_FirstUseEver);
     ImGui::Begin("3D Plot Demo", nullptr, ImGuiWindowFlags_MenuBar);
 
-    // ´´½¨Ò»¸öÑ¡Ïî¿¨À¸
+    // åˆ›å»ºä¸€ä¸ªé€‰é¡¹å¡æ 
     if (ImGui::BeginTabBar("Tabs")) {
-        // 2D Í¼ĞÎµÄÑ¡Ïî¿¨
+        // 2D å›¾å½¢çš„é€‰é¡¹å¡
         if (ImGui::BeginTabItem("2D Plot")) {
             show_plot2d = true;
             show_plot3d_1 = false;
             show_plot3d_2 = false;
 
-            // »æÖÆ 2D Í¼ĞÎ
+            // ç»˜åˆ¶ 2D å›¾å½¢
             if (show_plot2d) {
                 static float x_data[100];
                 static float y_data1[100]; // sin(x)
                 static float y_data2[100]; // cos(x)
 
-                // ³õÊ¼»¯Êı¾İ
+                // åˆå§‹åŒ–æ•°æ®
                 for (int i = 0; i < 100; ++i) {
                     x_data[i] = i * 0.1f;
                     y_data1[i] = sinf(x_data[i]);
@@ -567,11 +691,11 @@ void Application::ShowWindow2()
                 }
 
                 if (ImPlot::BeginPlot("Sine & Cosine Plot")) {
-                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f)); // À¶É«
+                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f)); // è“è‰²
                     ImPlot::PlotLine("Sine Wave", x_data, y_data1, 100);
                     ImPlot::PopStyleColor();
 
-                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.85f, 0.1f, 1.0f)); // »ÆÉ«
+                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.85f, 0.1f, 1.0f)); // é»„è‰²
                     ImPlot::PlotLine("Cosine Wave", x_data, y_data2, 100);
                     ImPlot::PopStyleColor();
 
@@ -581,13 +705,13 @@ void Application::ShowWindow2()
             ImGui::EndTabItem();
         }
 
-        // 3D Í¼ĞÎ 1 µÄÑ¡Ïî¿¨
+        // 3D å›¾å½¢ 1 çš„é€‰é¡¹å¡
         if (ImGui::BeginTabItem("3D Plot 1")) {
             show_plot2d = false;
             show_plot3d_1 = true;
             show_plot3d_2 = false;
 
-            // »æÖÆ 3D Í¼ĞÎ 1
+            // ç»˜åˆ¶ 3D å›¾å½¢ 1
             if (show_plot3d_1) {
                 static float xs1[1001], ys1[1001], zs1[1001];
                 for (int i = 0; i < 1001; i++) {
@@ -610,13 +734,13 @@ void Application::ShowWindow2()
             ImGui::EndTabItem();
         }
 
-        // 3D Í¼ĞÎ 2 µÄÑ¡Ïî¿¨
+        // 3D å›¾å½¢ 2 çš„é€‰é¡¹å¡
         if (ImGui::BeginTabItem("3D Plot 2")) {
             show_plot2d = false;
             show_plot3d_1 = false;
             show_plot3d_2 = true;
 
-            // »æÖÆ 3D Í¼ĞÎ 2
+            // ç»˜åˆ¶ 3D å›¾å½¢ 2
             if (show_plot3d_2) {
                 Application::CylinderPlots();
             }

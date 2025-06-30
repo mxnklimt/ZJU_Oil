@@ -12,4 +12,5 @@ void CopeSensorData(uint32_t uiReg, uint32_t uiRegNum);
 void AutoScanSensor(void);
 void DelayMs(uint16_t ms);
 void ComRxCallBack(char* p_data, UINT32 uiSize);
+void SensorUartSend(uint8_t* p_data, uint32_t uiSize);
 #endif
