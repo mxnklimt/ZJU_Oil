@@ -66,6 +66,7 @@ static void Hook_Renderer_SwapBuffers(ImGuiViewport* viewport, void*)
     if (WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData)
         ::SwapBuffers(data->hDC);
 }
+ImFont* DataFont = nullptr;
 
 // Main code
 int main(int, char**)
@@ -103,7 +104,7 @@ int main(int, char**)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;       // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;     // Enable Multi-Viewport / Platform Windows
     ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\simkai.ttf", 20.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
-
+    DataFont = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\simkai.ttf", 25.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();

@@ -282,7 +282,7 @@ void Application::ShowADXL355()
                                     }
                                 }
 
-                                std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 根据采样率调整
+                                std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 根据采样率调整
                             }
                             catch (const std::exception& e) {
                                 // 可以选择打印错误但不终止线程
@@ -309,12 +309,47 @@ void Application::ShowADXL355()
             // 你可以选择在此处显示数据
             {
                 std::lock_guard<std::mutex> lock(ADXL355Mutex);
-                extern ADXL355Data adxl355Data;
+                //extern ADXL355Data adxl355Data;
                 if (!adxl355Data.dataQue.empty()) {
                     const auto& data = adxl355Data.dataQue.back();
-                    ImGui::Text("X: %.4f g", data.x);
-                    ImGui::Text("Y: %.4f g", data.y);
-                    ImGui::Text("Z: %.4f g", data.z);
+                    //ImGui::Text("X: %.4f g", data.x);
+                    //ImGui::Text("Y: %.4f g", data.y);
+                    //ImGui::Text("Z: %.4f g", data.z);
+       
+                    //放大字体
+                    extern ImFont* DataFont;
+                    ImGui::PushFont(DataFont);
+
+                    // 三个卡片一行排列
+                    ImGui::Columns(3, nullptr, false);  // 三列，无边框间隔
+
+                    auto renderAccelCard = [](const char* label, float value) {
+                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+                        // 中间居中
+                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);  // 橙黄色字体
+
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);  // 白色文字
+
+                        ImGui::EndChild();
+                        ImGui::NextColumn();
+                        };
+                    
+                    // 示例调用：假设你已经获取了 X/Y/Z 加速度
+                    renderAccelCard(u8"加速度X", data.x);
+                    renderAccelCard(u8"加速度Y", data.y);
+                    renderAccelCard(u8"加速度Z", data.z);
+                    
+                    ImGui::Columns(1); // 恢复为单列
+                    ImGui::PopFont();  // 恢复默认字体
+                  
+
+
+
                 }
             }
         }
@@ -423,7 +458,7 @@ void Application::ShowWindow()
                 ImPlot::EndPlot();
             }
         }
-
+        
         if (ImGui::CollapsingHeader(u8"岸坡沉降位移")) {
             if (ImPlot::BeginPlot(u8"岸坡沉降位移图")) {
                 ImPlot::SetupAxes(u8"时间", u8"岸坡沉降位移");
@@ -439,12 +474,13 @@ void Application::ShowWindow()
             }
         }
     }
+    ImGui::End(); // 主窗口结束
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
     if (ADXL355) {
 		Application::ShowADXL355();
     }
-    ImGui::End(); // 主窗口结束
+    //ImGui::End(); // 主窗口结束
 
     //--------------------------------------------------------------------------------------------------------------------------------
     // 独立窗口：3D管道图像，光源建模
