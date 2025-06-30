@@ -3,7 +3,7 @@
 #include <windows.h>
 #include "Com.h"
 #include <wit_c_sdk.h>
-
+#include "data/Data.h"
 #define		iBufferSize 1000
 #define     UARTBufferLength 1000
 #undef  SYNCHRONOUS_MODE
@@ -20,6 +20,33 @@ static HANDLE		 hReceiveEvent[TOTAL_PORT_NUM]   ={NULL};
 static volatile char chrUARTBuffers[UARTBufferLength]={0};
 static volatile unsigned long ulUARTBufferStart={0}, ulUARTBufferEnd=0;
 
+
+
+static void AutoScanSensor(void)
+{
+	const uint32_t c_uiBaud[7] = { 4800, 9600, 19200, 38400, 57600, 115200, 230400 };
+	int i, iRetry;
+
+	for (i = 0; i < 7; i++)
+	{
+		SetBaundrate(c_uiBaud[i]);
+		iRetry = 2;
+		do
+		{
+			s_cDataUpdate = 0;
+			WitReadReg(AX, 3);
+			Sleep(100);
+			if (s_cDataUpdate != 0)
+			{
+				printf("%d baud find sensor\r\n\r\n", c_uiBaud[i]);
+				return;
+			}
+			iRetry--;
+		} while (iRetry);
+	}
+	printf("can not find sensor\r\n");
+	printf("please check your connection\r\n");
+}
 
 void ComRxCallBack(char* p_data, UINT32 uiSize)
 {
