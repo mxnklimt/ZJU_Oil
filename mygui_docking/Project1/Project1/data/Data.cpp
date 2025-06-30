@@ -20,3 +20,4 @@ static char s_cDataUpdate = 0;
 int iComPort = 4;
 int iBaud = 9600;
 int iAddress = 0x0D;
+float a[3], w[3], Angle[3], h[3];

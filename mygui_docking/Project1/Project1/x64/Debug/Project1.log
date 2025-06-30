@@ -1,14 +1,16 @@
-﻿  Com.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\JY61P\Com.h(8,6): error C2182: “DelayMs”: “void” 这一使用无效
-  (编译源文件“JY61P/Com.cpp”)
+﻿  Plot3DWindow.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
+  (编译源文件“ui/Plot3DWindow.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\JY61P\Com.h(8,14): error C2065: “uint16_t”: 未声明的标识符
-  (编译源文件“JY61P/Com.cpp”)
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
+  (编译源文件“ui/Plot3DWindow.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\JY61P\Com.h(8,23): error C2146: 语法错误: 缺少“)”(在标识符“ms”的前面)
-  (编译源文件“JY61P/Com.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\JY61P\Com.cpp(23,13): error C2365: “DelayMs”: 重定义；以前的定义是“数据变量”
-      C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\JY61P\Com.h(8,6):
-      参见“DelayMs”的声明
-  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(173,30): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(173,30): warning C4244:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(173,30): warning C4244:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(173,30): warning C4244:             _Ty=float
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(173,30): warning C4244:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(468,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+  Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Debug\Project1.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。

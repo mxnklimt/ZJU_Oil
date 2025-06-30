@@ -216,7 +216,41 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
     }
     return ports;
 }
+void Application::ShowJY61P()
+{
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 0;
+    static bool isConnected = false;
+    if (ImGui::Begin(u8"JY61P"))
+    {
+        if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+            for (int n = 0; n < availablePorts.size(); n++) {
+                bool isSelected = (selectedPortIndex == n);
+                if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+                    selectedPortIndex = n;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        // 波特率选择下拉框
+        if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+            for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+                bool isSelected = (selectedBaudIndex == n);
+                if (ImGui::Selectable(baudRates[n], isSelected))
+                    selectedBaudIndex = n;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+        ImGui::End();
+    }
 
+}
 void Application::ShowADXL355()
 {
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
@@ -225,7 +259,7 @@ void Application::ShowADXL355()
     static int selectedBaudIndex = 0;
 
     // 串口选择下拉框
-    if (ImGui::Begin(u8"ADXL355串口设置")) {
+    if (ImGui::Begin(u8"ADXL355")) {
         if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
             for (int n = 0; n < availablePorts.size(); n++) {
                 bool isSelected = (selectedPortIndex == n);
@@ -363,7 +397,8 @@ void Application::ShowADXL355()
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
-    static bool ADXL355 = false;
+    static bool ADXL355 = true;
+	static bool JY61P = true; // 默认显示JY61P数据
     static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
     static bool show_plot3d_2 = true;
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -376,6 +411,7 @@ void Application::ShowWindow()
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem(u8"管道位移/岸坡沉降", nullptr, &show_plot2d);
             ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
+            ImGui::MenuItem("JY61P", nullptr, &JY61P);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
             ImGui::EndMenu();
@@ -481,6 +517,14 @@ void Application::ShowWindow()
 		Application::ShowADXL355();
     }
     //ImGui::End(); // 主窗口结束
+
+
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // JY61P
+    if (JY61P)
+    {
+		Application::ShowJY61P();
+    }
 
     //--------------------------------------------------------------------------------------------------------------------------------
     // 独立窗口：3D管道图像，光源建模

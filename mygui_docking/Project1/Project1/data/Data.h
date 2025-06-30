@@ -26,7 +26,7 @@ extern char s_cDataUpdate;
 extern int iComPort;
 extern int iBaud;
 extern int iAddress;
-
+extern float a[3], w[3], Angle[3], h[3];
 class ADXL355Data
 {
 public:
