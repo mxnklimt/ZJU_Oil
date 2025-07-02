@@ -5,6 +5,7 @@
 #include <deque>
 #include <thread>
 #include <atomic>
+#include <map>
 #include"ADXL355/ADXL355Parser.h"
 #include"RS485/RS485Manager.h"
 
@@ -25,6 +26,11 @@ class ADXL355Data
 public:
 	std::deque<ADXL355Parser::AccelerationData> dataQue;//使用别的类里的结构体要加上作用域
 };
+extern std::vector<uint8_t> adxl355DeviceAddresses;
+extern std::map<uint8_t, std::thread> adxl355Threads;
+extern std::map<uint8_t, class ADXL355Data> adxl355DataMap;
+extern std::map<uint8_t, class ADXL355Parser> adxl355Parsers;
+extern std::mutex RS485SendRecvMutex;
 
 //JY61P
 class JY61PData
