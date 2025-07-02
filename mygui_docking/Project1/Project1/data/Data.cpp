@@ -13,11 +13,12 @@ std::mutex ADXL355Mutex;
 std::atomic<bool> collectingADXL355 = false;
 std::thread adxl355Thread;       //线程
 ADXL355Data adxl355Data;         //数据结构
-std::vector<uint8_t> adxl355DeviceAddresses = { 0x01, 0x02, 0x03 };
+std::vector<uint8_t> adxl355DeviceAddresses = { 0x00 ,0x01 };
 std::map<uint8_t, std::thread> adxl355Threads;
 std::map<uint8_t, ADXL355Data> adxl355DataMap;
 std::map<uint8_t, ADXL355Parser> adxl355Parsers;
 std::mutex RS485SendRecvMutex;
+std::thread adxl355PollingThread;
 //JY61P数据
 char s_cDataUpdate = 0;
 int iComPort = 7;

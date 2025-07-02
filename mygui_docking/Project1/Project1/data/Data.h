@@ -21,6 +21,7 @@ extern RS485Manager serialManager;
 extern ADXL355Parser parser;
 extern std::thread adxl355Thread;       //线程
 extern class ADXL355Data adxl355Data;         //数据结构
+extern std::thread adxl355PollingThread;
 class ADXL355Data
 {
 public:
