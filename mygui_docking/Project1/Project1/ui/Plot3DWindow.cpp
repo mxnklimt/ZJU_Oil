@@ -203,25 +203,55 @@ void Application::ExcelGetData()
 {
 
 }
+//std::vector<std::string> Application::listAvailableSerialPorts() {
+//    std::vector<std::string> ports;
+//    for (int i = 1; i <= 20; ++i) {
+//        std::string portName = "COM" + std::to_string(i);
+//        std::wstring wPortName = L"\\\\.\\" + std::wstring(portName.begin(), portName.end());
+//
+//        HANDLE h = CreateFileW(
+//            wPortName.c_str(),
+//            GENERIC_READ | GENERIC_WRITE,
+//            0,
+//            NULL,
+//            OPEN_EXISTING,
+//            FILE_FLAG_OVERLAPPED,//异步防止阻塞
+//            NULL
+//        );
+//        if (h != INVALID_HANDLE_VALUE) {
+//            ports.push_back(portName);
+//            CloseHandle(h);
+//        }
+//    }
+//    return ports;
+//}
+
+//：CreateFileW 在尝试打开不存在的串口时，Windows 系统默认会等待超时（约 2 秒）
 std::vector<std::string> Application::listAvailableSerialPorts() {
     std::vector<std::string> ports;
-    for (int i = 1; i <= 20; ++i) {
-        std::string portName = "COM" + std::to_string(i);
-        std::wstring wPortName = L"\\\\.\\" + std::wstring(portName.begin(), portName.end());
+    HKEY hKey;
+    // 打开注册表路径
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"HARDWARE\\DEVICEMAP\\SERIALCOMM", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        DWORD index = 0;
+        TCHAR valueName[256];
+        BYTE data[256];
+        DWORD valueNameSize, dataSize, type;
 
-        HANDLE h = CreateFileW(
-            wPortName.c_str(),
-            GENERIC_READ | GENERIC_WRITE,
-            0,
-            NULL,
-            OPEN_EXISTING,
-            0,
-            NULL
-        );
-        if (h != INVALID_HANDLE_VALUE) {
-            ports.push_back(portName);
-            CloseHandle(h);
+        // 遍历所有注册表键值
+        while (true) {
+            valueNameSize = sizeof(valueName);
+            dataSize = sizeof(data);
+            if (RegEnumValue(hKey, index, valueName, &valueNameSize, NULL, &type, data, &dataSize) != ERROR_SUCCESS)
+                break;
+
+            if (type == REG_SZ) {
+                // 将宽字符数据转换为字符串
+                std::wstring wPortName(reinterpret_cast<wchar_t*>(data));
+                ports.push_back(std::string(wPortName.begin(), wPortName.end()));
+            }
+            index++;
         }
+        RegCloseKey(hKey);
     }
     return ports;
 }
@@ -709,100 +739,6 @@ void Application::ShowWindow()
     }
     //--------------------------------------------------------------------------------------------------------------------------------
 }
-
-void Application::ShowWindow2()
-{
-    static bool show_plot2d = true;
-    static bool show_plot3d_1 = false;
-    static bool show_plot3d_2 = true;
-    ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(1200, 800), ImGuiCond_FirstUseEver);
-    ImGui::Begin("3D Plot Demo", nullptr, ImGuiWindowFlags_MenuBar);
-
-    // 创建一个选项卡栏
-    if (ImGui::BeginTabBar("Tabs")) {
-        // 2D 图形的选项卡
-        if (ImGui::BeginTabItem("2D Plot")) {
-            show_plot2d = true;
-            show_plot3d_1 = false;
-            show_plot3d_2 = false;
-
-            // 绘制 2D 图形
-            if (show_plot2d) {
-                static float x_data[100];
-                static float y_data1[100]; // sin(x)
-                static float y_data2[100]; // cos(x)
-
-                // 初始化数据
-                for (int i = 0; i < 100; ++i) {
-                    x_data[i] = i * 0.1f;
-                    y_data1[i] = sinf(x_data[i]);
-                    y_data2[i] = cosf(x_data[i]);
-                }
-
-                if (ImPlot::BeginPlot("Sine & Cosine Plot")) {
-                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f)); // 蓝色
-                    ImPlot::PlotLine("Sine Wave", x_data, y_data1, 100);
-                    ImPlot::PopStyleColor();
-
-                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.85f, 0.1f, 1.0f)); // 黄色
-                    ImPlot::PlotLine("Cosine Wave", x_data, y_data2, 100);
-                    ImPlot::PopStyleColor();
-
-                    ImPlot::EndPlot();
-                }
-            }
-            ImGui::EndTabItem();
-        }
-
-        // 3D 图形 1 的选项卡
-        if (ImGui::BeginTabItem("3D Plot 1")) {
-            show_plot2d = false;
-            show_plot3d_1 = true;
-            show_plot3d_2 = false;
-
-            // 绘制 3D 图形 1
-            if (show_plot3d_1) {
-                static float xs1[1001], ys1[1001], zs1[1001];
-                for (int i = 0; i < 1001; i++) {
-                    xs1[i] = i * 0.001f;
-                    ys1[i] = 0.5f + 0.5f * cosf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
-                    zs1[i] = 0.5f + 0.5f * sinf(50 * (xs1[i] + (float)ImGui::GetTime() / 10));
-                }
-                static double xs2[20], ys2[20], zs2[20];
-                for (int i = 0; i < 20; i++) {
-                    xs2[i] = i * 1 / 19.0f;
-                    ys2[i] = xs2[i] * xs2[i];
-                    zs2[i] = xs2[i] * ys2[i];
-                }
-                if (ImPlot3D::BeginPlot("Line Plots")) {
-                    ImPlot3D::SetupAxes("x", "y", "z");
-                    ImPlot3D::PlotLine("f(x)", xs1, ys1, zs1, 1001);
-                    ImPlot3D::EndPlot();
-                }
-            }
-            ImGui::EndTabItem();
-        }
-
-        // 3D 图形 2 的选项卡
-        if (ImGui::BeginTabItem("3D Plot 2")) {
-            show_plot2d = false;
-            show_plot3d_1 = false;
-            show_plot3d_2 = true;
-
-            // 绘制 3D 图形 2
-            if (show_plot3d_2) {
-                Application::CylinderPlots();
-            }
-            ImGui::EndTabItem();
-        }
-
-        ImGui::EndTabBar();
-    }
-
-    ImGui::End();
-}
-
 
 
 
