@@ -1,4 +1,14 @@
-﻿  Plot3DWindow.cpp
+﻿  ReadFile.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(31,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(32,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(75,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+  Plot3DWindow.cpp
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
   
@@ -10,11 +20,11 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Pl
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(182,30): warning C4244:         [
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(182,30): warning C4244:             _Ty=float
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(182,30): warning C4244:         ]
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(929,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(641,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
   正在生成代码
-  0 of 8130 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+  38 of 8833 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    18 functions were new in current compilation
+    300 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Release\Project1.exe
   'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
