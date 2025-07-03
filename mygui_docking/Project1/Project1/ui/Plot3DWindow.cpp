@@ -287,7 +287,7 @@ void Application::ShowDualAxisSensor() {
 
             }
             catch (const std::exception& e) {
-                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"连接失败: %s", e.what());
             }
         }
     }
@@ -329,10 +329,37 @@ void Application::ShowDualAxisSensor() {
             auto& angles = dualAxisDataMap[addr];
             ImGui::Separator();
             ImGui::Text(u8"设备 0x%02X", addr);
-            ImGui::Text(u8"水平角度 = %.2f°", angles.filtered_horizontal);
+            /*ImGui::Text(u8"水平角度 = %.2f°", angles.filtered_horizontal);
             ImGui::Text(u8"垂直角度 = %.2f°", angles.filtered_vertical);
             ImGui::Text(u8"原始水平 = %.2f°", angles.raw_horizontal);
-            ImGui::Text(u8"原始垂直 = %.2f°", angles.raw_vertical);
+            ImGui::Text(u8"原始垂直 = %.2f°", angles.raw_vertical);*/
+            ImGui::Separator();
+            ImGui::Text(u8"当前设备: 0x%02X", addr);
+            extern ImFont* DataFont;
+            ImGui::PushFont(DataFont);  // 如果你有专用字体
+            ImGui::Columns(2, nullptr, false);
+
+            auto renderAngleCard = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
+                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+
+            // 显示4个卡片：过滤后的水平、垂直 + 原始的水平、垂直
+            renderAngleCard(u8"水平角度", angles.filtered_horizontal);
+            renderAngleCard(u8"垂直角度", angles.filtered_vertical);
+            renderAngleCard(u8"原始水平", angles.raw_horizontal);
+            renderAngleCard(u8"原始垂直", angles.raw_vertical);
+
+            ImGui::Columns(1);
+            ImGui::PopFont();
+
         }
         else {
             ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备 0x%02X 暂无数据", addr);
@@ -344,29 +371,6 @@ void Application::ShowDualAxisSensor() {
 }
 
 
-
-//std::vector<std::string> Application::listAvailableSerialPorts() {
-//    std::vector<std::string> ports;
-//    for (int i = 1; i <= 20; ++i) {
-//        std::string portName = "COM" + std::to_string(i);
-//        std::wstring wPortName = L"\\\\.\\" + std::wstring(portName.begin(), portName.end());
-//
-//        HANDLE h = CreateFileW(
-//            wPortName.c_str(),
-//            GENERIC_READ | GENERIC_WRITE,
-//            0,
-//            NULL,
-//            OPEN_EXISTING,
-//            FILE_FLAG_OVERLAPPED,//异步防止阻塞
-//            NULL
-//        );
-//        if (h != INVALID_HANDLE_VALUE) {
-//            ports.push_back(portName);
-//            CloseHandle(h);
-//        }
-//    }
-//    return ports;
-//}
 
 //：CreateFileW 在尝试打开不存在的串口时，Windows 系统默认会等待超时（约 2 秒）
 std::vector<std::string> Application::listAvailableSerialPorts() {
