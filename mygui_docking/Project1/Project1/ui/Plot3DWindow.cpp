@@ -29,6 +29,7 @@
 #include"JY61P/REG.h"
 #include"JY61P/Com.h"
 #include"wit_c_sdk.h"
+#include"DualAxisSensor/DualAxisSensorParser.h"
 struct Vec3 {
     float x, y, z;
     Vec3() = default;
@@ -203,6 +204,147 @@ void Application::ExcelGetData()
 {
 
 }
+void Application::ShowDualAxisSensor() {
+    if (!ImGui::Begin(u8"双轴柔性传感器")) {
+        ImGui::End();
+        return;
+    }
+
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 4;
+    static bool isConnected = false;
+
+    static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x01 };
+    static std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
+    static std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
+    static std::thread pollingThread;
+    static std::mutex dataMutex;
+    static std::atomic<bool> collecting = false;
+    static int selectedDeviceIndex = 0;
+
+    // 串口选择
+    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+        for (int i = 0; i < availablePorts.size(); ++i) {
+            bool isSelected = (i == selectedPortIndex);
+            if (ImGui::Selectable(availablePorts[i].c_str(), isSelected))
+                selectedPortIndex = i;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    // 波特率选择
+    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+        for (int i = 0; i < IM_ARRAYSIZE(baudRates); ++i) {
+            bool isSelected = (i == selectedBaudIndex);
+            if (ImGui::Selectable(baudRates[i], isSelected))
+                selectedBaudIndex = i;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                isConnected = true;
+                collecting = true;
+
+                // 初始化每个地址的解析器
+                for (uint8_t addr : dualAxisDeviceAddresses) {
+                    dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialManager, addr);
+                }
+
+                // 启动轮询线程
+                pollingThread = std::thread([] {
+                    while (collecting) {
+                        for (uint8_t addr : dualAxisDeviceAddresses) {
+                            try {
+                                auto& parser = *dualAxisParsers[addr];
+                                auto angles = parser.readAngles();
+
+                                {
+                                    std::lock_guard<std::mutex> lock(dataMutex);
+                                    dualAxisDataMap[addr] = angles;
+                                }
+                            }
+                            catch (const std::exception& e) {
+                                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
+                            }
+
+                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        }
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    }
+                    });
+
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            collecting = false;
+            if (pollingThread.joinable()) pollingThread.join();
+            serialManager.close();
+            isConnected = false;
+
+            dualAxisParsers.clear();
+            dualAxisDataMap.clear();
+        }
+
+        // 设备选择下拉
+        std::vector<std::string> labels;
+        for (uint8_t addr : dualAxisDeviceAddresses) {
+            char label[16];
+            sprintf_s(label, sizeof(label), "0x%02X", addr);
+            labels.push_back(label);
+        }
+
+        const char* currentLabel = labels[selectedDeviceIndex].c_str();
+        if (ImGui::BeginCombo(u8"显示设备", currentLabel)) {
+            for (int i = 0; i < labels.size(); ++i) {
+                bool isSelected = (i == selectedDeviceIndex);
+                if (ImGui::Selectable(labels[i].c_str(), isSelected))
+                    selectedDeviceIndex = i;
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        uint8_t addr = dualAxisDeviceAddresses[selectedDeviceIndex];
+        std::lock_guard<std::mutex> lock(dataMutex);
+
+        if (dualAxisDataMap.find(addr) != dualAxisDataMap.end()) {
+            auto& angles = dualAxisDataMap[addr];
+            ImGui::Separator();
+            ImGui::Text(u8"设备 0x%02X", addr);
+            ImGui::Text(u8"水平角度 = %.2f°", angles.filtered_horizontal);
+            ImGui::Text(u8"垂直角度 = %.2f°", angles.filtered_vertical);
+            ImGui::Text(u8"原始水平 = %.2f°", angles.raw_horizontal);
+            ImGui::Text(u8"原始垂直 = %.2f°", angles.raw_vertical);
+        }
+        else {
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备 0x%02X 暂无数据", addr);
+        }
+    }
+
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+    ImGui::End();
+}
+
+
+
 //std::vector<std::string> Application::listAvailableSerialPorts() {
 //    std::vector<std::string> ports;
 //    for (int i = 1; i <= 20; ++i) {
@@ -608,6 +750,7 @@ void Application::ShowWindow()
 	static bool JY61P = true; // 默认显示JY61P数据
     static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
     static bool show_plot3d_2 = true;
+    static bool DualAxis = true;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -619,6 +762,7 @@ void Application::ShowWindow()
             ImGui::MenuItem(u8"管道位移/岸坡沉降", nullptr, &show_plot2d);
             ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
             ImGui::MenuItem("JY61P", nullptr, &JY61P);
+            ImGui::MenuItem("DualAxis", nullptr, &DualAxis);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
             ImGui::EndMenu();
@@ -737,6 +881,40 @@ void Application::ShowWindow()
         Application::CylinderPlots();
         ImGui::End();
     }
+
+    if (DualAxis)
+    {
+		Application::ShowDualAxisSensor();
+    }
+
+    //try
+    //{
+    //    RS485Manager rs485_DualAxis;
+    //    rs485_DualAxis.open("COM7", 115200);
+
+    //    DualAxisSensorParser sensor(rs485_DualAxis);
+
+    //    // 读取角度
+    //    auto angles = sensor.readAngles();
+    //    std::cout << "Horizontal =  " << angles.filtered_horizontal << "°" << std::endl;
+    //    std::cout << "Vertical = " << angles.filtered_vertical << "°" << std::endl;
+    //    std::cout << "raw_horizonta = " << angles.raw_horizontal << "°" << std::endl;
+    //    std::cout << "raw_vertical = " << angles.raw_vertical << "°" << std::endl;
+
+    //    // 设置采样率
+    //    sensor.setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_10_Hz);
+
+    //    // 执行校准
+    //    sensor.performCalibration(DualAxisSensorParser::CalibrationCommand::CLEAR_CALIBRATION);
+    //    // ... 其他校准步骤
+
+    //    // 读取设备信息
+    //    std::cout << "Device info: " << sensor.readDeviceInfo() << std::endl;
+    //}
+    //catch (const std::exception& e)
+    //{
+    //    std::cerr << "Error: " << e.what() << std::endl;
+    //}
     //--------------------------------------------------------------------------------------------------------------------------------
 }
 

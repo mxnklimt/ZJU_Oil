@@ -138,6 +138,7 @@
     <ClInclude Include="ADXL355\ADXL355Parser.h" />
     <ClInclude Include="Auto.h" />
     <ClInclude Include="data\Data.h" />
+    <ClInclude Include="DualAxisSensor\DualAxisSensorParser.h" />
     <ClInclude Include="file\ReadFile.h" />
     <ClInclude Include="Imgui\imconfig.h" />
     <ClInclude Include="Imgui\imgui.h" />

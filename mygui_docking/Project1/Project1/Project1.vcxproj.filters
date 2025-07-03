@@ -249,6 +249,9 @@
     <ClInclude Include="JY61P\wit_c_sdk.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DualAxisSensor\DualAxisSensorParser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">

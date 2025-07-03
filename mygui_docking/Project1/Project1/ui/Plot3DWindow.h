@@ -6,7 +6,7 @@ class Application
 public:
 	static void ShowWindow();
 	static void CylinderPlots();
-	static void ShowWindow2();
+	static void ShowDualAxisSensor();
 	static void ShowADXL355();
 	static void ShowJY61P();
 	static void ExcelGetData();
