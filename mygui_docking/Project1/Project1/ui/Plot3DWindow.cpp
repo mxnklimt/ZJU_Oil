@@ -216,13 +216,14 @@ void Application::ShowDualAxisSensor() {
     static int selectedBaudIndex = 4;
     static bool isConnected = false;
 
-    static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x01 };
+    static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
     static std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
     static std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
     static std::thread pollingThread;
     static std::mutex dataMutex;
     static std::atomic<bool> collecting = false;
     static int selectedDeviceIndex = 0;
+
 
     // 串口选择
     if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
@@ -259,6 +260,13 @@ void Application::ShowDualAxisSensor() {
                 // 初始化每个地址的解析器
                 for (uint8_t addr : dualAxisDeviceAddresses) {
                     dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialManager, addr);
+					auto& parser = *dualAxisParsers[addr];
+
+                    //修改设备地址
+                    //if (addr == 0x0C)  // 如果是0x0C地址，尝试更改串口配置
+                    //{
+                    //     parser.changeSerialConfig(0xB8, 0x00, 0x02); //波特率115200代码是0xB8
+                    //}
                 }
 
                 // 启动轮询线程
@@ -267,6 +275,7 @@ void Application::ShowDualAxisSensor() {
                         for (uint8_t addr : dualAxisDeviceAddresses) {
                             try {
                                 auto& parser = *dualAxisParsers[addr];
+								
                                 auto angles = parser.readAngles();
 
                                 {

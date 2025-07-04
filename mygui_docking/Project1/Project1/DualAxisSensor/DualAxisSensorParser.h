@@ -189,7 +189,7 @@ public:
             deviceAddress_,
             0x06,       // 功能码: 写单个寄存器
             0xBD,       // 起始地址高位
-            0x00,       // 起始地址低位 (校验位设置)
+            parity,       // 起始地址低位 (校验位设置) 默认0x00无校验
             baudRateCode,  // 波特率代码
             newAddress,    // 新地址
             0x00, 0x00  // CRC占位符
