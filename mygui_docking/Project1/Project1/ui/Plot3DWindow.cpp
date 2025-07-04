@@ -582,6 +582,177 @@ void Application::JY61PInit(const std::string& portName)
 
 
 //单线程轮询多设备
+//void Application::ShowADXL355() {
+//    if (!ImGui::Begin("ADXL355")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 0;
+//    static bool isConnected = false;
+//
+//    static int selectedDeviceIndex = 0;
+//
+//    // 串口选择
+//    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+//        for (int n = 0; n < availablePorts.size(); n++) {
+//            bool isSelected = (selectedPortIndex == n);
+//            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+//                selectedPortIndex = n;
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//
+//    // 波特率选择
+//    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+//        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+//            bool isSelected = (selectedBaudIndex == n);
+//            if (ImGui::Selectable(baudRates[n], isSelected))
+//                selectedBaudIndex = n;
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//
+//    // 连接按钮
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+//                isConnected = true;
+//                collectingADXL355 = true;
+//
+//                // 初始化解析器和数据容器
+//                for (uint8_t addr : adxl355DeviceAddresses) {
+//                    adxl355Parsers[addr] = ADXL355Parser(addr);
+//                    adxl355DataMap[addr] = ADXL355Data();
+//                }
+//
+//                // 启动轮询线程
+//                adxl355PollingThread = std::thread([]() {
+//                    while (collectingADXL355) {
+//                        for (uint8_t addr : adxl355DeviceAddresses) {
+//                            try {
+//                                std::vector<uint8_t> cmd;
+//                                std::vector<uint8_t> response;
+//                                ADXL355Parser::AccelerationData data;
+//
+//                                {
+//                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+//                                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+//                                    serialManager.send(cmd);
+//                                    response = serialManager.receiveADXL355Response();
+//                                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
+//                                }
+//
+//                                {
+//                                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+//                                    auto& dq = adxl355DataMap[addr].dataQue;
+//                                    dq.push_back(data);
+//                                    if (dq.size() > MAX_POINTS)
+//                                        dq.pop_front();
+//                                }
+//
+//                                std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 设备间小延时
+//                            }
+//                            catch (const std::exception& e) {
+//                                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+//                            }
+//                        }
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(10));  // 轮询间隙
+//                    }
+//                    });
+//
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            collectingADXL355 = false;
+//            if (adxl355PollingThread.joinable())
+//                adxl355PollingThread.join();
+//
+//            serialManager.close();
+//            isConnected = false;
+//
+//            // 清理数据
+//            adxl355Parsers.clear();
+//            adxl355DataMap.clear();
+//        }
+//
+//        // 设备选择下拉框
+//        if (!adxl355DeviceAddresses.empty()) {
+//            std::vector<std::string> deviceLabels;
+//            for (uint8_t addr : adxl355DeviceAddresses) {
+//                char label[16];
+//                sprintf_s(label, sizeof(label), "0x%02X", addr);
+//                deviceLabels.push_back(label);
+//            }
+//
+//            const char* currentLabel = deviceLabels[selectedDeviceIndex].c_str();
+//            if (ImGui::BeginCombo(u8"显示设备", currentLabel)) {
+//                for (int i = 0; i < deviceLabels.size(); i++) {
+//                    bool isSelected = (i == selectedDeviceIndex);
+//                    if (ImGui::Selectable(deviceLabels[i].c_str(), isSelected))
+//                        selectedDeviceIndex = i;
+//                    if (isSelected)
+//                        ImGui::SetItemDefaultFocus();
+//                }
+//                ImGui::EndCombo();
+//            }
+//
+//            uint8_t selectedAddr = adxl355DeviceAddresses[selectedDeviceIndex];
+//
+//            std::lock_guard<std::mutex> lock(ADXL355Mutex);
+//            auto it = adxl355DataMap.find(selectedAddr);
+//            if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
+//                const auto& data = it->second.dataQue.back();
+//
+//                extern ImFont* DataFont;
+//                ImGui::Separator();
+//                ImGui::Text(u8"当前显示设备: 0x%02X", selectedAddr);
+//                ImGui::PushFont(DataFont);
+//                ImGui::Columns(3, nullptr, false);
+//
+//                auto renderAccelCard = [](const char* label, float value) {
+//                    ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+//                    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+//                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+//                    ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+//                    ImGui::Dummy(ImVec2(0.0f, 5.0f));
+//                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+//                    ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+//                    ImGui::EndChild();
+//                    ImGui::NextColumn();
+//                    };
+//
+//                renderAccelCard(u8"加速度X", data.x);
+//                renderAccelCard(u8"加速度Y", data.y);
+//                renderAccelCard(u8"加速度Z", data.z);
+//
+//                ImGui::Columns(1);
+//                ImGui::PopFont();
+//            }
+//            else {
+//                ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", selectedAddr);
+//            }
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//
+//    ImGui::End();
+//}
 void Application::ShowADXL355() {
     if (!ImGui::Begin("ADXL355")) {
         ImGui::End();
@@ -593,8 +764,7 @@ void Application::ShowADXL355() {
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
-
-    static int selectedDeviceIndex = 0;
+    static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
 
     // 串口选择
     if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
@@ -620,7 +790,7 @@ void Application::ShowADXL355() {
         ImGui::EndCombo();
     }
 
-    // 连接按钮
+    // 连接或断开
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
             try {
@@ -629,13 +799,11 @@ void Application::ShowADXL355() {
                 isConnected = true;
                 collectingADXL355 = true;
 
-                // 初始化解析器和数据容器
                 for (uint8_t addr : adxl355DeviceAddresses) {
                     adxl355Parsers[addr] = ADXL355Parser(addr);
                     adxl355DataMap[addr] = ADXL355Data();
                 }
 
-                // 启动轮询线程
                 adxl355PollingThread = std::thread([]() {
                     while (collectingADXL355) {
                         for (uint8_t addr : adxl355DeviceAddresses) {
@@ -660,16 +828,15 @@ void Application::ShowADXL355() {
                                         dq.pop_front();
                                 }
 
-                                std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 设备间小延时
+                                std::this_thread::sleep_for(std::chrono::milliseconds(20));
                             }
                             catch (const std::exception& e) {
                                 std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
                             }
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));  // 轮询间隙
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     }
                     });
-
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
@@ -681,78 +848,74 @@ void Application::ShowADXL355() {
             collectingADXL355 = false;
             if (adxl355PollingThread.joinable())
                 adxl355PollingThread.join();
-
             serialManager.close();
             isConnected = false;
-
-            // 清理数据
             adxl355Parsers.clear();
             adxl355DataMap.clear();
+            deviceDisplayFlags.clear();
         }
 
-        // 设备选择下拉框
+        // 显示复选框选择多个设备
         if (!adxl355DeviceAddresses.empty()) {
-            std::vector<std::string> deviceLabels;
+            ImGui::Separator();
+            //ImGui::Text(u8"选择要显示的数据设备：");
+
             for (uint8_t addr : adxl355DeviceAddresses) {
-                char label[16];
-                sprintf_s(label, sizeof(label), "0x%02X", addr);
-                deviceLabels.push_back(label);
-            }
+                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+                    deviceDisplayFlags[addr] = false;
 
-            const char* currentLabel = deviceLabels[selectedDeviceIndex].c_str();
-            if (ImGui::BeginCombo(u8"显示设备", currentLabel)) {
-                for (int i = 0; i < deviceLabels.size(); i++) {
-                    bool isSelected = (i == selectedDeviceIndex);
-                    if (ImGui::Selectable(deviceLabels[i].c_str(), isSelected))
-                        selectedDeviceIndex = i;
-                    if (isSelected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
+                char label[32];
+                sprintf_s(label, sizeof(label),u8" 0x%02X", addr);
+                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
             }
-
-            uint8_t selectedAddr = adxl355DeviceAddresses[selectedDeviceIndex];
 
             std::lock_guard<std::mutex> lock(ADXL355Mutex);
-            auto it = adxl355DataMap.find(selectedAddr);
-            if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
-                const auto& data = it->second.dataQue.back();
+            for (uint8_t addr : adxl355DeviceAddresses) {
+                if (!deviceDisplayFlags[addr]) continue;
 
-                extern ImFont* DataFont;
-                ImGui::Separator();
-                ImGui::Text(u8"当前显示设备: 0x%02X", selectedAddr);
-                ImGui::PushFont(DataFont);
-                ImGui::Columns(3, nullptr, false);
+                auto it = adxl355DataMap.find(addr);
+                if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
+                    const auto& data = it->second.dataQue.back();
 
-                auto renderAccelCard = [](const char* label, float value) {
-                    ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-                    ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-                    ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
-                    ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                    ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-                    ImGui::EndChild();
-                    ImGui::NextColumn();
-                    };
+                    extern ImFont* DataFont;
+                    ImGui::Separator();
+                    ImGui::Text(u8"设备 0x%02X", addr);
+                    ImGui::PushID(addr);
+                    ImGui::PushFont(DataFont);
+                    ImGui::Columns(3, nullptr, false);
 
-                renderAccelCard(u8"加速度X", data.x);
-                renderAccelCard(u8"加速度Y", data.y);
-                renderAccelCard(u8"加速度Z", data.z);
+                    auto renderAccelCard = [](const char* label, float value) {
+                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                        ImGui::EndChild();
+                        ImGui::NextColumn();
+                        };
 
-                ImGui::Columns(1);
-                ImGui::PopFont();
-            }
-            else {
-                ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", selectedAddr);
+                    renderAccelCard(u8"加速度X", data.x);
+                    renderAccelCard(u8"加速度Y", data.y);
+                    renderAccelCard(u8"加速度Z", data.z);
+
+                    ImGui::Columns(1);
+                    ImGui::PopFont();
+                    ImGui::PopID();
+                }
+                else {
+                    ImGui::Separator();
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+                }
             }
         }
     }
 
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-
     ImGui::End();
 }
+
 
 
 
