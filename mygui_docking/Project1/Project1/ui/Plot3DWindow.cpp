@@ -35,6 +35,12 @@ struct Vec3 {
     Vec3() = default;
     Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 };
+void SetJY61PAddress(uint8_t addr) {
+    WitInit(WIT_PROTOCOL_MODBUS, addr);        // 切换地址
+    WitSerialWriteRegister(SensorUartSend);    // 重新绑定串口写函数
+    WitRegisterCallBack(CopeSensorData);       // 注册数据处理回调
+}
+
 //
 ////V1.0
 void Application::CylinderPlots() {
@@ -356,181 +362,6 @@ void Application::ShowDualAxisSensor() {
     ImGui::End();
 }
 
-//void Application::ShowDualAxisSensor() {
-//    if (!ImGui::Begin(u8"双轴柔性传感器")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 4;
-//    static bool isConnected = false;
-//
-//    static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
-//    static std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
-//    static std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
-//    static std::thread pollingThread;
-//    static std::mutex dataMutex;
-//    static std::atomic<bool> collecting = false;
-//    static int selectedDeviceIndex = 0;
-//
-//
-//    // 串口选择
-//    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-//        for (int i = 0; i < availablePorts.size(); ++i) {
-//            bool isSelected = (i == selectedPortIndex);
-//            if (ImGui::Selectable(availablePorts[i].c_str(), isSelected))
-//                selectedPortIndex = i;
-//            if (isSelected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//
-//    // 波特率选择
-//    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-//        for (int i = 0; i < IM_ARRAYSIZE(baudRates); ++i) {
-//            bool isSelected = (i == selectedBaudIndex);
-//            if (ImGui::Selectable(baudRates[i], isSelected))
-//                selectedBaudIndex = i;
-//            if (isSelected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//
-//    if (!isConnected) {
-//        if (ImGui::Button(u8"连接")) {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
-//                isConnected = true;
-//                collecting = true;
-//
-//                // 初始化每个地址的解析器
-//                for (uint8_t addr : dualAxisDeviceAddresses) {
-//                    dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialManager, addr);
-//					auto& parser = *dualAxisParsers[addr];
-//
-//                    //修改设备地址
-//                    //if (addr == 0x0C)  // 如果是0x0C地址，尝试更改串口配置
-//                    //{
-//                    //     parser.changeSerialConfig(0xB8, 0x00, 0x02); //波特率115200代码是0xB8
-//                    //}
-//                }
-//
-//                // 启动轮询线程
-//                pollingThread = std::thread([] {
-//                    while (collecting) {
-//                        for (uint8_t addr : dualAxisDeviceAddresses) {
-//                            try {
-//                                auto& parser = *dualAxisParsers[addr];
-//								
-//                                auto angles = parser.readAngles();
-//
-//                                {
-//                                    std::lock_guard<std::mutex> lock(dataMutex);
-//                                    dualAxisDataMap[addr] = angles;
-//                                }
-//                            }
-//                            catch (const std::exception& e) {
-//                                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
-//                            }
-//
-//                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-//                        }
-//
-//                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//                    }
-//                    });
-//
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"连接失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else {
-//        if (ImGui::Button(u8"断开")) {
-//            collecting = false;
-//            if (pollingThread.joinable()) pollingThread.join();
-//            serialManager.close();
-//            isConnected = false;
-//
-//            dualAxisParsers.clear();
-//            dualAxisDataMap.clear();
-//        }
-//
-//        // 设备选择下拉
-//        std::vector<std::string> labels;
-//        for (uint8_t addr : dualAxisDeviceAddresses) {
-//            char label[16];
-//            sprintf_s(label, sizeof(label), "0x%02X", addr);
-//            labels.push_back(label);
-//        }
-//
-//        const char* currentLabel = labels[selectedDeviceIndex].c_str();
-//        if (ImGui::BeginCombo(u8"显示设备", currentLabel)) {
-//            for (int i = 0; i < labels.size(); ++i) {
-//                bool isSelected = (i == selectedDeviceIndex);
-//                if (ImGui::Selectable(labels[i].c_str(), isSelected))
-//                    selectedDeviceIndex = i;
-//                if (isSelected)
-//                    ImGui::SetItemDefaultFocus();
-//            }
-//            ImGui::EndCombo();
-//        }
-//
-//        uint8_t addr = dualAxisDeviceAddresses[selectedDeviceIndex];
-//        std::lock_guard<std::mutex> lock(dataMutex);
-//
-//        if (dualAxisDataMap.find(addr) != dualAxisDataMap.end()) {
-//            auto& angles = dualAxisDataMap[addr];
-//            ImGui::Separator();
-//            ImGui::Text(u8"设备 0x%02X", addr);
-//            /*ImGui::Text(u8"水平角度 = %.2f°", angles.filtered_horizontal);
-//            ImGui::Text(u8"垂直角度 = %.2f°", angles.filtered_vertical);
-//            ImGui::Text(u8"原始水平 = %.2f°", angles.raw_horizontal);
-//            ImGui::Text(u8"原始垂直 = %.2f°", angles.raw_vertical);*/
-//            ImGui::Separator();
-//            ImGui::Text(u8"当前设备: 0x%02X", addr);
-//            extern ImFont* DataFont;
-//            ImGui::PushFont(DataFont);  // 如果你有专用字体
-//            ImGui::Columns(2, nullptr, false);
-//
-//            auto renderAngleCard = [](const char* label, float value) {
-//                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-//                ImGui::Dummy(ImVec2(0.0f, 10.0f));
-//                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
-//                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
-//                ImGui::Dummy(ImVec2(0.0f, 5.0f));
-//                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-//                ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
-//                ImGui::EndChild();
-//                ImGui::NextColumn();
-//                };
-//
-//            // 显示4个卡片：过滤后的水平、垂直 + 原始的水平、垂直
-//            renderAngleCard(u8"水平角度", angles.filtered_horizontal);
-//            renderAngleCard(u8"垂直角度", angles.filtered_vertical);
-//            renderAngleCard(u8"原始水平", angles.raw_horizontal);
-//            renderAngleCard(u8"原始垂直", angles.raw_vertical);
-//
-//            ImGui::Columns(1);
-//            ImGui::PopFont();
-//
-//        }
-//        else {
-//            ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备 0x%02X 暂无数据", addr);
-//        }
-//    }
-//
-//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-//    ImGui::End();
-//}
-
 
 
 //：CreateFileW 在尝试打开不存在的串口时，Windows 系统默认会等待超时（约 2 秒）
@@ -562,19 +393,26 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
     }
     return ports;
 }
-void Application::ShowJY61P()
-{
-    // ImGui::Begin() 返回 false 表示窗口不可见（如被折叠），必须 return
-	// 防止Imgui报错child窗口未结束 
+
+void Application::ShowJY61P() {
     if (!ImGui::Begin("JY61P")) {
         ImGui::End();
         return;
     }
+
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
+
+    static std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
+    static std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+    static std::unordered_map<uint8_t, bool> displayFlags;
+    static std::thread pollingThread;
+    static std::mutex jy61pDataMutex;
+    static std::atomic<bool> collecting = false;
+
     if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
         for (int n = 0; n < availablePorts.size(); n++) {
             bool isSelected = (selectedPortIndex == n);
@@ -585,7 +423,7 @@ void Application::ShowJY61P()
         }
         ImGui::EndCombo();
     }
-    // 波特率选择下拉框
+
     if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
         for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
             bool isSelected = (selectedBaudIndex == n);
@@ -596,130 +434,116 @@ void Application::ShowJY61P()
         }
         ImGui::EndCombo();
     }
-       
-    if (!isConnected)
-    {
-        if (ImGui::Button(u8"连接"))
-        {
-			try {
-				DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-				JY61PInit(availablePorts[selectedPortIndex]);
-				isConnected = true;
-				collectingJY61P = true;//通过这个变量控制线程采集数据
-				// 启动数据采集线程
-				JY61PThread = std::thread([] {
-					while (collectingJY61P) {
-						try {
-                            JY61PData::angle tempData;
-							WitReadReg(AX, 15);
-                            Sleep(500); // 采集间隔500ms
-                            for (int i = 0; i < 3; i++)
-                            {
-                                tempData.a[i] = (float)sReg[AX + i] / 32768.0f * 16.0f;
-                                tempData.w[i] = (float)sReg[GX + i] / 32768.0f * 2000.0f;
-                                tempData.Angle[i] = (float)sReg[Roll + i] / 32768.0f * 180.0f;
-                                //h[i] = (float)sReg[HX + i];
-                                /*printf("a:%.2f %.2f %.2f\r\n", a[0], a[1], a[2]);
-                                printf("w:%.2f %.2f %.2f\r\n", w[0], w[1], w[2]);
-                                printf("Angle:%.1f %.1f %.1f\r\n", Angle[0], Angle[1], Angle[2]);*/
-                                //printf("h:%.0f %.0f %.0f\r\n\r\n", h[0], h[1], h[2]);
+
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                OpenCOMDevice(iComPort, baudRate);
+                isConnected = true;
+                collecting = true;
+
+                pollingThread = std::thread([] {
+                    while (collecting) {
+                        for (uint8_t addr : jy61pDeviceAddresses) {
+                            try {
+                                WitInit(WIT_PROTOCOL_MODBUS, addr);
+                                WitSerialWriteRegister(SensorUartSend);
+                                WitRegisterCallBack(CopeSensorData);
+                                WitReadReg(AX, 15);
+                                Sleep(20);
+
+                                JY61PData::angle temp;
+                                for (int i = 0; i < 3; ++i) {
+                                    temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
+                                    temp.w[i] = sReg[GX + i] / 32768.0f * 2000.0f;
+                                    temp.Angle[i] = sReg[Roll + i] / 32768.0f * 180.0f;
+                                }
+
+                                std::lock_guard<std::mutex> lock(jy61pDataMutex);
+                                jy61pDataMap[addr].dataQue.push_back(temp);
+                                if (jy61pDataMap[addr].dataQue.size() > MAX_POINTS)
+                                    jy61pDataMap[addr].dataQue.pop_front();
                             }
-                            {
-                                std::lock_guard<std::mutex> lock(JY61PMutex);
-                                jy61pData.dataQue.push_back(tempData);  //  推入队列
-                                if (jy61pData.dataQue.size() > MAX_POINTS)
-                                    jy61pData.dataQue.pop_front();
+                            catch (const std::exception& e) {
+                                std::cerr << "JY61P 地址 0x" << std::hex << (int)addr << " 读取失败: " << e.what() << std::endl;
                             }
-                   
-						}
-						catch (const std::exception& e) {
-							std::cerr << "JY61P线程错误: " << e.what() << std::endl;
-						}
-					}
-					});
-			}
-			catch (const std::exception& e) {
-				ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-			}
-		}
-	}
-	else //连接上了
-	{
-		if (ImGui::Button(u8"断开"))
-		{
-			isConnected = false;//更新连接状态
-			collectingJY61P = false;//更新采集线程状态
-            if (JY61PThread.joinable()) {
-                JY61PThread.join(); //
+                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                        }
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    }
+                    });
             }
-			CloseCOMDevice(); // 关闭串口设备
-		}
-		// 显示传感器数据
-		std::lock_guard<std::mutex> lock(JY61PMutex);
-		extern JY61PData jy61pData;
-        if (!jy61pData.dataQue.empty())
-        {
-			const auto& data = jy61pData.dataQue.back(); // 获取最新数据
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            collecting = false;
+            if (pollingThread.joinable()) pollingThread.join();
+            CloseCOMDevice();
+            isConnected = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text(u8"选择要显示的数据设备：");
+        for (uint8_t addr : jy61pDeviceAddresses) {
+            if (displayFlags.find(addr) == displayFlags.end())
+                displayFlags[addr] = false;
+
+            char label[32];
+            sprintf_s(label, sizeof(label), u8"显示设备 0x%02X", addr);
+            ImGui::Checkbox(label, &displayFlags[addr]);
+        }
+
+        std::lock_guard<std::mutex> lock(jy61pDataMutex);
+        for (uint8_t addr : jy61pDeviceAddresses) {
+            if (!displayFlags[addr]) continue;
+            if (jy61pDataMap[addr].dataQue.empty()) continue;
+
+            auto& data = jy61pDataMap[addr].dataQue.back();
+            ImGui::Separator();
+            ImGui::Text(u8"当前显示设备: 0x%02X", addr);
             extern ImFont* DataFont;
+            ImGui::PushID(addr);
             ImGui::PushFont(DataFont);
             ImGui::Columns(3, nullptr, false);
-            auto renderAccelCard1 = [](const char* label, float value) {
+
+            auto renderCard = [](const char* label, float value, ImVec4 color, const char* fmt) {
                 ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
                 ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-                ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(fmt).x) * 0.5f);
+                ImGui::TextColored(color, fmt, value);
                 ImGui::Dummy(ImVec2(0.0f, 5.0f));
                 ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
                 ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
                 ImGui::EndChild();
                 ImGui::NextColumn();
                 };
-            auto renderAccelCard2 = [](const char* label, float value) {
-                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-                ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-                ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s", value);
-                ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-                ImGui::EndChild();
-                ImGui::NextColumn();
-                };
-            auto renderAccelCard3 = [](const char* label, float value) {
-                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-                ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
-                ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-                ImGui::EndChild();
-                ImGui::NextColumn();
-                };
-                renderAccelCard1(u8"加速度X", data.a[0]);
-                renderAccelCard1(u8"加速度Y", data.a[1]);
-                renderAccelCard1(u8"加速度Z", data.a[2]);
-                renderAccelCard2(u8"角速度X", data.w[0]);
-                renderAccelCard2(u8"角速度Y", data.w[1]);
-                renderAccelCard2(u8"角速度Z", data.w[2]);
-                renderAccelCard3(u8"角度X", data.Angle[0]);
-                renderAccelCard3(u8"角度Y", data.Angle[1]);
-                renderAccelCard3(u8"角度Z", data.Angle[2]);
-           
+
+            renderCard(u8"加速度X", data.a[0], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+            renderCard(u8"加速度Y", data.a[1], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+            renderCard(u8"加速度Z", data.a[2], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+            renderCard(u8"角速度X", data.w[0], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+            renderCard(u8"角速度Y", data.w[1], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+            renderCard(u8"角速度Z", data.w[2], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+            renderCard(u8"角度X", data.Angle[0], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+            renderCard(u8"角度Y", data.Angle[1], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+            renderCard(u8"角度Z", data.Angle[2], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+
+            ImGui::Columns(1);
             ImGui::PopFont();
+            ImGui::PopID();
         }
-		
-       
-		//ImGui::Text(u8"加速度: %.2f %.2f %.2f m/s²", a[0], a[1], a[2]);
-		//ImGui::Text(u8"角速度: %.2f %.2f %.2f °/s", w[0], w[1], w[2]);
-		//ImGui::Text(u8"角度: %.1f %.1f %.1f °", Angle[0], Angle[1], Angle[2]);
-		//ImGui::Text(u8"高度: %.0f %.0f %.0f m", h[0], h[1], h[2]);
-	}
+    }
+
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-
-    ImGui::End(); //  一定记得调用
-
+    ImGui::End();
 }
+
+
 void Application::JY61PInit(const std::string& portName)
 {
 
