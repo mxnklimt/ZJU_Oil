@@ -513,6 +513,154 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
     return ports;
 }
 
+//void Application::ShowJY61P() {
+//    if (!ImGui::Begin("JY61P")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 0;
+//    static bool isConnected = false;
+//
+//    static std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
+//    static std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+//    static std::unordered_map<uint8_t, bool> displayFlags;
+//    static std::thread pollingThread;
+//    static std::mutex jy61pDataMutex;
+//    static std::atomic<bool> collecting = false;
+//
+//    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+//        for (int n = 0; n < availablePorts.size(); n++) {
+//            bool isSelected = (selectedPortIndex == n);
+//            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+//                selectedPortIndex = n;
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//
+//    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+//        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+//            bool isSelected = (selectedBaudIndex == n);
+//            if (ImGui::Selectable(baudRates[n], isSelected))
+//                selectedBaudIndex = n;
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                OpenCOMDevice(iComPort, baudRate);
+//                isConnected = true;
+//                collecting = true;
+//
+//                pollingThread = std::thread([] {
+//                    while (collecting) {
+//                        for (uint8_t addr : jy61pDeviceAddresses) {
+//                            try {
+//                                WitInit(WIT_PROTOCOL_MODBUS, addr);
+//                                WitSerialWriteRegister(SensorUartSend);
+//                                WitRegisterCallBack(CopeSensorData);
+//                                WitReadReg(AX, 15);
+//                                Sleep(20);
+//
+//                                JY61PData::angle temp;
+//                                for (int i = 0; i < 3; ++i) {
+//                                    temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
+//                                    temp.w[i] = sReg[GX + i] / 32768.0f * 2000.0f;
+//                                    temp.Angle[i] = sReg[Roll + i] / 32768.0f * 180.0f;
+//                                }
+//
+//                                std::lock_guard<std::mutex> lock(jy61pDataMutex);
+//                                jy61pDataMap[addr].dataQue.push_back(temp);
+//                                if (jy61pDataMap[addr].dataQue.size() > MAX_POINTS)
+//                                    jy61pDataMap[addr].dataQue.pop_front();
+//                            }
+//                            catch (const std::exception& e) {
+//                                std::cerr << "JY61P 地址 0x" << std::hex << (int)addr << " 读取失败: " << e.what() << std::endl;
+//                            }
+//                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+//                        }
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//                    }
+//                    });
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            collecting = false;
+//            if (pollingThread.joinable()) pollingThread.join();
+//            CloseCOMDevice();
+//            isConnected = false;
+//        }
+//
+//        ImGui::Separator();
+//        ImGui::Text(u8"选择要显示的数据设备：");
+//        for (uint8_t addr : jy61pDeviceAddresses) {
+//            if (displayFlags.find(addr) == displayFlags.end())
+//                displayFlags[addr] = false;
+//
+//            char label[32];
+//            sprintf_s(label, sizeof(label), u8"显示设备 0x%02X", addr);
+//            ImGui::Checkbox(label, &displayFlags[addr]);
+//        }
+//
+//        std::lock_guard<std::mutex> lock(jy61pDataMutex);
+//        for (uint8_t addr : jy61pDeviceAddresses) {
+//            if (!displayFlags[addr]) continue;
+//            if (jy61pDataMap[addr].dataQue.empty()) continue;
+//
+//            auto& data = jy61pDataMap[addr].dataQue.back();
+//            ImGui::Separator();
+//            ImGui::Text(u8"当前显示设备: 0x%02X", addr);
+//            extern ImFont* DataFont;
+//            ImGui::PushID(addr);
+//            ImGui::PushFont(DataFont);
+//            ImGui::Columns(3, nullptr, false);
+//
+//            auto renderCard = [](const char* label, float value, ImVec4 color, const char* fmt) {
+//                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+//                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+//                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(fmt).x) * 0.5f);
+//                ImGui::TextColored(color, fmt, value);
+//                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+//                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+//                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+//                ImGui::EndChild();
+//                ImGui::NextColumn();
+//                };
+//
+//            renderCard(u8"加速度X", data.a[0], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+//            renderCard(u8"加速度Y", data.a[1], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+//            renderCard(u8"加速度Z", data.a[2], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+//            renderCard(u8"角速度X", data.w[0], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+//            renderCard(u8"角速度Y", data.w[1], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+//            renderCard(u8"角速度Z", data.w[2], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+//            renderCard(u8"角度X", data.Angle[0], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+//            renderCard(u8"角度Y", data.Angle[1], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+//            renderCard(u8"角度Z", data.Angle[2], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+//
+//            ImGui::Columns(1);
+//            ImGui::PopFont();
+//            ImGui::PopID();
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//    ImGui::End();
+//}
 void Application::ShowJY61P() {
     if (!ImGui::Begin("JY61P")) {
         ImGui::End();
@@ -532,6 +680,14 @@ void Application::ShowJY61P() {
     static std::mutex jy61pDataMutex;
     static std::atomic<bool> collecting = false;
 
+    // 新增采集控制相关
+    static std::atomic<bool> isCollectingData = false;
+    static std::thread dataCollectionThread;
+    static std::vector<std::pair<std::chrono::system_clock::time_point,
+        std::unordered_map<uint8_t, JY61PData::angle>>> collectedData;
+    static std::mutex collectedDataMutex;
+
+    // 串口选择
     if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
         for (int n = 0; n < availablePorts.size(); n++) {
             bool isSelected = (selectedPortIndex == n);
@@ -543,6 +699,7 @@ void Application::ShowJY61P() {
         ImGui::EndCombo();
     }
 
+    // 波特率选择
     if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
         for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
             bool isSelected = (selectedBaudIndex == n);
@@ -554,11 +711,16 @@ void Application::ShowJY61P() {
         ImGui::EndCombo();
     }
 
+    // 连接逻辑（启动轮询线程采集数据）
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
             try {
                 DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-                OpenCOMDevice(iComPort, baudRate);
+                // 从"COM3"中提取数字3
+                std::string port = availablePorts[selectedPortIndex];
+                unsigned long portNumber = std::stoul(port.substr(3)); // 跳过"COM"前缀
+                OpenCOMDevice(portNumber, baudRate);
+                //OpenCOMDevice(availablePorts[selectedPortIndex].c_str(), baudRate);
                 isConnected = true;
                 collecting = true;
 
@@ -602,8 +764,130 @@ void Application::ShowJY61P() {
         if (ImGui::Button(u8"断开")) {
             collecting = false;
             if (pollingThread.joinable()) pollingThread.join();
+
+            // 停止采集线程
+            isCollectingData = false;
+            if (dataCollectionThread.joinable()) dataCollectionThread.join();
+
             CloseCOMDevice();
             isConnected = false;
+            jy61pDataMap.clear();
+            displayFlags.clear();
+        }
+
+        // 采集控制按钮
+        if (!isCollectingData) {
+            if (ImGui::Button(u8"开始采集")) {
+                isCollectingData = true;
+                {
+                    std::lock_guard<std::mutex> lock(collectedDataMutex);
+                    collectedData.clear();
+                }
+
+                dataCollectionThread = std::thread([&]() {
+                    while (isCollectingData) {
+                        std::unordered_map<uint8_t, JY61PData::angle> snapshot;
+
+                        {
+                            std::lock_guard<std::mutex> lock(jy61pDataMutex);
+                            for (auto& [addr, data] : jy61pDataMap) {
+                                if (!data.dataQue.empty())
+                                    snapshot[addr] = data.dataQue.back();
+                            }
+                        }
+
+                        auto now = std::chrono::system_clock::now();
+                        {
+                            std::lock_guard<std::mutex> lock(collectedDataMutex);
+                            collectedData.emplace_back(now, snapshot);
+                        }
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
+                    });
+            }
+        }
+        else {
+            if (ImGui::Button(u8"停止采集并保存")) {
+                isCollectingData = false;
+                if (dataCollectionThread.joinable())
+                    dataCollectionThread.join();
+
+                try {
+                    std::string saveFilePath = generateUniqueFileName("JY61P_data");
+                    OpenXLSX::XLDocument doc;
+                    doc.create(saveFilePath, false);
+                    doc.open(saveFilePath);
+                    auto wks = doc.workbook().worksheet("Sheet1");
+
+                    // 写入表头
+                    wks.cell(1, 1).value() = "Time";
+                    int col = 2;
+                    for (uint8_t addr : jy61pDeviceAddresses) {
+                        std::stringstream ss;
+                        ss << "Device 0x" << std::uppercase << std::hex
+                            << std::setw(2) << std::setfill('0') << (int)addr;
+
+                        wks.cell(1, col++) = ss.str() + " Accel X";
+                        wks.cell(1, col++) = ss.str() + " Accel Y";
+                        wks.cell(1, col++) = ss.str() + " Accel Z";
+
+                        wks.cell(1, col++) = ss.str() + " Gyro X";
+                        wks.cell(1, col++) = ss.str() + " Gyro Y";
+                        wks.cell(1, col++) = ss.str() + " Gyro Z";
+
+                        wks.cell(1, col++) = ss.str() + " Angle X";
+                        wks.cell(1, col++) = ss.str() + " Angle Y";
+                        wks.cell(1, col++) = ss.str() + " Angle Z";
+                    }
+
+                    // 写入数据
+                    std::lock_guard<std::mutex> lock(collectedDataMutex);
+                    for (size_t row = 0; row < collectedData.size(); ++row) {
+                        const auto& [timestamp, snapshot] = collectedData[row];
+
+                        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+                        std::tm tm;
+                        localtime_s(&tm, &time_t);
+                        std::ostringstream oss;
+                        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+                        wks.cell(row + 2, 1).value() = oss.str();
+
+                        int col = 2;
+                        for (uint8_t addr : jy61pDeviceAddresses) {
+                            if (snapshot.find(addr) != snapshot.end()) {
+                                const auto& angle = snapshot.at(addr);
+                                wks.cell(row + 2, col++) = angle.a[0];
+                                wks.cell(row + 2, col++) = angle.a[1];
+                                wks.cell(row + 2, col++) = angle.a[2];
+
+                                wks.cell(row + 2, col++) = angle.w[0];
+                                wks.cell(row + 2, col++) = angle.w[1];
+                                wks.cell(row + 2, col++) = angle.w[2];
+
+                                wks.cell(row + 2, col++) = angle.Angle[0];
+                                wks.cell(row + 2, col++) = angle.Angle[1];
+                                wks.cell(row + 2, col++) = angle.Angle[2];
+                            }
+                            else {
+                                col += 9; // 跳过无数据设备
+                            }
+                        }
+                    }
+
+                    doc.save();
+                    doc.close();
+
+                    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+                }
+                catch (const std::exception& e) {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+                }
+            }
+
+            // 显示采集状态
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据... 已记录 %d 条",
+                static_cast<int>(collectedData.size()));
         }
 
         ImGui::Separator();
