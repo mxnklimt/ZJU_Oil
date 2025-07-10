@@ -17,11 +17,9 @@
 #include<algorithm>
 #include<filesystem>
 #include <atomic>
-
 #include <map>
 #include <unordered_map>
 #include <chrono>
-
 #include "Plot3DWindow.h"
 #include"imgui.h"
 #include"ImPlot3d/implot3d.h"
@@ -37,137 +35,180 @@
 #include"wit_c_sdk.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
 
+void Application::ShowWindow()
+{
+    static bool show_plot2d = true;
+    static bool ADXL355 = true;
+    static bool JY61P = true; // 默认显示JY61P数据
+    static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
+    static bool show_plot3d_2 = true;
+    static bool DualAxis = true;
+    static bool SynchronizedCapture = true;
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // 主窗口
+    ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
+    ImGui::Begin("2D Plot", nullptr, ImGuiWindowFlags_MenuBar);
 
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("View")) {
+            ImGui::MenuItem(u8"管道位移/岸坡沉降", nullptr, &show_plot2d);
+            ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
+            ImGui::MenuItem("JY61P", nullptr, &JY61P);
+            ImGui::MenuItem("DualAxis", nullptr, &DualAxis);
+            ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
+            ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
+            ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Style")) {
+            if (ImGui::MenuItem("Dark")) ImGui::StyleColorsDark();
+            if (ImGui::MenuItem("Light")) ImGui::StyleColorsLight();
+            if (ImGui::MenuItem("Classic")) ImGui::StyleColorsClassic();
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+    //--------------------------------------------------------------------------------------------------------------------------------
 
-
-
-
-void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
-    std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
-    std::string saveFilePath = generateUniqueFileName("JY61P_sync");
-    OpenXLSX::XLDocument doc;
-    doc.create(saveFilePath, false);
-    doc.open(saveFilePath);
-    auto wks = doc.workbook().worksheet("Sheet1");
-
-    wks.cell(1, 1).value() = "Time";
-    int col = 2;
-    for (uint8_t addr : jy61pDeviceAddresses) {
-        std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-        wks.cell(1, col++) = ss.str() + " Accel X";
-        wks.cell(1, col++) = ss.str() + " Accel Y";
-        wks.cell(1, col++) = ss.str() + " Accel Z";
-        wks.cell(1, col++) = ss.str() + " Gyro X";
-        wks.cell(1, col++) = ss.str() + " Gyro Y";
-        wks.cell(1, col++) = ss.str() + " Gyro Z";
-        wks.cell(1, col++) = ss.str() + " Angle X";
-        wks.cell(1, col++) = ss.str() + " Angle Y";
-        wks.cell(1, col++) = ss.str() + " Angle Z";
+    if (ImGui::Button(u8"加载Excel数据")) {
+        loadExcelDataAsync();
     }
 
-    for (size_t row = 0; row < data.size(); ++row) {
-        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-        std::tm tm; localtime_s(&tm, &time_t);
-        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-        wks.cell(row + 2, 1).value() = oss.str();
+    checkLoadingStatus();
 
-        int col = 2;
-        for (uint8_t addr : jy61pDeviceAddresses) {
-            if (data[row].second.count(addr)) {
-                auto& angle = data[row].second.at(addr);
-                wks.cell(row + 2, col++) = angle.a[0];
-                wks.cell(row + 2, col++) = angle.a[1];
-                wks.cell(row + 2, col++) = angle.a[2];
-                wks.cell(row + 2, col++) = angle.w[0];
-                wks.cell(row + 2, col++) = angle.w[1];
-                wks.cell(row + 2, col++) = angle.w[2];
-                wks.cell(row + 2, col++) = angle.Angle[0];
-                wks.cell(row + 2, col++) = angle.Angle[1];
-                wks.cell(row + 2, col++) = angle.Angle[2];
+    std::vector<float> d, e;
+    std::vector<std::tm> ts;
+
+    {
+        std::lock_guard<std::mutex> lock(sheetDataMutex);
+        d = dValues_save;
+        e = eValues_save;
+        ts = times_save;
+        size_t minSize = std::min({ d.size(), e.size(), ts.size() });
+        d.resize(minSize);
+        e.resize(minSize);
+        ts.resize(minSize);
+
+    }
+
+
+    if (dataLoadingDone) {
+        ImGui::Text(u8"数据加载完成，行数：%d", (int)d.size() + (int)e.size());
+
+        if (d.size() > 0) {
+            // 构造绘图数据
+            static std::vector<float> time_xf, y_d, y_e;
+            size_t count = d.size();
+            time_xf.resize(count);
+            y_d.resize(count);
+            y_e.resize(count);
+
+            for (size_t i = 0; i < count; ++i) {
+                const std::tm& t = ts[i];
+                float seconds = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
+                time_xf[i] = seconds;
+                y_d[i] = d[i];
+                y_e[i] = e[i];
             }
-            else col += 9;
+
+            ImPlotFormatter TimeFormatter = [](double seconds, char* buf, int size, void*) -> int {
+                int h = (int)seconds / 3600;
+                int m = ((int)seconds % 3600) / 60;
+                int s = (int)seconds % 60;
+                return snprintf(buf, size, "%02d:%02d:%02d", h, m, s);
+                };
+            if (ImGui::CollapsingHeader(u8"管道水平位移")) {
+                if (ImPlot::BeginPlot(u8"管道水平位移图")) {
+                    ImPlot::SetupAxes(u8"时间", u8"水平位移");
+                    ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86500.0, ImGuiCond_Always);  // 限制时间轴显示一天
+                    ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
+                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
+                    ImPlot::PlotLine(u8"水平位移", time_xf.data(), y_d.data(), (int)count);
+                    ImPlot::PopStyleColor();
+                    ImPlot::EndPlot();
+                }
+            }
+
+            if (ImGui::CollapsingHeader(u8"岸坡沉降位移")) {
+                if (ImPlot::BeginPlot(u8"岸坡沉降位移图")) {
+                    ImPlot::SetupAxes(u8"时间", u8"沉降位移");
+                    ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86400.0, ImGuiCond_Always);  // 限制时间轴显示一天
+                    ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
+                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.6f, 0.1f, 1.0f));
+                    ImPlot::PlotLine(u8"沉降位移", time_xf.data(), y_e.data(), (int)count);
+                    ImPlot::PopStyleColor();
+                    ImPlot::EndPlot();
+                }
+            }
         }
     }
-    doc.save(); doc.close();
-}
-
-void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
-    std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
-    std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
-    OpenXLSX::XLDocument doc;
-    doc.create(saveFilePath, false);
-    doc.open(saveFilePath);
-    auto wks = doc.workbook().worksheet("Sheet1");
-
-    wks.cell(1, 1).value() = "Time";
-    int col = 2;
-    for (uint8_t addr : adxl355DeviceAddresses) {
-        std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-        wks.cell(1, col++) = ss.str() + " Accel X";
-        wks.cell(1, col++) = ss.str() + " Accel Y";
-        wks.cell(1, col++) = ss.str() + " Accel Z";
+    else {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"正在加载中...");
     }
 
-    for (size_t row = 0; row < data.size(); ++row) {
-        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-        std::tm tm; localtime_s(&tm, &time_t);
-        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-        wks.cell(row + 2, 1).value() = oss.str();
-
-        int col = 2;
-        for (uint8_t addr : adxl355DeviceAddresses) {
-            if (data[row].second.count(addr)) {
-                auto& val = data[row].second.at(addr);
-                wks.cell(row + 2, col++) = val.x;
-                wks.cell(row + 2, col++) = val.y;
-                wks.cell(row + 2, col++) = val.z;
-            }
-            else col += 3;
-        }
+    ImGui::End();
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // ADXL355
+    if (ADXL355) {
+        Application::ShowADXL355();
     }
-    doc.save(); doc.close();
-}
+    //ImGui::End(); // 主窗口结束
 
-void SaveDualAxisToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
-    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& data) {
-    std::string saveFilePath = generateUniqueFileName("DualAxis_sync");
-    OpenXLSX::XLDocument doc;
-    doc.create(saveFilePath, false);
-    doc.open(saveFilePath);
-    auto wks = doc.workbook().worksheet("Sheet1");
 
-    wks.cell(1, 1).value() = "Time";
-    int col = 2;
-    for (uint8_t addr : dualAxisDeviceAddresses) {
-        std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-        wks.cell(1, col++) = ss.str() + " Filtered Horizontal";
-        wks.cell(1, col++) = ss.str() + " Filtered Vertical";
-        wks.cell(1, col++) = ss.str() + " Raw Horizontal";
-        wks.cell(1, col++) = ss.str() + " Raw Vertical";
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // JY61P
+    if (JY61P)
+    {
+        Application::ShowJY61P();
     }
 
-    for (size_t row = 0; row < data.size(); ++row) {
-        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-        std::tm tm; localtime_s(&tm, &time_t);
-        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-        wks.cell(row + 2, 1).value() = oss.str();
-
-        int col = 2;
-        for (uint8_t addr : dualAxisDeviceAddresses) {
-            if (data[row].second.count(addr)) {
-                auto& val = data[row].second.at(addr);
-                wks.cell(row + 2, col++) = val.filtered_horizontal;
-                wks.cell(row + 2, col++) = val.filtered_vertical;
-                wks.cell(row + 2, col++) = val.raw_horizontal;
-                wks.cell(row + 2, col++) = val.raw_vertical;
-            }
-            else col += 4;
-        }
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // 独立窗口：3D管道图像，光源建模
+    if (show_plot3d_2_window) {
+        //ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
+        ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // 可关闭窗口
+        Application::CylinderPlots();
+        ImGui::End();
     }
-    doc.save(); doc.close();
+
+    if (DualAxis)
+    {
+        Application::ShowDualAxisSensor();
+    }
+    if (SynchronizedCapture)
+    {
+        Application::ShowSynchronizedCapture();
+    }
+    //try
+    //{
+    //    RS485Manager rs485_DualAxis;
+    //    rs485_DualAxis.open("COM7", 115200);
+
+    //    DualAxisSensorParser sensor(rs485_DualAxis);
+
+    //    // 读取角度
+    //    auto angles = sensor.readAngles();
+    //    std::cout << "Horizontal =  " << angles.filtered_horizontal << "°" << std::endl;
+    //    std::cout << "Vertical = " << angles.filtered_vertical << "°" << std::endl;
+    //    std::cout << "raw_horizonta = " << angles.raw_horizontal << "°" << std::endl;
+    //    std::cout << "raw_vertical = " << angles.raw_vertical << "°" << std::endl;
+
+    //    // 设置采样率
+    //    sensor.setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_10_Hz);
+
+    //    // 执行校准
+    //    sensor.performCalibration(DualAxisSensorParser::CalibrationCommand::CLEAR_CALIBRATION);
+    //    // ... 其他校准步骤
+
+    //    // 读取设备信息
+    //    std::cout << "Device info: " << sensor.readDeviceInfo() << std::endl;
+    //}
+    //catch (const std::exception& e)
+    //{
+    //    std::cerr << "Error: " << e.what() << std::endl;
+    //}
+    //--------------------------------------------------------------------------------------------------------------------------------
 }
 
 void Application::ShowSynchronizedCapture() {
@@ -419,12 +460,8 @@ void Application::ShowDualAxisSensor() {
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 4;
     static bool isConnected = false;
-
-
     static std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
-
     static std::thread pollingThread;
-
     static std::atomic<bool> collecting = false;
     static std::unordered_map<uint8_t, bool> displayFlags;
 
@@ -712,15 +749,11 @@ void Application::ShowJY61P() {
         ImGui::End();
         return;
     }
-
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
-
-
-
     static std::unordered_map<uint8_t, bool> displayFlags;
     static std::thread pollingThread;
 
@@ -1004,169 +1037,6 @@ void Application::JY61PInit(const std::string& portName)
     AutoScanSensor();
 }
 
-//void Application::ShowADXL355() {
-//    if (!ImGui::Begin("ADXL355")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 0;
-//    static bool isConnected = false;
-//    static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
-//
-//    // 串口选择
-//    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-//        for (int n = 0; n < availablePorts.size(); n++) {
-//            bool isSelected = (selectedPortIndex == n);
-//            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
-//                selectedPortIndex = n;
-//            if (isSelected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//
-//    // 波特率选择
-//    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-//        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
-//            bool isSelected = (selectedBaudIndex == n);
-//            if (ImGui::Selectable(baudRates[n], isSelected))
-//                selectedBaudIndex = n;
-//            if (isSelected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//
-//    // 连接或断开
-//    if (!isConnected) {
-//        if (ImGui::Button(u8"连接")) {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
-//                isConnected = true;
-//                collectingADXL355 = true;
-//
-//                for (uint8_t addr : adxl355DeviceAddresses) {
-//                    adxl355Parsers[addr] = ADXL355Parser(addr);
-//                    adxl355DataMap[addr] = ADXL355Data();
-//                }
-//
-//                adxl355PollingThread = std::thread([]() {
-//                    while (collectingADXL355) {
-//                        for (uint8_t addr : adxl355DeviceAddresses) {
-//                            try {
-//                                std::vector<uint8_t> cmd;
-//                                std::vector<uint8_t> response;
-//                                ADXL355Parser::AccelerationData data;
-//
-//                                {
-//                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-//                                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-//                                    serialManager.send(cmd);
-//                                    response = serialManager.receiveADXL355Response();
-//                                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-//                                }
-//
-//                                {
-//                                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-//                                    auto& dq = adxl355DataMap[addr].dataQue;
-//                                    dq.push_back(data);
-//                                    if (dq.size() > MAX_POINTS)
-//                                        dq.pop_front();
-//                                }
-//
-//                                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-//                            }
-//                            catch (const std::exception& e) {
-//                                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-//                            }
-//                        }
-//                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//                    }
-//                    });
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else {
-//        if (ImGui::Button(u8"断开")) {
-//            collectingADXL355 = false;
-//            if (adxl355PollingThread.joinable())
-//                adxl355PollingThread.join();
-//            serialManager.close();
-//            isConnected = false;
-//            adxl355Parsers.clear();
-//            adxl355DataMap.clear();
-//            deviceDisplayFlags.clear();
-//        }
-//
-//        // 显示复选框选择多个设备
-//        if (!adxl355DeviceAddresses.empty()) {
-//            ImGui::Separator();
-//            //ImGui::Text(u8"选择要显示的数据设备：");
-//
-//            for (uint8_t addr : adxl355DeviceAddresses) {
-//                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
-//                    deviceDisplayFlags[addr] = false;
-//
-//                char label[32];
-//                sprintf_s(label, sizeof(label),u8" 0x%02X", addr);
-//                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
-//            }
-//
-//            std::lock_guard<std::mutex> lock(ADXL355Mutex);
-//            for (uint8_t addr : adxl355DeviceAddresses) {
-//                if (!deviceDisplayFlags[addr]) continue;
-//
-//                auto it = adxl355DataMap.find(addr);
-//                if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
-//                    const auto& data = it->second.dataQue.back();
-//
-//                    extern ImFont* DataFont;
-//                    ImGui::Separator();
-//                    ImGui::Text(u8"设备 0x%02X", addr);
-//                    ImGui::PushID(addr);
-//                    ImGui::PushFont(DataFont);
-//                    ImGui::Columns(3, nullptr, false);
-//
-//                    auto renderAccelCard = [](const char* label, float value) {
-//                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-//                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
-//                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-//                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
-//                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
-//                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-//                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-//                        ImGui::EndChild();
-//                        ImGui::NextColumn();
-//                        };
-//
-//                    renderAccelCard(u8"加速度X", data.x);
-//                    renderAccelCard(u8"加速度Y", data.y);
-//                    renderAccelCard(u8"加速度Z", data.z);
-//
-//                    ImGui::Columns(1);
-//                    ImGui::PopFont();
-//                    ImGui::PopID();
-//                }
-//                else {
-//                    ImGui::Separator();
-//                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
-//                }
-//            }
-//        }
-//    }
-//
-//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-//    ImGui::End();
-//}
-
 void Application::ShowADXL355() {
     if (!ImGui::Begin("ADXL355")) {
         ImGui::End();
@@ -1437,185 +1307,7 @@ void Application::ShowADXL355() {
 
 
 
-void Application::ShowWindow()
-{
-    static bool show_plot2d = true;
-    static bool ADXL355 = true;
-	static bool JY61P = true; // 默认显示JY61P数据
-    static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
-    static bool show_plot3d_2 = true;
-    static bool DualAxis = true;
-    static bool SynchronizedCapture = true;
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // 主窗口
-    ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
-    ImGui::Begin("2D Plot", nullptr, ImGuiWindowFlags_MenuBar);
 
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("View")) {
-            ImGui::MenuItem(u8"管道位移/岸坡沉降", nullptr, &show_plot2d);
-            ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
-            ImGui::MenuItem("JY61P", nullptr, &JY61P);
-            ImGui::MenuItem("DualAxis", nullptr, &DualAxis);
-            ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
-            ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
-            ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Style")) {
-            if (ImGui::MenuItem("Dark")) ImGui::StyleColorsDark();
-            if (ImGui::MenuItem("Light")) ImGui::StyleColorsLight();
-            if (ImGui::MenuItem("Classic")) ImGui::StyleColorsClassic();
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenuBar();
-    }
-    //--------------------------------------------------------------------------------------------------------------------------------
-
-    if (ImGui::Button(u8"加载Excel数据")) {
-        loadExcelDataAsync();
-    }
-
-    checkLoadingStatus();
-
-    std::vector<float> d, e;
-    std::vector<std::tm> ts;
-
-    {
-        std::lock_guard<std::mutex> lock(sheetDataMutex);
-        d = dValues_save;
-        e = eValues_save;
-        ts = times_save;
-        size_t minSize = std::min({ d.size(), e.size(), ts.size() });
-        d.resize(minSize);
-        e.resize(minSize);
-        ts.resize(minSize);
-
-    }
-
-
-    if (dataLoadingDone) {
-        ImGui::Text(u8"数据加载完成，行数：%d", (int)d.size()+(int)e.size());
-
-        if (d.size() > 0) {
-            // 构造绘图数据
-            static std::vector<float> time_xf, y_d, y_e;
-            size_t count = d.size();
-            time_xf.resize(count);
-            y_d.resize(count);
-            y_e.resize(count);
-
-            for (size_t i = 0; i < count; ++i) {
-                const std::tm& t = ts[i];
-                float seconds = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
-                time_xf[i] = seconds;
-                y_d[i] = d[i];
-                y_e[i] = e[i];
-            }
-
-            ImPlotFormatter TimeFormatter = [](double seconds, char* buf, int size, void*) -> int {
-                int h = (int)seconds / 3600;
-                int m = ((int)seconds % 3600) / 60;
-                int s = (int)seconds % 60;
-                return snprintf(buf, size, "%02d:%02d:%02d", h, m, s);
-                };
-            if (ImGui::CollapsingHeader(u8"管道水平位移")) {
-                if (ImPlot::BeginPlot(u8"管道水平位移图")) {
-                    ImPlot::SetupAxes(u8"时间", u8"水平位移");
-                    ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86500.0, ImGuiCond_Always);  // 限制时间轴显示一天
-                    ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
-                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
-                    ImPlot::PlotLine(u8"水平位移", time_xf.data(), y_d.data(), (int)count);
-                    ImPlot::PopStyleColor();
-                    ImPlot::EndPlot();
-                }
-            }
-
-            if (ImGui::CollapsingHeader(u8"岸坡沉降位移")) {
-                if (ImPlot::BeginPlot(u8"岸坡沉降位移图")) {
-                    ImPlot::SetupAxes(u8"时间", u8"沉降位移");
-                    ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 86400.0, ImGuiCond_Always);  // 限制时间轴显示一天
-                    ImPlot::SetupAxisFormat(ImAxis_X1, TimeFormatter);
-                    ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(1.0f, 0.6f, 0.1f, 1.0f));
-                    ImPlot::PlotLine(u8"沉降位移", time_xf.data(), y_e.data(), (int)count);
-                    ImPlot::PopStyleColor();
-                    ImPlot::EndPlot();
-                }
-            }
-        }
-    }
-    else {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"正在加载中...");
-    }
-
-    ImGui::End();
-
-    //--------------------------------------------------------------------------------------------------------------------------------
-
-
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // ADXL355
-    if (ADXL355) {
-		Application::ShowADXL355();
-    }
-    //ImGui::End(); // 主窗口结束
-
-
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // JY61P
-    if (JY61P)
-    {
-		Application::ShowJY61P();
-    }
-
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // 独立窗口：3D管道图像，光源建模
-    if (show_plot3d_2_window) {
-        //ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
-        ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // 可关闭窗口
-        Application::CylinderPlots();
-        ImGui::End();
-    }
-
-    if (DualAxis)
-    {
-		Application::ShowDualAxisSensor();
-    }
-    if (SynchronizedCapture)
-    {
-        Application::ShowSynchronizedCapture();
-    }
-    //try
-    //{
-    //    RS485Manager rs485_DualAxis;
-    //    rs485_DualAxis.open("COM7", 115200);
-
-    //    DualAxisSensorParser sensor(rs485_DualAxis);
-
-    //    // 读取角度
-    //    auto angles = sensor.readAngles();
-    //    std::cout << "Horizontal =  " << angles.filtered_horizontal << "°" << std::endl;
-    //    std::cout << "Vertical = " << angles.filtered_vertical << "°" << std::endl;
-    //    std::cout << "raw_horizonta = " << angles.raw_horizontal << "°" << std::endl;
-    //    std::cout << "raw_vertical = " << angles.raw_vertical << "°" << std::endl;
-
-    //    // 设置采样率
-    //    sensor.setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_10_Hz);
-
-    //    // 执行校准
-    //    sensor.performCalibration(DualAxisSensorParser::CalibrationCommand::CLEAR_CALIBRATION);
-    //    // ... 其他校准步骤
-
-    //    // 读取设备信息
-    //    std::cout << "Device info: " << sensor.readDeviceInfo() << std::endl;
-    //}
-    //catch (const std::exception& e)
-    //{
-    //    std::cerr << "Error: " << e.what() << std::endl;
-    //}
-    //--------------------------------------------------------------------------------------------------------------------------------
-}
 
 
 

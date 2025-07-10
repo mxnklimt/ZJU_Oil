@@ -1,14 +1,141 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "ReadFile.h"
-#include "OpenXLSX/OpenXLSX.hpp"
+
 #include <regex>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <filesystem>
 #include <string>   
+#include "ReadFile.h"
+#include "OpenXLSX/OpenXLSX.hpp"
+#include "data/Data.h"
+void SaveDualAxisToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& data) {
+    std::string saveFilePath = generateUniqueFileName("DualAxis_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
+
+    wks.cell(1, 1).value() = "Time";
+    int col = 2;
+    for (uint8_t addr : dualAxisDeviceAddresses) {
+        std::stringstream ss;
+        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+        wks.cell(1, col++) = ss.str() + " Filtered Horizontal";
+        wks.cell(1, col++) = ss.str() + " Filtered Vertical";
+        wks.cell(1, col++) = ss.str() + " Raw Horizontal";
+        wks.cell(1, col++) = ss.str() + " Raw Vertical";
+    }
+
+    for (size_t row = 0; row < data.size(); ++row) {
+        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+        std::tm tm; localtime_s(&tm, &time_t);
+        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row + 2, 1).value() = oss.str();
+
+        int col = 2;
+        for (uint8_t addr : dualAxisDeviceAddresses) {
+            if (data[row].second.count(addr)) {
+                auto& val = data[row].second.at(addr);
+                wks.cell(row + 2, col++) = val.filtered_horizontal;
+                wks.cell(row + 2, col++) = val.filtered_vertical;
+                wks.cell(row + 2, col++) = val.raw_horizontal;
+                wks.cell(row + 2, col++) = val.raw_vertical;
+            }
+            else col += 4;
+        }
+    }
+    doc.save(); doc.close();
+}
+void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
+    std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
+
+    wks.cell(1, 1).value() = "Time";
+    int col = 2;
+    for (uint8_t addr : adxl355DeviceAddresses) {
+        std::stringstream ss;
+        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+        wks.cell(1, col++) = ss.str() + " Accel X";
+        wks.cell(1, col++) = ss.str() + " Accel Y";
+        wks.cell(1, col++) = ss.str() + " Accel Z";
+    }
+
+    for (size_t row = 0; row < data.size(); ++row) {
+        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+        std::tm tm; localtime_s(&tm, &time_t);
+        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row + 2, 1).value() = oss.str();
+
+        int col = 2;
+        for (uint8_t addr : adxl355DeviceAddresses) {
+            if (data[row].second.count(addr)) {
+                auto& val = data[row].second.at(addr);
+                wks.cell(row + 2, col++) = val.x;
+                wks.cell(row + 2, col++) = val.y;
+                wks.cell(row + 2, col++) = val.z;
+            }
+            else col += 3;
+        }
+    }
+    doc.save(); doc.close();
+}
+void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
+    std::string saveFilePath = generateUniqueFileName("JY61P_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
+
+    wks.cell(1, 1).value() = "Time";
+    int col = 2;
+    for (uint8_t addr : jy61pDeviceAddresses) {
+        std::stringstream ss;
+        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+        wks.cell(1, col++) = ss.str() + " Accel X";
+        wks.cell(1, col++) = ss.str() + " Accel Y";
+        wks.cell(1, col++) = ss.str() + " Accel Z";
+        wks.cell(1, col++) = ss.str() + " Gyro X";
+        wks.cell(1, col++) = ss.str() + " Gyro Y";
+        wks.cell(1, col++) = ss.str() + " Gyro Z";
+        wks.cell(1, col++) = ss.str() + " Angle X";
+        wks.cell(1, col++) = ss.str() + " Angle Y";
+        wks.cell(1, col++) = ss.str() + " Angle Z";
+    }
+
+    for (size_t row = 0; row < data.size(); ++row) {
+        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+        std::tm tm; localtime_s(&tm, &time_t);
+        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row + 2, 1).value() = oss.str();
+
+        int col = 2;
+        for (uint8_t addr : jy61pDeviceAddresses) {
+            if (data[row].second.count(addr)) {
+                auto& angle = data[row].second.at(addr);
+                wks.cell(row + 2, col++) = angle.a[0];
+                wks.cell(row + 2, col++) = angle.a[1];
+                wks.cell(row + 2, col++) = angle.a[2];
+                wks.cell(row + 2, col++) = angle.w[0];
+                wks.cell(row + 2, col++) = angle.w[1];
+                wks.cell(row + 2, col++) = angle.w[2];
+                wks.cell(row + 2, col++) = angle.Angle[0];
+                wks.cell(row + 2, col++) = angle.Angle[1];
+                wks.cell(row + 2, col++) = angle.Angle[2];
+            }
+            else col += 9;
+        }
+    }
+    doc.save(); doc.close();
+}
 std::string generateUniqueFileName(const std::string& baseName, const std::string& extension) {
     std::string filename = baseName + extension;
     int counter = 1;
