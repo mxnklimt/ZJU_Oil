@@ -16,6 +16,12 @@
 #include<Windows.h>
 #include<algorithm>
 #include<filesystem>
+#include <atomic>
+
+#include <map>
+#include <unordered_map>
+#include <chrono>
+
 #include "Plot3DWindow.h"
 #include"imgui.h"
 #include"ImPlot3d/implot3d.h"
@@ -30,16 +36,19 @@
 #include"JY61P/Com.h"
 #include"wit_c_sdk.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
+
+static std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
+static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
+static std::mutex jy61pDataMutex;
+static std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+static std::mutex dataMutex;
+static std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 struct Vec3 {
     float x, y, z;
     Vec3() = default;
     Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 };
-void SetJY61PAddress(uint8_t addr) {
-    WitInit(WIT_PROTOCOL_MODBUS, addr);        // 切换地址
-    WitSerialWriteRegister(SensorUartSend);    // 重新绑定串口写函数
-    WitRegisterCallBack(CopeSensorData);       // 注册数据处理回调
-}
+
 std::string generateUniqueFileName(const std::string& baseName, const std::string& extension = ".xlsx") {
     std::string filename = baseName + extension;
     int counter = 1;
@@ -48,6 +57,209 @@ std::string generateUniqueFileName(const std::string& baseName, const std::strin
     }
     return filename;
 }
+
+
+
+void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
+    std::string saveFilePath = generateUniqueFileName("JY61P_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
+
+    wks.cell(1, 1).value() = "Time";
+    int col = 2;
+    for (uint8_t addr : jy61pDeviceAddresses) {
+        std::stringstream ss;
+        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+        wks.cell(1, col++) = ss.str() + " Accel X";
+        wks.cell(1, col++) = ss.str() + " Accel Y";
+        wks.cell(1, col++) = ss.str() + " Accel Z";
+        wks.cell(1, col++) = ss.str() + " Gyro X";
+        wks.cell(1, col++) = ss.str() + " Gyro Y";
+        wks.cell(1, col++) = ss.str() + " Gyro Z";
+        wks.cell(1, col++) = ss.str() + " Angle X";
+        wks.cell(1, col++) = ss.str() + " Angle Y";
+        wks.cell(1, col++) = ss.str() + " Angle Z";
+    }
+
+    for (size_t row = 0; row < data.size(); ++row) {
+        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+        std::tm tm; localtime_s(&tm, &time_t);
+        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row + 2, 1).value() = oss.str();
+
+        int col = 2;
+        for (uint8_t addr : jy61pDeviceAddresses) {
+            if (data[row].second.count(addr)) {
+                auto& angle = data[row].second.at(addr);
+                wks.cell(row + 2, col++) = angle.a[0];
+                wks.cell(row + 2, col++) = angle.a[1];
+                wks.cell(row + 2, col++) = angle.a[2];
+                wks.cell(row + 2, col++) = angle.w[0];
+                wks.cell(row + 2, col++) = angle.w[1];
+                wks.cell(row + 2, col++) = angle.w[2];
+                wks.cell(row + 2, col++) = angle.Angle[0];
+                wks.cell(row + 2, col++) = angle.Angle[1];
+                wks.cell(row + 2, col++) = angle.Angle[2];
+            }
+            else col += 9;
+        }
+    }
+    doc.save(); doc.close();
+}
+
+void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
+    std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
+
+    wks.cell(1, 1).value() = "Time";
+    int col = 2;
+    for (uint8_t addr : adxl355DeviceAddresses) {
+        std::stringstream ss;
+        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+        wks.cell(1, col++) = ss.str() + " Accel X";
+        wks.cell(1, col++) = ss.str() + " Accel Y";
+        wks.cell(1, col++) = ss.str() + " Accel Z";
+    }
+
+    for (size_t row = 0; row < data.size(); ++row) {
+        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+        std::tm tm; localtime_s(&tm, &time_t);
+        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row + 2, 1).value() = oss.str();
+
+        int col = 2;
+        for (uint8_t addr : adxl355DeviceAddresses) {
+            if (data[row].second.count(addr)) {
+                auto& val = data[row].second.at(addr);
+                wks.cell(row + 2, col++) = val.x;
+                wks.cell(row + 2, col++) = val.y;
+                wks.cell(row + 2, col++) = val.z;
+            }
+            else col += 3;
+        }
+    }
+    doc.save(); doc.close();
+}
+
+void SaveDualAxisToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& data) {
+    std::string saveFilePath = generateUniqueFileName("DualAxis_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
+
+    wks.cell(1, 1).value() = "Time";
+    int col = 2;
+    for (uint8_t addr : dualAxisDeviceAddresses) {
+        std::stringstream ss;
+        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+        wks.cell(1, col++) = ss.str() + " Filtered Horizontal";
+        wks.cell(1, col++) = ss.str() + " Filtered Vertical";
+        wks.cell(1, col++) = ss.str() + " Raw Horizontal";
+        wks.cell(1, col++) = ss.str() + " Raw Vertical";
+    }
+
+    for (size_t row = 0; row < data.size(); ++row) {
+        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+        std::tm tm; localtime_s(&tm, &time_t);
+        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row + 2, 1).value() = oss.str();
+
+        int col = 2;
+        for (uint8_t addr : dualAxisDeviceAddresses) {
+            if (data[row].second.count(addr)) {
+                auto& val = data[row].second.at(addr);
+                wks.cell(row + 2, col++) = val.filtered_horizontal;
+                wks.cell(row + 2, col++) = val.filtered_vertical;
+                wks.cell(row + 2, col++) = val.raw_horizontal;
+                wks.cell(row + 2, col++) = val.raw_vertical;
+            }
+            else col += 4;
+        }
+    }
+    doc.save(); doc.close();
+}
+
+void Application::ShowSynchronizedCapture() {
+    if (!ImGui::Begin(u8"同步采集控制")) {
+        ImGui::End();
+        return;
+    }
+
+    static std::atomic<bool> isSyncCollecting = false;
+    static std::thread syncCollectionThread;
+
+    if (!isSyncCollecting) {
+        if (ImGui::Button(u8"开始同步采集")) {
+            isSyncCollecting = true;
+
+            syncCollectionThread = std::thread([] {
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, DualAxisSensorParser::AngleData>>> dualAxisBuffer;
+
+                while (isSyncCollecting) {
+                    auto now = std::chrono::system_clock::now();
+
+                    // JY61P
+                    {
+                        std::unordered_map<uint8_t, JY61PData::angle> snapshot;
+                        std::lock_guard<std::mutex> lock(jy61pDataMutex);
+                        for (auto& [addr, data] : jy61pDataMap)
+                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
+                        jy61pBuffer.emplace_back(now, snapshot);
+                    }
+                    // ADXL355
+                    {
+                        std::map<uint8_t, ADXL355Parser::AccelerationData> snapshot;
+                        std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                        for (auto& [addr, data] : adxl355DataMap)
+                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
+                        adxl355Buffer.emplace_back(now, snapshot);
+                    }
+                    // Dual Axis
+                    {
+                        std::map<uint8_t, DualAxisSensorParser::AngleData> snapshot;
+                        std::lock_guard<std::mutex> lock(dataMutex);
+                        snapshot = dualAxisDataMap;
+                        dualAxisBuffer.emplace_back(now, snapshot);
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+
+                SaveJY61PToXLSX(jy61pBuffer);
+                SaveADXL355ToXLSX(adxl355Buffer);
+                SaveDualAxisToXLSX(dualAxisBuffer);
+                });
+        }
+    }
+    else {
+        if (ImGui::Button(u8"停止同步采集并保存")) {
+            isSyncCollecting = false;
+            if (syncCollectionThread.joinable()) syncCollectionThread.join();
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"同步采集中...");
+    }
+
+    ImGui::End();
+}
+
+
+void SetJY61PAddress(uint8_t addr) {
+    WitInit(WIT_PROTOCOL_MODBUS, addr);        // 切换地址
+    WitSerialWriteRegister(SensorUartSend);    // 重新绑定串口写函数
+    WitRegisterCallBack(CopeSensorData);       // 注册数据处理回调
+}
+
 
 //
 ////V1.0
@@ -226,11 +438,11 @@ void Application::ShowDualAxisSensor() {
     static int selectedBaudIndex = 4;
     static bool isConnected = false;
 
-    static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
+
     static std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
-    static std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
+
     static std::thread pollingThread;
-    static std::mutex dataMutex;
+
     static std::atomic<bool> collecting = false;
     static std::unordered_map<uint8_t, bool> displayFlags;
 
@@ -513,154 +725,6 @@ std::vector<std::string> Application::listAvailableSerialPorts() {
     return ports;
 }
 
-//void Application::ShowJY61P() {
-//    if (!ImGui::Begin("JY61P")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 0;
-//    static bool isConnected = false;
-//
-//    static std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
-//    static std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
-//    static std::unordered_map<uint8_t, bool> displayFlags;
-//    static std::thread pollingThread;
-//    static std::mutex jy61pDataMutex;
-//    static std::atomic<bool> collecting = false;
-//
-//    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-//        for (int n = 0; n < availablePorts.size(); n++) {
-//            bool isSelected = (selectedPortIndex == n);
-//            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
-//                selectedPortIndex = n;
-//            if (isSelected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//
-//    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-//        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
-//            bool isSelected = (selectedBaudIndex == n);
-//            if (ImGui::Selectable(baudRates[n], isSelected))
-//                selectedBaudIndex = n;
-//            if (isSelected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//
-//    if (!isConnected) {
-//        if (ImGui::Button(u8"连接")) {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                OpenCOMDevice(iComPort, baudRate);
-//                isConnected = true;
-//                collecting = true;
-//
-//                pollingThread = std::thread([] {
-//                    while (collecting) {
-//                        for (uint8_t addr : jy61pDeviceAddresses) {
-//                            try {
-//                                WitInit(WIT_PROTOCOL_MODBUS, addr);
-//                                WitSerialWriteRegister(SensorUartSend);
-//                                WitRegisterCallBack(CopeSensorData);
-//                                WitReadReg(AX, 15);
-//                                Sleep(20);
-//
-//                                JY61PData::angle temp;
-//                                for (int i = 0; i < 3; ++i) {
-//                                    temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
-//                                    temp.w[i] = sReg[GX + i] / 32768.0f * 2000.0f;
-//                                    temp.Angle[i] = sReg[Roll + i] / 32768.0f * 180.0f;
-//                                }
-//
-//                                std::lock_guard<std::mutex> lock(jy61pDataMutex);
-//                                jy61pDataMap[addr].dataQue.push_back(temp);
-//                                if (jy61pDataMap[addr].dataQue.size() > MAX_POINTS)
-//                                    jy61pDataMap[addr].dataQue.pop_front();
-//                            }
-//                            catch (const std::exception& e) {
-//                                std::cerr << "JY61P 地址 0x" << std::hex << (int)addr << " 读取失败: " << e.what() << std::endl;
-//                            }
-//                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-//                        }
-//                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//                    }
-//                    });
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else {
-//        if (ImGui::Button(u8"断开")) {
-//            collecting = false;
-//            if (pollingThread.joinable()) pollingThread.join();
-//            CloseCOMDevice();
-//            isConnected = false;
-//        }
-//
-//        ImGui::Separator();
-//        ImGui::Text(u8"选择要显示的数据设备：");
-//        for (uint8_t addr : jy61pDeviceAddresses) {
-//            if (displayFlags.find(addr) == displayFlags.end())
-//                displayFlags[addr] = false;
-//
-//            char label[32];
-//            sprintf_s(label, sizeof(label), u8"显示设备 0x%02X", addr);
-//            ImGui::Checkbox(label, &displayFlags[addr]);
-//        }
-//
-//        std::lock_guard<std::mutex> lock(jy61pDataMutex);
-//        for (uint8_t addr : jy61pDeviceAddresses) {
-//            if (!displayFlags[addr]) continue;
-//            if (jy61pDataMap[addr].dataQue.empty()) continue;
-//
-//            auto& data = jy61pDataMap[addr].dataQue.back();
-//            ImGui::Separator();
-//            ImGui::Text(u8"当前显示设备: 0x%02X", addr);
-//            extern ImFont* DataFont;
-//            ImGui::PushID(addr);
-//            ImGui::PushFont(DataFont);
-//            ImGui::Columns(3, nullptr, false);
-//
-//            auto renderCard = [](const char* label, float value, ImVec4 color, const char* fmt) {
-//                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-//                ImGui::Dummy(ImVec2(0.0f, 10.0f));
-//                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(fmt).x) * 0.5f);
-//                ImGui::TextColored(color, fmt, value);
-//                ImGui::Dummy(ImVec2(0.0f, 5.0f));
-//                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-//                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-//                ImGui::EndChild();
-//                ImGui::NextColumn();
-//                };
-//
-//            renderCard(u8"加速度X", data.a[0], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
-//            renderCard(u8"加速度Y", data.a[1], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
-//            renderCard(u8"加速度Z", data.a[2], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
-//            renderCard(u8"角速度X", data.w[0], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
-//            renderCard(u8"角速度Y", data.w[1], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
-//            renderCard(u8"角速度Z", data.w[2], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
-//            renderCard(u8"角度X", data.Angle[0], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
-//            renderCard(u8"角度Y", data.Angle[1], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
-//            renderCard(u8"角度Z", data.Angle[2], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
-//
-//            ImGui::Columns(1);
-//            ImGui::PopFont();
-//            ImGui::PopID();
-//        }
-//    }
-//
-//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-//    ImGui::End();
-//}
 void Application::ShowJY61P() {
     if (!ImGui::Begin("JY61P")) {
         ImGui::End();
@@ -673,11 +737,11 @@ void Application::ShowJY61P() {
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
 
-    static std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
-    static std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+
+
     static std::unordered_map<uint8_t, bool> displayFlags;
     static std::thread pollingThread;
-    static std::mutex jy61pDataMutex;
+
     static std::atomic<bool> collecting = false;
 
     // 新增采集控制相关
@@ -958,6 +1022,169 @@ void Application::JY61PInit(const std::string& portName)
     AutoScanSensor();
 }
 
+//void Application::ShowADXL355() {
+//    if (!ImGui::Begin("ADXL355")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 0;
+//    static bool isConnected = false;
+//    static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+//
+//    // 串口选择
+//    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+//        for (int n = 0; n < availablePorts.size(); n++) {
+//            bool isSelected = (selectedPortIndex == n);
+//            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
+//                selectedPortIndex = n;
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//
+//    // 波特率选择
+//    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+//        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
+//            bool isSelected = (selectedBaudIndex == n);
+//            if (ImGui::Selectable(baudRates[n], isSelected))
+//                selectedBaudIndex = n;
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//
+//    // 连接或断开
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+//                isConnected = true;
+//                collectingADXL355 = true;
+//
+//                for (uint8_t addr : adxl355DeviceAddresses) {
+//                    adxl355Parsers[addr] = ADXL355Parser(addr);
+//                    adxl355DataMap[addr] = ADXL355Data();
+//                }
+//
+//                adxl355PollingThread = std::thread([]() {
+//                    while (collectingADXL355) {
+//                        for (uint8_t addr : adxl355DeviceAddresses) {
+//                            try {
+//                                std::vector<uint8_t> cmd;
+//                                std::vector<uint8_t> response;
+//                                ADXL355Parser::AccelerationData data;
+//
+//                                {
+//                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+//                                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+//                                    serialManager.send(cmd);
+//                                    response = serialManager.receiveADXL355Response();
+//                                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
+//                                }
+//
+//                                {
+//                                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+//                                    auto& dq = adxl355DataMap[addr].dataQue;
+//                                    dq.push_back(data);
+//                                    if (dq.size() > MAX_POINTS)
+//                                        dq.pop_front();
+//                                }
+//
+//                                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+//                            }
+//                            catch (const std::exception& e) {
+//                                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+//                            }
+//                        }
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//                    }
+//                    });
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            collectingADXL355 = false;
+//            if (adxl355PollingThread.joinable())
+//                adxl355PollingThread.join();
+//            serialManager.close();
+//            isConnected = false;
+//            adxl355Parsers.clear();
+//            adxl355DataMap.clear();
+//            deviceDisplayFlags.clear();
+//        }
+//
+//        // 显示复选框选择多个设备
+//        if (!adxl355DeviceAddresses.empty()) {
+//            ImGui::Separator();
+//            //ImGui::Text(u8"选择要显示的数据设备：");
+//
+//            for (uint8_t addr : adxl355DeviceAddresses) {
+//                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+//                    deviceDisplayFlags[addr] = false;
+//
+//                char label[32];
+//                sprintf_s(label, sizeof(label),u8" 0x%02X", addr);
+//                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
+//            }
+//
+//            std::lock_guard<std::mutex> lock(ADXL355Mutex);
+//            for (uint8_t addr : adxl355DeviceAddresses) {
+//                if (!deviceDisplayFlags[addr]) continue;
+//
+//                auto it = adxl355DataMap.find(addr);
+//                if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
+//                    const auto& data = it->second.dataQue.back();
+//
+//                    extern ImFont* DataFont;
+//                    ImGui::Separator();
+//                    ImGui::Text(u8"设备 0x%02X", addr);
+//                    ImGui::PushID(addr);
+//                    ImGui::PushFont(DataFont);
+//                    ImGui::Columns(3, nullptr, false);
+//
+//                    auto renderAccelCard = [](const char* label, float value) {
+//                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+//                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+//                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+//                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+//                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+//                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+//                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+//                        ImGui::EndChild();
+//                        ImGui::NextColumn();
+//                        };
+//
+//                    renderAccelCard(u8"加速度X", data.x);
+//                    renderAccelCard(u8"加速度Y", data.y);
+//                    renderAccelCard(u8"加速度Z", data.z);
+//
+//                    ImGui::Columns(1);
+//                    ImGui::PopFont();
+//                    ImGui::PopID();
+//                }
+//                else {
+//                    ImGui::Separator();
+//                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+//                }
+//            }
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//    ImGui::End();
+//}
+
 void Application::ShowADXL355() {
     if (!ImGui::Begin("ADXL355")) {
         ImGui::End();
@@ -970,6 +1197,12 @@ void Application::ShowADXL355() {
     static int selectedBaudIndex = 0;
     static bool isConnected = false;
     static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+
+    // 采集控制相关变量
+    static std::atomic<bool> isCollectingADXL355 = false;
+    static std::thread adxl355CollectionThread;
+    static std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355CollectedData;
+    static std::mutex adxl355CollectedDataMutex;
 
     // 串口选择
     if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
@@ -995,7 +1228,6 @@ void Application::ShowADXL355() {
         ImGui::EndCombo();
     }
 
-    // 连接或断开
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
             try {
@@ -1053,6 +1285,11 @@ void Application::ShowADXL355() {
             collectingADXL355 = false;
             if (adxl355PollingThread.joinable())
                 adxl355PollingThread.join();
+            isCollectingADXL355 = false;
+            if (adxl355CollectionThread.joinable())
+                adxl355CollectionThread.join();
+            adxl355CollectedData.clear();
+
             serialManager.close();
             isConnected = false;
             adxl355Parsers.clear();
@@ -1060,17 +1297,112 @@ void Application::ShowADXL355() {
             deviceDisplayFlags.clear();
         }
 
-        // 显示复选框选择多个设备
+        // 采集控制
+        if (!isCollectingADXL355) {
+            if (ImGui::Button(u8"开始采集")) {
+                isCollectingADXL355 = true;
+                {
+                    std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
+                    adxl355CollectedData.clear();
+                }
+
+                adxl355CollectionThread = std::thread([] {
+                    while (isCollectingADXL355) {
+                        std::unordered_map<uint8_t, ADXL355Parser::AccelerationData> snapshot;
+
+                        {
+                            std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                            for (const auto& [addr, data] : adxl355DataMap) {
+                                if (!data.dataQue.empty())
+                                    snapshot[addr] = data.dataQue.back();
+                            }
+                        }
+
+                        auto now = std::chrono::system_clock::now();
+                        {
+                            std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
+                            adxl355CollectedData.emplace_back(now, snapshot);
+                        }
+
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
+                    });
+            }
+        }
+        else {
+            if (ImGui::Button(u8"停止采集并保存")) {
+                isCollectingADXL355 = false;
+                if (adxl355CollectionThread.joinable())
+                    adxl355CollectionThread.join();
+
+                try {
+                    std::string saveFilePath = generateUniqueFileName("ADXL355_data");
+                    OpenXLSX::XLDocument doc;
+                    doc.create(saveFilePath, false);
+                    doc.open(saveFilePath);
+                    auto wks = doc.workbook().worksheet("Sheet1");
+
+                    // 写入表头
+                    wks.cell(1, 1).value() = "Time";
+                    int col = 2;
+                    for (uint8_t addr : adxl355DeviceAddresses) {
+                        std::stringstream ss;
+                        ss << "Device 0x" << std::uppercase << std::hex
+                            << std::setw(2) << std::setfill('0') << (int)addr;
+                        wks.cell(1, col++) = ss.str() + " Accel X";
+                        wks.cell(1, col++) = ss.str() + " Accel Y";
+                        wks.cell(1, col++) = ss.str() + " Accel Z";
+                    }
+
+                    // 写入数据
+                    std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
+                    for (size_t row = 0; row < adxl355CollectedData.size(); ++row) {
+                        const auto& [timestamp, snapshot] = adxl355CollectedData[row];
+                        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+                        std::tm tm;
+                        localtime_s(&tm, &time_t);
+                        std::ostringstream oss;
+                        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+                        wks.cell(row + 2, 1).value() = oss.str();
+
+                        int col = 2;
+                        for (uint8_t addr : adxl355DeviceAddresses) {
+                            if (snapshot.find(addr) != snapshot.end()) {
+                                const auto& data = snapshot.at(addr);
+                                wks.cell(row + 2, col++) = data.x;
+                                wks.cell(row + 2, col++) = data.y;
+                                wks.cell(row + 2, col++) = data.z;
+                            }
+                            else {
+                                col += 3;
+                            }
+                        }
+                    }
+
+                    doc.save();
+                    doc.close();
+
+                    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+                }
+                catch (const std::exception& e) {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+                }
+            }
+
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据... 已记录 %d 条",
+                static_cast<int>(adxl355CollectedData.size()));
+        }
+
+        // 设备选择与显示
         if (!adxl355DeviceAddresses.empty()) {
             ImGui::Separator();
-            //ImGui::Text(u8"选择要显示的数据设备：");
-
             for (uint8_t addr : adxl355DeviceAddresses) {
                 if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
                     deviceDisplayFlags[addr] = false;
 
                 char label[32];
-                sprintf_s(label, sizeof(label),u8" 0x%02X", addr);
+                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
                 ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
             }
 
@@ -1123,7 +1455,6 @@ void Application::ShowADXL355() {
 
 
 
-
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -1132,6 +1463,7 @@ void Application::ShowWindow()
     static bool show_plot3d_2_window = true;  // 注意：控制的是独立窗口
     static bool show_plot3d_2 = true;
     static bool DualAxis = true;
+    static bool SynchronizedCapture = true;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -1144,6 +1476,7 @@ void Application::ShowWindow()
             ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
             ImGui::MenuItem("JY61P", nullptr, &JY61P);
             ImGui::MenuItem("DualAxis", nullptr, &DualAxis);
+            ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
             ImGui::EndMenu();
@@ -1267,7 +1600,10 @@ void Application::ShowWindow()
     {
 		Application::ShowDualAxisSensor();
     }
-
+    if (SynchronizedCapture)
+    {
+        Application::ShowSynchronizedCapture();
+    }
     //try
     //{
     //    RS485Manager rs485_DualAxis;
