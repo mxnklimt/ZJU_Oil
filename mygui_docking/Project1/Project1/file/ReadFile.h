@@ -13,3 +13,4 @@ public:
         std::vector<std::tm>& timeList
     );
 };
+std::string generateUniqueFileName(const std::string& baseName, const std::string& extension = ".xlsx");

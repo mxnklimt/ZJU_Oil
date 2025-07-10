@@ -7,6 +7,16 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <filesystem>
+#include <string>   
+std::string generateUniqueFileName(const std::string& baseName, const std::string& extension) {
+    std::string filename = baseName + extension;
+    int counter = 1;
+    while (std::filesystem::exists(filename)) {
+        filename = baseName + "_" + std::to_string(counter++) + extension;
+    }
+    return filename;
+}
  void ReadFile::readColumnsDandEFloat(
     const std::string& filePath,
     const std::string& sheetName,

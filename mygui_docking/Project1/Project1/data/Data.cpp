@@ -1,10 +1,11 @@
 //Data.cpp
 #include<map>
 #include"data/Data.h"  
-
-
+#include<unordered_map>
+#include"DualAxisSensor/DualAxisSensorParser.h"
 //cpp中定义全局变量
 
+std::mutex dataMutex;
 //adxl355数据
 const size_t MAX_POINTS = 500;  
 RS485Manager serialManager;
@@ -29,3 +30,9 @@ std::thread JY61PThread;       //线程
 std::mutex JY61PMutex;
 std::deque<JY61PData> JY61PData_dataQue; // 存储数据的队列
 JY61PData jy61pData;
+std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
+std::mutex jy61pDataMutex;
+std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+//DualAxis数据
+std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
+std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;

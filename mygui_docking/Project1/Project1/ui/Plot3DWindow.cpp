@@ -37,26 +37,8 @@
 #include"wit_c_sdk.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
 
-static std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
-static std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
-static std::mutex jy61pDataMutex;
-static std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
-static std::mutex dataMutex;
-static std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
-struct Vec3 {
-    float x, y, z;
-    Vec3() = default;
-    Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
-};
 
-std::string generateUniqueFileName(const std::string& baseName, const std::string& extension = ".xlsx") {
-    std::string filename = baseName + extension;
-    int counter = 1;
-    while (std::filesystem::exists(filename)) {
-        filename = baseName + "_" + std::to_string(counter++) + extension;
-    }
-    return filename;
-}
+
 
 
 

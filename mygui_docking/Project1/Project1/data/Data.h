@@ -6,12 +6,14 @@
 #include <thread>
 #include <atomic>
 #include <map>
+#include <unordered_map>
 #include"ADXL355/ADXL355Parser.h"
 #include"RS485/RS485Manager.h"
+#include"DualAxisSensor/DualAxisSensorParser.h"
 
 
 
-
+extern std::mutex dataMutex;
 //extern声明全局变量
 //ADXL355
 extern const size_t MAX_POINTS;
@@ -54,8 +56,18 @@ extern std::atomic<bool> collectingJY61P;
 extern std::thread JY61PThread;
 extern std::mutex JY61PMutex;
 extern class JY61PData jy61pData;         //数据结构
+extern std::mutex jy61pDataMutex;
+extern std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+extern std::vector<uint8_t> jy61pDeviceAddresses;
 
 
+struct Vec3 {
+	float x, y, z;
+	Vec3() = default;
+	Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+};
 
+//DualAxis数据
+extern std::vector<uint8_t> dualAxisDeviceAddresses;
 
-
+extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
