@@ -103,7 +103,7 @@ void Application::ShowWindow()
     }
     if (SynchronizedCapture)
     {
-        //Application::ShowSynchronizedCapture();
+        
     }
     //try
     //{
@@ -480,28 +480,9 @@ void Application::ShowDualAxisSensor() {
     static std::string saveFilePath = "DualAxisSensor_data.xlsx";
 
     // 串口选择
-    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-        for (int i = 0; i < availablePorts.size(); ++i) {
-            bool isSelected = (i == selectedPortIndex);
-            if (ImGui::Selectable(availablePorts[i].c_str(), isSelected))
-                selectedPortIndex = i;
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
+    ShowSerialPortSelector(availablePorts, selectedPortIndex);
     // 波特率选择
-    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-        for (int i = 0; i < IM_ARRAYSIZE(baudRates); ++i) {
-            bool isSelected = (i == selectedBaudIndex);
-            if (ImGui::Selectable(baudRates[i], isSelected))
-                selectedBaudIndex = i;
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
 
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
@@ -660,7 +641,7 @@ void Application::ShowDualAxisSensor() {
 
                 static_cast<int>(collectedData.size()));
         }
-
+        Application::ShowSynchronizedCapture();
         ImGui::Separator();
         ImGui::Text(u8"选择要显示的数据设备：");
 
@@ -1067,28 +1048,9 @@ void Application::ShowADXL355() {
     static std::mutex adxl355CollectedDataMutex;
 
     // 串口选择
-    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
-        for (int n = 0; n < availablePorts.size(); n++) {
-            bool isSelected = (selectedPortIndex == n);
-            if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
-                selectedPortIndex = n;
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
+    ShowSerialPortSelector(availablePorts, selectedPortIndex);
     // 波特率选择
-    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
-        for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
-            bool isSelected = (selectedBaudIndex == n);
-            if (ImGui::Selectable(baudRates[n], isSelected))
-                selectedBaudIndex = n;
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
 
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
@@ -1318,6 +1280,31 @@ void Application::ShowADXL355() {
 
 
 
+void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selectedIndex, const char* label) {
+    if (ImGui::BeginCombo(label, ports[selectedIndex].c_str())) {
+        for (int i = 0; i < ports.size(); ++i) {
+            bool isSelected = (selectedIndex == i);
+            if (ImGui::Selectable(ports[i].c_str(), isSelected))
+                selectedIndex = i;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+}
+
+void ShowBaudRateSelector(const char* const* baudRates, int baudRateCount, int& selectedIndex, const char* label) {
+    if (ImGui::BeginCombo(label, baudRates[selectedIndex])) {
+        for (int i = 0; i < baudRateCount; ++i) {
+            bool isSelected = (selectedIndex == i);
+            if (ImGui::Selectable(baudRates[i], isSelected))
+                selectedIndex = i;
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+}
 
 
 

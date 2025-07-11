@@ -16,3 +16,7 @@ public:
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;
 };
+// 显示串口选择器
+void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selectedIndex, const char* label = u8"串口");
+// 显示波特率选择器
+void ShowBaudRateSelector(const char* const* baudRates, int baudRateCount, int& selectedIndex, const char* label = u8"波特率");
