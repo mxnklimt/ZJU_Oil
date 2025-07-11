@@ -24,3 +24,12 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
     std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data);
 void SaveDualAxisToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::map<uint8_t, DualAxisSensorParser::AngleData>>>& data);
+void StopAndSaveDualAxisData(
+    std::atomic<bool>& isCollectingData,
+    std::thread& dataCollectionThread,
+    const std::vector<uint8_t>& deviceAddresses,
+    const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& collectedData,
+    std::mutex& collectedDataMutex,
+    const std::string& baseFileName = "DualAxis_data"
+);

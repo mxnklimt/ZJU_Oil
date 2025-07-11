@@ -1,8 +1,4 @@
-﻿
-
-// V2.0
-#undef x  // 取消冲突宏
-
+﻿#undef x  // 取消冲突宏
 
 #include<iostream>
 #include<vector>
@@ -21,7 +17,6 @@
 #include <unordered_map>
 #include <chrono>
 #include "Plot3DWindow.h"
-#include"imgui.h"
 #include"ImPlot3d/implot3d.h"
 #include"ImPlot/implot.h"
 #include"ImPlot/implot_internal.h"
@@ -78,9 +73,6 @@ void Application::ShowWindow()
     if (ADXL355) {
         Application::ShowADXL355();
     }
-    //ImGui::End(); // 主窗口结束
-
-
     //--------------------------------------------------------------------------------------------------------------------------------
     // JY61P
     if (JY61P)
@@ -475,13 +467,13 @@ void Application::ShowDualAxisSensor() {
     static std::atomic<bool> isCollectingData = false;
     static std::thread dataCollectionThread;
     static std::vector<std::pair<std::chrono::system_clock::time_point,
-        std::map<uint8_t, DualAxisSensorParser::AngleData>>> collectedData;
+    std::map<uint8_t, DualAxisSensorParser::AngleData>>> collectedData;
     static std::mutex collectedDataMutex;
     static std::string saveFilePath = "DualAxisSensor_data.xlsx";
 
-    // 串口选择
+    // 串口选择下拉框
     ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    // 波特率选择
+    // 波特率选择下拉框
     ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
 
     if (!isConnected) {
@@ -567,74 +559,14 @@ void Application::ShowDualAxisSensor() {
         }
         else {
             if (ImGui::Button(u8"停止采集并保存")) {
-                isCollectingData = false;
-                if (dataCollectionThread.joinable()) {
-                    dataCollectionThread.join();
-                }
-
-                try {
-                    // 每次生成不重名的文件名
-                    std::string saveFilePath = generateUniqueFileName("DualAxis_data");
-                    OpenXLSX::XLDocument doc;
-
-                    doc.create(saveFilePath, false);  // 不覆盖已有文件
-                    doc.open(saveFilePath);  //  推荐方式
-                    auto wks = doc.workbook().worksheet("Sheet1");
-
-                    // 写入表头
-                    wks.cell(1, 1).value() = "Time Stack";
-                    int col = 2;
-                    for (uint8_t addr : dualAxisDeviceAddresses) {
-                        std::stringstream ss;
-                        ss << "Device 0x" << std::uppercase << std::hex
-                            << std::setw(2) << std::setfill('0') << static_cast<int>(addr);
-                        std::string deviceName = ss.str();
-
-                        wks.cell(1, col++).value() = deviceName + " Filtered Horizontal";
-                        wks.cell(1, col++).value() = deviceName + " Filtered Vertical";
-                        wks.cell(1, col++).value() = deviceName + " Raw Horizontal";
-                        wks.cell(1, col++).value() = deviceName + " Raw Vertical";
-                    }
-
-                    // 写入数据
-                    std::lock_guard<std::mutex> lock(collectedDataMutex);
-                    for (size_t row = 0; row < collectedData.size(); ++row) {
-                        const auto& [timestamp, dataMap] = collectedData[row];
-
-                        // 转换时间戳为字符串
-                        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
-                        std::tm tm;
-                        localtime_s(&tm, &time_t);
-                        std::ostringstream oss;
-                        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-                        wks.cell(row + 2, 1).value() = oss.str();
-
-                        int col = 2;
-                        for (uint8_t addr : dualAxisDeviceAddresses) {
-                            if (dataMap.find(addr) != dataMap.end()) {
-                                const auto& angles = dataMap.at(addr);
-                                wks.cell(row + 2, col++).value() = angles.filtered_horizontal;
-                                wks.cell(row + 2, col++).value() = angles.filtered_vertical;
-                                wks.cell(row + 2, col++).value() = angles.raw_horizontal;
-                                wks.cell(row + 2, col++).value() = angles.raw_vertical;
-                            }
-                            else {
-                                col += 4; // 跳过无数据设备
-                            }
-                        }
-                    }
-
-                    doc.save();
-                    doc.close();
-
-                    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
-                }
-                catch (const std::exception& e) {
-                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
-                }
+                StopAndSaveDualAxisData(
+                    isCollectingData,
+                    dataCollectionThread,
+                    dualAxisDeviceAddresses,
+                    collectedData,
+                    collectedDataMutex
+                );
             }
-            
-
             // 显示采集状态
             ImGui::SameLine();
             ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据... 已记录 %d 条",
