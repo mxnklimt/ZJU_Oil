@@ -38,3 +38,6 @@ RS485Manager serialDualAxis;
 std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
 std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 std::mutex dualAxisMutex;
+//map中的uint8是0x01, 0x02, 0x03等设备地址
+//std::unique_ptr是指向这个类的智能指针，unique_ptr 表示独占所有权：一个对象只能被一个指针拥有，不能复制，只能移动
+std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;

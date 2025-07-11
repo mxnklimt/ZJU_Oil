@@ -29,7 +29,7 @@
 #include"JY61P/Com.h"
 #include"wit_c_sdk.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
-
+#include"data/CollectData.h"
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -458,7 +458,7 @@ void Application::ShowDualAxisSensor() {
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
     static int selectedBaudIndex = 4;
     static bool isConnected = false;
-    static std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
+
     static std::thread pollingThread;
     static std::atomic<bool> collecting = false;
     static std::unordered_map<uint8_t, bool> displayFlags;
@@ -480,16 +480,13 @@ void Application::ShowDualAxisSensor() {
         if (ImGui::Button(u8"连接")) {
             try {
                 DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                //打开选择的串口号，使用选择的波特率
                 serialDualAxis.open(availablePorts[selectedPortIndex], baudRate);
                 isConnected = true;
                 collecting = true;
-
-                for (uint8_t addr : dualAxisDeviceAddresses) {
-                    dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialDualAxis, addr);
-                    // 设置采样率（假设类中提供该函数）
-                    dualAxisParsers[addr]->setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_100_Hz);
-                }
-
+				// 初始化设备地址列表
+                initializedualAxisParsers();
+				// 启动数据采集线程
                 pollingThread = std::thread([] {
                     while (collecting) {
                         for (uint8_t addr : dualAxisDeviceAddresses) {

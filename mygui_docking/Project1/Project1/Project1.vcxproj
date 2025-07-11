@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="ADXL355\ADXL355Parser.h" />
     <ClInclude Include="Auto.h" />
+    <ClInclude Include="data\CollectData.h" />
     <ClInclude Include="data\Data.h" />
     <ClInclude Include="DualAxisSensor\DualAxisSensorParser.h" />
     <ClInclude Include="file\ReadFile.h" />
@@ -263,6 +264,7 @@
     <ClCompile Include="OpenXLSX\sources\XLXmlFile.cpp" />
     <ClCompile Include="OpenXLSX\sources\XLXmlParser.cpp" />
     <ClCompile Include="OpenXLSX\sources\XLZipArchive.cpp" />
+    <ClCompile Include="data\CollectData.cpp" />
     <ClCompile Include="ui\Plot3DWindow.cpp" />
     <ClCompile Include="ui\sheetdata.cpp" />
   </ItemGroup>
