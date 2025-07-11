@@ -70,7 +70,74 @@ void Application::ShowWindow()
         ImGui::EndMenuBar();
     }
     //--------------------------------------------------------------------------------------------------------------------------------
+    //读取Excel数据，显示图
+    Application::ShowExcel();
+    
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // ADXL355
+    if (ADXL355) {
+        Application::ShowADXL355();
+    }
+    //ImGui::End(); // 主窗口结束
 
+
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // JY61P
+    if (JY61P)
+    {
+        Application::ShowJY61P();
+    }
+
+    //--------------------------------------------------------------------------------------------------------------------------------
+    // 独立窗口：3D管道图像，光源建模
+    if (show_plot3d_2_window) {
+        //ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
+        ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // 可关闭窗口
+        Application::CylinderPlots();
+        ImGui::End();
+    }
+
+    if (DualAxis)
+    {
+        Application::ShowDualAxisSensor();
+    }
+    if (SynchronizedCapture)
+    {
+        //Application::ShowSynchronizedCapture();
+    }
+    //try
+    //{
+    //    RS485Manager rs485_DualAxis;
+    //    rs485_DualAxis.open("COM7", 115200);
+
+    //    DualAxisSensorParser sensor(rs485_DualAxis);
+
+    //    // 读取角度
+    //    auto angles = sensor.readAngles();
+    //    std::cout << "Horizontal =  " << angles.filtered_horizontal << "°" << std::endl;
+    //    std::cout << "Vertical = " << angles.filtered_vertical << "°" << std::endl;
+    //    std::cout << "raw_horizonta = " << angles.raw_horizontal << "°" << std::endl;
+    //    std::cout << "raw_vertical = " << angles.raw_vertical << "°" << std::endl;
+
+    //    // 设置采样率
+    //    sensor.setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_10_Hz);
+
+    //    // 执行校准
+    //    sensor.performCalibration(DualAxisSensorParser::CalibrationCommand::CLEAR_CALIBRATION);
+    //    // ... 其他校准步骤
+
+    //    // 读取设备信息
+    //    std::cout << "Device info: " << sensor.readDeviceInfo() << std::endl;
+    //}
+    //catch (const std::exception& e)
+    //{
+    //    std::cerr << "Error: " << e.what() << std::endl;
+    //}
+    //--------------------------------------------------------------------------------------------------------------------------------
+}
+
+void Application::ShowExcel()
+{
     if (ImGui::Button(u8"加载Excel数据")) {
         loadExcelDataAsync();
     }
@@ -148,74 +215,13 @@ void Application::ShowWindow()
     }
 
     ImGui::End();
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // ADXL355
-    if (ADXL355) {
-        Application::ShowADXL355();
-    }
-    //ImGui::End(); // 主窗口结束
-
-
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // JY61P
-    if (JY61P)
-    {
-        Application::ShowJY61P();
-    }
-
-    //--------------------------------------------------------------------------------------------------------------------------------
-    // 独立窗口：3D管道图像，光源建模
-    if (show_plot3d_2_window) {
-        //ImGui::SetNextWindowSize(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
-        ImGui::Begin("3D Plot 2 - Cylinder", &show_plot3d_2_window); // 可关闭窗口
-        Application::CylinderPlots();
-        ImGui::End();
-    }
-
-    if (DualAxis)
-    {
-        Application::ShowDualAxisSensor();
-    }
-    if (SynchronizedCapture)
-    {
-        Application::ShowSynchronizedCapture();
-    }
-    //try
-    //{
-    //    RS485Manager rs485_DualAxis;
-    //    rs485_DualAxis.open("COM7", 115200);
-
-    //    DualAxisSensorParser sensor(rs485_DualAxis);
-
-    //    // 读取角度
-    //    auto angles = sensor.readAngles();
-    //    std::cout << "Horizontal =  " << angles.filtered_horizontal << "°" << std::endl;
-    //    std::cout << "Vertical = " << angles.filtered_vertical << "°" << std::endl;
-    //    std::cout << "raw_horizonta = " << angles.raw_horizontal << "°" << std::endl;
-    //    std::cout << "raw_vertical = " << angles.raw_vertical << "°" << std::endl;
-
-    //    // 设置采样率
-    //    sensor.setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_10_Hz);
-
-    //    // 执行校准
-    //    sensor.performCalibration(DualAxisSensorParser::CalibrationCommand::CLEAR_CALIBRATION);
-    //    // ... 其他校准步骤
-
-    //    // 读取设备信息
-    //    std::cout << "Device info: " << sensor.readDeviceInfo() << std::endl;
-    //}
-    //catch (const std::exception& e)
-    //{
-    //    std::cerr << "Error: " << e.what() << std::endl;
-    //}
-    //--------------------------------------------------------------------------------------------------------------------------------
 }
 
 void Application::ShowSynchronizedCapture() {
-    if (!ImGui::Begin(u8"同步采集控制")) {
+    /*if (!ImGui::Begin(u8"同步采集控制")) {
         ImGui::End();
         return;
-    }
+    }*/
 
     static std::atomic<bool> isSyncCollecting = false;
     static std::thread syncCollectionThread;
@@ -273,7 +279,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"同步采集中...");
     }
 
-    ImGui::End();
+    //ImGui::End();
 }
 
 
@@ -501,12 +507,14 @@ void Application::ShowDualAxisSensor() {
         if (ImGui::Button(u8"连接")) {
             try {
                 DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                serialDualAxis.open(availablePorts[selectedPortIndex], baudRate);
                 isConnected = true;
                 collecting = true;
 
                 for (uint8_t addr : dualAxisDeviceAddresses) {
-                    dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialManager, addr);
+                    dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialDualAxis, addr);
+                    // 设置采样率（假设类中提供该函数）
+                    dualAxisParsers[addr]->setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_100_Hz);
                 }
 
                 pollingThread = std::thread([] {
@@ -525,9 +533,9 @@ void Application::ShowDualAxisSensor() {
                                 std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
                             }
 
-                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     }
                     });
 
@@ -543,13 +551,12 @@ void Application::ShowDualAxisSensor() {
             isCollectingData = false;
             if (pollingThread.joinable()) pollingThread.join();
             if (dataCollectionThread.joinable()) dataCollectionThread.join();
-            serialManager.close();
+            serialDualAxis.close();
             isConnected = false;
             dualAxisParsers.clear();
             dualAxisDataMap.clear();
             displayFlags.clear();
         }
-
         // 数据采集控制按钮
         if (!isCollectingData) {
             if (ImGui::Button(u8"开始采集")) {
@@ -586,14 +593,12 @@ void Application::ShowDualAxisSensor() {
 
                 try {
                     // 每次生成不重名的文件名
-                    std::string saveFilePath = generateUniqueFileName("sensor_data");
+                    std::string saveFilePath = generateUniqueFileName("DualAxis_data");
                     OpenXLSX::XLDocument doc;
 
                     doc.create(saveFilePath, false);  // 不覆盖已有文件
                     doc.open(saveFilePath);  //  推荐方式
                     auto wks = doc.workbook().worksheet("Sheet1");
-                   /* doc.workbook().addWorksheet("Sheet1");
-                    auto wks = doc.workbook().worksheet("Sheet1");*/
 
                     // 写入表头
                     wks.cell(1, 1).value() = "Time Stack";
@@ -647,7 +652,7 @@ void Application::ShowDualAxisSensor() {
                     ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
                 }
             }
-
+            
 
             // 显示采集状态
             ImGui::SameLine();
@@ -668,45 +673,50 @@ void Application::ShowDualAxisSensor() {
             ImGui::Checkbox(label, &displayFlags[addr]);
         }
 
-        std::lock_guard<std::mutex> lock(dataMutex);
-        for (uint8_t addr : dualAxisDeviceAddresses) {
-            if (!displayFlags[addr]) continue;
+        auto renderAngleCard = [](const char* label, float value) {
+            ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::Dummy(ImVec2(0.0f, 10.0f));
+            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
+            ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+            ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
+            ImGui::EndChild();
+            ImGui::NextColumn();
+            };
 
-            if (dualAxisDataMap.find(addr) != dualAxisDataMap.end()) {
-                auto& angles = dualAxisDataMap[addr];
+        {
+            std::lock_guard<std::mutex> lock(dataMutex);
+            for (uint8_t addr : dualAxisDeviceAddresses) {
+                if (!displayFlags[addr]) continue;
 
-                ImGui::Separator();
-                ImGui::Text(u8"当前显示设备: 0x%02X", addr);
-                extern ImFont* DataFont;
-                ImGui::PushID(addr);  // 避免 BeginChild 重名
-                ImGui::PushFont(DataFont);
-                ImGui::Columns(2, nullptr, false);
+                if (dualAxisDataMap.find(addr) != dualAxisDataMap.end()) {
+                    auto& angles = dualAxisDataMap[addr];
 
-                auto renderAngleCard = [](const char* label, float value) {
-                    ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-                    ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
-                    ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
-                    ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                    ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
-                    ImGui::EndChild();
-                    ImGui::NextColumn();
-                    };
+                    ImGui::Separator();
+                    ImGui::Text(u8"当前显示设备: 0x%02X", addr);
+                    extern ImFont* DataFont;
+                    ImGui::PushID(addr);  // 避免 BeginChild 重名
+                    ImGui::PushFont(DataFont);
+                    ImGui::Columns(2, nullptr, false);
 
-                renderAngleCard(u8"水平角度", angles.filtered_horizontal);
-                renderAngleCard(u8"垂直角度", angles.filtered_vertical);
-                renderAngleCard(u8"原始水平", angles.raw_horizontal);
-                renderAngleCard(u8"原始垂直", angles.raw_vertical);
+                    
 
-                ImGui::Columns(1);
-                ImGui::PopFont();
-                ImGui::PopID();
-            }
-            else {
-                ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备 0x%02X 暂无数据", addr);
+                    renderAngleCard(u8"水平角度", angles.filtered_horizontal);
+                    renderAngleCard(u8"垂直角度", angles.filtered_vertical);
+                    renderAngleCard(u8"原始水平", angles.raw_horizontal);
+                    renderAngleCard(u8"原始垂直", angles.raw_vertical);
+
+                    ImGui::Columns(1);
+                    ImGui::PopFont();
+                    ImGui::PopID();
+                }
+                else {
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备 0x%02X 暂无数据", addr);
+                }
             }
         }
+        
     }
 
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");

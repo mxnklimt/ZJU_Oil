@@ -69,5 +69,5 @@ struct Vec3 {
 
 //DualAxisÊý¾Ý
 extern std::vector<uint8_t> dualAxisDeviceAddresses;
-
+extern RS485Manager serialDualAxis;
 extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;

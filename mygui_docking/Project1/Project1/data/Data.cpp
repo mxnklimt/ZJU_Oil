@@ -34,5 +34,7 @@ std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 //DualAxisÊý¾Ý
+RS485Manager serialDualAxis;
 std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
 std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
+std::mutex dualAxisMutex;

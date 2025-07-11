@@ -12,6 +12,7 @@ public:
 	static void JY61PInit(const std::string& portName);
 	static std::vector<std::string> listAvailableSerialPorts();
 	static void ShowSynchronizedCapture();
+	static void ShowExcel();
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;
 };
