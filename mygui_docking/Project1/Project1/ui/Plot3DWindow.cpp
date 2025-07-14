@@ -95,7 +95,7 @@ void Application::ShowWindow()
     }
     if (SynchronizedCapture)
     {
-        
+        Application::ShowSynchronizedCapture();
     }
     //try
     //{
@@ -208,18 +208,42 @@ void Application::ShowExcel()
 
     ImGui::End();
 }
-
 void Application::ShowSynchronizedCapture() {
-    /*if (!ImGui::Begin(u8"同步采集控制")) {
+    if (!ImGui::Begin(u8"同步采集控制")) {
         ImGui::End();
         return;
-    }*/
+    }
 
     static std::atomic<bool> isSyncCollecting = false;
     static std::thread syncCollectionThread;
 
+    // 用于显示当前记录条数
+    static std::atomic<int> jy61pCount = 0;
+    static std::atomic<int> adxl355Count = 0;
+    static std::atomic<int> dualAxisCount = 0;
+
+    //  显示状态栏
+    {
+        ImGui::Separator();
+        ImGui::Text(u8"当前状态：");
+        ImGui::SameLine();
+        if (isSyncCollecting) {
+            ImGui::TextColored(ImVec4(0.0f, 0.8f, 0.0f, 1.0f), u8"同步采集中");
+        }
+        else {
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), u8"未采集");
+        }
+
+        ImGui::Text(u8"采样周期：1 秒");
+        ImGui::Separator();
+    }
+
+    // 🎛️ 控制按钮区
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 200) * 0.5f);  // 居中按钮
+
     if (!isSyncCollecting) {
-        if (ImGui::Button(u8"开始同步采集")) {
+        if (ImGui::Button(u8"开始同步采集", ImVec2(200, 40))) {
             isSyncCollecting = true;
 
             syncCollectionThread = std::thread([] {
@@ -237,7 +261,9 @@ void Application::ShowSynchronizedCapture() {
                         for (auto& [addr, data] : jy61pDataMap)
                             if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
                         jy61pBuffer.emplace_back(now, snapshot);
+                        jy61pCount = static_cast<int>(jy61pBuffer.size());
                     }
+
                     // ADXL355
                     {
                         std::map<uint8_t, ADXL355Parser::AccelerationData> snapshot;
@@ -245,14 +271,18 @@ void Application::ShowSynchronizedCapture() {
                         for (auto& [addr, data] : adxl355DataMap)
                             if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
                         adxl355Buffer.emplace_back(now, snapshot);
+                        adxl355Count = static_cast<int>(adxl355Buffer.size());
                     }
+
                     // Dual Axis
                     {
                         std::map<uint8_t, DualAxisSensorParser::AngleData> snapshot;
                         std::lock_guard<std::mutex> lock(dataMutex);
                         snapshot = dualAxisDataMap;
                         dualAxisBuffer.emplace_back(now, snapshot);
+                        dualAxisCount = static_cast<int>(dualAxisBuffer.size());
                     }
+
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
 
@@ -263,16 +293,28 @@ void Application::ShowSynchronizedCapture() {
         }
     }
     else {
-        if (ImGui::Button(u8"停止同步采集并保存")) {
+        if (ImGui::Button(u8" 停止采集并保存", ImVec2(200, 40))) {
             isSyncCollecting = false;
             if (syncCollectionThread.joinable()) syncCollectionThread.join();
         }
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"同步采集中...");
+
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8" 同步采集中...");
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", jy61pCount.load());
+        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", adxl355Count.load());
+        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8"双轴传感器 已记录 %d 条", dualAxisCount.load());
     }
 
-    //ImGui::End();
+    // 📌 操作说明
+    ImGui::Separator();
+    ImGui::Text(u8"操作说明：");
+    ImGui::BulletText(u8"每秒同步采集所有模块数据");
+    ImGui::BulletText(u8"停止采集后自动保存为 .xlsx 文件");
+
+    ImGui::End();
 }
+
+
 
 
 void SetJY61PAddress(uint8_t addr) {
@@ -570,7 +612,7 @@ void Application::ShowDualAxisSensor() {
 
                 static_cast<int>(collectedData.size()));
         }
-        Application::ShowSynchronizedCapture();
+        //Application::ShowSynchronizedCapture();
         ImGui::Separator();
         ImGui::Text(u8"选择要显示的数据设备：");
 
