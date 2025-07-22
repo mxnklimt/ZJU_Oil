@@ -78,6 +78,10 @@ public:
 
         // 解析角度数据
         AngleData data;
+        data.filtered_horizontal = parseAngle(0, 0);
+        data.filtered_vertical = parseAngle(0, 0);
+        data.raw_horizontal = parseAngle(0, 0);
+        data.raw_vertical = parseAngle(0, 0);
 		if (response.size() < 13) {
 			return data; // 如果响应数据不完整，返回空数据
 		}

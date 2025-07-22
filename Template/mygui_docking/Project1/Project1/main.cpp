@@ -133,6 +133,7 @@ void ShowDualAxisSensor()
                         for (uint8_t addr : dualAxisDeviceAddresses) {
                             auto& parser = *dualAxisParsers[addr];
                             auto angles = parser.readAngles();
+                            std::cout << "addr: " << std::hex <<(int)addr << std::endl;
 							std::cout << angles.filtered_horizontal << std::endl;
                         }
 
