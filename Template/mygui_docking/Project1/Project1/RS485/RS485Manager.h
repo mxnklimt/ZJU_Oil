@@ -135,7 +135,7 @@ public:
 
     //    return buffer;
     //}
-    std::vector<uint8_t> receive(size_t expectedSize, DWORD timeoutMs = 100) {
+    std::vector<uint8_t> receive(size_t expectedSize, DWORD timeoutMs = 30) {
         if (!isOpen()) {
             throw std::runtime_error("´®¿ÚÎ´´ò¿ª");
         }

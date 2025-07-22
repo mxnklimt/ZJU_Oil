@@ -35,7 +35,7 @@ std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 //DualAxis数据
 RS485Manager serialDualAxis;
-std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };
+std::vector<uint8_t> dualAxisDeviceAddresses = { 0x03, 0x0C };
 std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 std::mutex dualAxisMutex;
 //map中的uint8是0x01, 0x02, 0x03等设备地址

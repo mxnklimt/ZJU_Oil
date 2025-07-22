@@ -25,6 +25,7 @@
 #include <map>
 #include <Thread>
 #include <unordered_map>
+#include <mutex>
 //：CreateFileW 在尝试打开不存在的串口时，Windows 系统默认会等待超时（约 2 秒）
 std::vector<std::string> listAvailableSerialPorts() {
     std::vector<std::string> ports;
@@ -85,6 +86,7 @@ std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };//经过init以后
 static std::thread pollingThread;
 std::vector<uint8_t> collectdualAxisDeveiceAddresses;
 static std::unordered_map<uint8_t, bool> displayFlags;
+std::mutex dataMutex;
 void initAllPossibleDualAxisAddresses() {
     dualAxisDeviceAddresses.clear();
     for (uint8_t addr = 1; addr <= 127; ++addr) {
@@ -167,6 +169,7 @@ void ShowDualAxisSensor()
                             std::cout << "angles.filtered_horizontal = " << angles.filtered_horizontal << std::endl;
                             loadingAddress(addr, angles.filtered_horizontal);
                         }
+                        break;
                     }
                     });
             }
@@ -187,6 +190,70 @@ void ShowDualAxisSensor()
             displayFlags.clear();
         }
     }
+
+
+    ImGui::Separator();
+ImGui::Text(u8"设备配置");
+
+static std::unordered_map<uint8_t, int> deviceBaudIndexMap;
+static std::unordered_map<uint8_t, int> deviceNewAddrMap;
+const char* deviceBaudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+
+for (uint8_t addr : collectdualAxisDeveiceAddresses)
+{
+    if (!displayFlags[addr])
+        continue; // 只显示勾选中的设备
+
+    ImGui::PushID(addr); // 避免控件重复冲突
+
+    ImGui::Separator();
+    char title[32];
+    sprintf_s(title, u8"设备 0x%02X", addr);
+    ImGui::Text(title);
+
+    if (deviceBaudIndexMap.find(addr) == deviceBaudIndexMap.end())
+        deviceBaudIndexMap[addr] = 0; // 默认选中9600
+    if (deviceNewAddrMap.find(addr) == deviceNewAddrMap.end())
+        deviceNewAddrMap[addr] = addr; // 默认当前地址
+
+    // 波特率选择
+    ImGui::Text(u8"设置波特率:");
+    ImGui::Combo("##BaudRate", &deviceBaudIndexMap[addr], deviceBaudRates, IM_ARRAYSIZE(deviceBaudRates));
+
+    // 地址输入框
+    ImGui::Text(u8"新地址:");
+    ImGui::InputInt("##NewAddress", &deviceNewAddrMap[addr]);
+    if (deviceNewAddrMap[addr] < 0) deviceNewAddrMap[addr] = 0;
+    if (deviceNewAddrMap[addr] > 255) deviceNewAddrMap[addr] = 255;
+
+    if (ImGui::Button(u8"应用设置")) {
+        try {
+            uint8_t baudCode = 0xB8;
+            switch (deviceBaudIndexMap[addr]) {
+            case 0: baudCode = 0xB2; break; // 9600
+            case 1: baudCode = 0xB4; break; // 19200
+            case 2: baudCode = 0xB6; break; // 38400
+            case 3: baudCode = 0xB7; break; // 57600
+            case 4: baudCode = 0xB8; break; // 115200
+            }
+
+            uint8_t newAddr = static_cast<uint8_t>(deviceNewAddrMap[addr]);
+
+            auto it = dualAxisParsers.find(addr);
+            if (it != dualAxisParsers.end()) {
+                it->second->changeSerialConfig(baudCode, 0x00, newAddr); // 无校验
+                ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"设置成功！");
+            } else {
+                ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备解析器不存在");
+            }
+
+        } catch (const std::exception& e) {
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"设置失败: %s", e.what());
+        }
+    }
+
+    ImGui::PopID();
+}
 
     ImGui::EndChild(); // 结束右侧主区域
 
