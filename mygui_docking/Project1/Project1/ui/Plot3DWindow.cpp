@@ -238,7 +238,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::Separator();
     }
 
-    // 🎛️ 控制按钮区
+    // 控制按钮区
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
     ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 200) * 0.5f);  // 居中按钮
 
@@ -305,7 +305,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8"双轴传感器 已记录 %d 条", dualAxisCount.load());
     }
 
-    // 📌 操作说明
+    //  操作说明
     ImGui::Separator();
     ImGui::Text(u8"操作说明：");
     ImGui::BulletText(u8"每秒同步采集所有模块数据");
