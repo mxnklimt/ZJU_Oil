@@ -87,6 +87,7 @@ static std::thread pollingThread;
 std::vector<uint8_t> collectdualAxisDeveiceAddresses;
 static std::unordered_map<uint8_t, bool> displayFlags;
 std::mutex dataMutex;
+
 void initAllPossibleDualAxisAddresses() {
     dualAxisDeviceAddresses.clear();
     for (uint8_t addr = 1; addr <= 127; ++addr) {
@@ -141,8 +142,9 @@ void ShowDualAxisSensor()
 
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
-    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-    static int selectedBaudIndex = 4;
+    static const char* baudRates[] = { "2400","4800","9600", "14400","19200","28800", "38400", "57600", "115200","128000","153600","230400","250000",
+"256000","345600","691200" };
+    static int selectedBaudIndex = 15;
     static bool isConnected = false;
     static std::atomic<bool> collecting = false;
 
@@ -167,6 +169,10 @@ void ShowDualAxisSensor()
                             auto angles = parser.readAngles();
                             std::cout << "扫描中...addr: " << std::hex << (int)addr << std::endl;
                             std::cout << "angles.filtered_horizontal = " << angles.filtered_horizontal << std::endl;
+                            if (angles.filtered_horizontal != 0 && angles.filtered_horizontal<360 && angles.filtered_horizontal>-360)
+                            {
+                                //std::lock_guard<std::mutex> lock(dataMutex);
+                            }
                             loadingAddress(addr, angles.filtered_horizontal);
                         }
                         break;
@@ -197,7 +203,8 @@ ImGui::Text(u8"设备配置");
 
 static std::unordered_map<uint8_t, int> deviceBaudIndexMap;
 static std::unordered_map<uint8_t, int> deviceNewAddrMap;
-const char* deviceBaudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+const char* deviceBaudRates[] = { "2400","4800","9600", "14400","19200","28800", "38400", "57600", "115200","128000","153600","230400","250000",
+"256000","345600","691200"};
 
 for (uint8_t addr : collectdualAxisDeveiceAddresses)
 {
@@ -230,11 +237,22 @@ for (uint8_t addr : collectdualAxisDeveiceAddresses)
         try {
             uint8_t baudCode = 0xB8;
             switch (deviceBaudIndexMap[addr]) {
-            case 0: baudCode = 0xB2; break; // 9600
-            case 1: baudCode = 0xB4; break; // 19200
-            case 2: baudCode = 0xB6; break; // 38400
-            case 3: baudCode = 0xB7; break; // 57600
-            case 4: baudCode = 0xB8; break; // 115200
+            case 0: baudCode = 0xB0; break; // 2400
+            case 1: baudCode = 0xB1; break; // 4800
+            case 2: baudCode = 0xB2; break; // 9600
+            case 3: baudCode = 0xB3; break; // 14400
+            case 4: baudCode = 0xB4; break; // 19200
+            case 5: baudCode = 0xB5; break; // 28800
+            case 6: baudCode = 0xB6; break; // 38400
+            case 7: baudCode = 0xB7; break; // 57600
+            case 8: baudCode = 0xB8; break; // 115200
+            case 9: baudCode = 0xB9; break; // 128000
+            case 10: baudCode = 0xBA; break;// 153600
+            case 11: baudCode = 0xBB; break;// 230400
+            case 12: baudCode = 0xBC; break;// 250000
+            case 13: baudCode = 0xBD; break;// 256000
+            case 14: baudCode = 0xBE; break;// 345600
+            case 15: baudCode = 0xBF; break;// 691200
             }
 
             uint8_t newAddr = static_cast<uint8_t>(deviceNewAddrMap[addr]);
@@ -260,77 +278,7 @@ for (uint8_t addr : collectdualAxisDeveiceAddresses)
     ImGui::End(); // 结束整个窗口
 }
 
-//void ShowDualAxisSensor()
-//{
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 4;
-//    static bool isConnected = false;
-//    static std::atomic<bool> collecting = false;
-//	
-//    // 串口选择下拉框
-//    ShowSerialPortSelector(availablePorts, selectedPortIndex, u8"串口号");
-//    // 波特率选择下拉框
-//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex, u8"波特率");
-//
-//    if (!isConnected)
-//    {
-//        if (ImGui::Button(u8"连接"))
-//        {
-//            try
-//            {
-//				DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                //打开所选的串口号，使用选择的波特率
-//				serialDualAxis.open(availablePorts[selectedPortIndex], baudRate);
-//                isConnected = true;
-//                collecting = true;
-//                // 初始化设备地址列表
-//                initializedualAxisParsers();
-//                // 启动数据采集线程
-//                pollingThread = std::thread([] {
-//                    while (collecting)
-//                    {
-//                        for (uint8_t addr : dualAxisDeviceAddresses) {
-//                            auto& parser = *dualAxisParsers[addr];
-//                            auto angles = parser.readAngles();
-//                            std::cout << "扫描中...addr: " << std::hex <<(int)addr << std::endl;
-//							std::cout <<"angles.filtered_horizontal = " << angles.filtered_horizontal << std::endl;
-//							loadingAddress(addr, angles.filtered_horizontal);
-//
-//                        }
-//
-//                    }
-//
-//                    });
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"扫描失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else
-//    {
-//        if (ImGui::Button(u8"停止扫描"))
-//        {
-//            collecting = false;//停止数据采集
-//			if (pollingThread.joinable())
-//				pollingThread.join(); // 等待线程结束
-//            isConnected = false;
-//			dualAxisParsers.clear(); // 清空解析器
-//			displayFlags.clear(); // 清空显示标志
-//        }
-//        
-//    }
-//    for (uint8_t addr : collectdualAxisDeveiceAddresses)
-//    {
-//        if (displayFlags.find(addr) == displayFlags.end())
-//            displayFlags[addr] = false;
-//        char label[32];
-//		sprintf_s(label, u8"设备地址: 0x%02X", addr);
-//        ImGui::Checkbox(label, &displayFlags[addr]);
-//    }
-//}
+
 // Data stored per platform window
 struct WGL_WindowData { HDC hDC; };
 
@@ -505,8 +453,8 @@ int main(int, char**)
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
-            ImPlot::ShowDemoWindow();
-            ImPlot3D::ShowDemoWindow();
+            //ImPlot::ShowDemoWindow();
+            //ImPlot3D::ShowDemoWindow();
             //ShowDualAxisSensorSettings();
             ShowDualAxisSensor();
 
@@ -515,11 +463,11 @@ int main(int, char**)
         // 3. Show another simple window.
         if (show_another_window)
         {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
+            //ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+            //ImGui::Text("Hello from another window!");
+            //if (ImGui::Button("Close Me"))
+            //    show_another_window = false;
+            //ImGui::End();
         }
 
         // Rendering
