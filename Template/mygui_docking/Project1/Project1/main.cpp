@@ -26,6 +26,8 @@
 #include <Thread>
 #include <unordered_map>
 #include <mutex>
+//define chinese font
+ImFont* DataFont = nullptr;
 //：CreateFileW 在尝试打开不存在的串口时，Windows 系统默认会等待超时（约 2 秒）
 std::vector<std::string> listAvailableSerialPorts() {
     std::vector<std::string> ports;
@@ -87,7 +89,7 @@ static std::thread pollingThread;
 std::vector<uint8_t> collectdualAxisDeveiceAddresses;
 static std::unordered_map<uint8_t, bool> displayFlags;
 std::mutex dataMutex;
-
+std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 void initAllPossibleDualAxisAddresses() {
     dualAxisDeviceAddresses.clear();
     for (uint8_t addr = 1; addr <= 127; ++addr) {
@@ -112,6 +114,7 @@ void loadingAddress(uint8_t addr,double data1)
 		collectdualAxisDeveiceAddresses.push_back(addr);//将扫描到有数据的，已经连接的设备地址存入
     }
 }
+
 void ShowDualAxisSensor()
 {
     if (!ImGui::Begin(u8"双轴柔性传感器")) {
@@ -119,7 +122,7 @@ void ShowDualAxisSensor()
         return;
     }
 
-    // ===== 左侧子窗口：显示设备列表与设置按钮 =====
+    // ===== 左侧子窗口：设备 checkbox + 设置按钮 =====
     ImGui::BeginChild("LeftSidebar", ImVec2(200, 0), true);
     ImGui::Text(u8"显示设备:");
 
@@ -142,11 +145,11 @@ void ShowDualAxisSensor()
         ImGui::PopID();
     }
 
-    ImGui::EndChild(); // 左侧区域结束
+    ImGui::EndChild(); // 左侧结束
 
     ImGui::SameLine();
 
-    // ===== 右侧子窗口：串口选择与扫描控制 =====
+    // ===== 右侧子窗口：串口选择 + 扫描控制 + 数据显示 =====
     ImGui::BeginChild("MainArea", ImVec2(0, 0), true);
 
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
@@ -157,10 +160,11 @@ void ShowDualAxisSensor()
         "38400", "57600", "115200","128000","153600",
         "230400","250000", "256000","345600","691200"
     };
-    static int selectedBaudIndex = 2; // 默认9600
+    static int selectedBaudIndex = 2;
 
     static bool isConnected = false;
     static std::atomic<bool> collecting = false;
+    static std::thread pollingThread;
 
     ImGui::Text(u8"串口配置");
     ShowSerialPortSelector(availablePorts, selectedPortIndex, u8"串口号");
@@ -175,23 +179,39 @@ void ShowDualAxisSensor()
                 serialDualAxis.open(availablePorts[selectedPortIndex], baudRate);
                 isConnected = true;
                 collecting = true;
+
+                collectdualAxisDeveiceAddresses.clear();
+                dualAxisDataMap.clear();
+                displayFlags.clear();
+
                 initializedualAxisParsers();
+
                 pollingThread = std::thread([] {
-                    while (collecting)
-                    {
-                        for (uint8_t addr : dualAxisDeviceAddresses) {
+                    for (uint8_t addr : dualAxisDeviceAddresses) {
+                        try {
                             auto& parser = *dualAxisParsers[addr];
                             auto angles = parser.readAngles();
-                            std::cout << "扫描中...addr: " << std::hex << (int)addr << std::endl;
-                            std::cout << "angles.filtered_horizontal = " << angles.filtered_horizontal << std::endl;
-                            if (angles.filtered_horizontal != 0 && angles.filtered_horizontal<360 && angles.filtered_horizontal>-360)
-                            {
-                                // 处理角度
+
+                            if (angles.filtered_horizontal != 0 &&
+                                angles.filtered_horizontal < 360 &&
+                                angles.filtered_horizontal > -360) {
+
+                                std::lock_guard<std::mutex> lock(dataMutex);
+                                dualAxisDataMap[addr] = angles;
+
+                                // 避免重复添加地址
+                                if (std::find(collectdualAxisDeveiceAddresses.begin(), collectdualAxisDeveiceAddresses.end(), addr) == collectdualAxisDeveiceAddresses.end()) {
+                                    collectdualAxisDeveiceAddresses.push_back(addr);
+                                }
+
+                                std::cout << "扫描成功: 0x" << std::hex << (int)addr << ", angle: " << angles.filtered_horizontal << std::endl;
                             }
-                            loadingAddress(addr, angles.filtered_horizontal);
                         }
-                        break; // 如果只想扫描一次
+                        catch (const std::exception& e) {
+                            std::cerr << "读取失败: 0x" << std::hex << (int)addr << " 错误: " << e.what() << std::endl;
+                        }
                     }
+                    collecting = false;
                     });
             }
             catch (const std::exception& e) {
@@ -212,9 +232,53 @@ void ShowDualAxisSensor()
         }
     }
 
-    ImGui::EndChild(); // 右侧区域结束
+    ImGui::Separator();
+    ImGui::Text(u8"已选设备数据：");
 
-    // ===== 弹窗：每个设备的配置窗口 =====
+    std::lock_guard<std::mutex> lock(dataMutex);
+
+    for (uint8_t addr : collectdualAxisDeveiceAddresses) {
+        if (!displayFlags[addr]) continue;
+
+        if (dualAxisDataMap.find(addr) != dualAxisDataMap.end()) {
+            auto& angles = dualAxisDataMap[addr];
+
+            ImGui::Separator();
+            ImGui::Text(u8"当前显示设备: 0x%02X", addr);
+            extern ImFont* DataFont;
+            ImGui::PushID(addr);
+            ImGui::PushFont(DataFont);
+            ImGui::Columns(2, nullptr, false);
+
+            auto renderAngleCard = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
+                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+
+            renderAngleCard(u8"水平角度", angles.filtered_horizontal);
+            renderAngleCard(u8"垂直角度", angles.filtered_vertical);
+            renderAngleCard(u8"原始水平", angles.raw_horizontal);
+            renderAngleCard(u8"原始垂直", angles.raw_vertical);
+
+            ImGui::Columns(1);
+            ImGui::PopFont();
+            ImGui::PopID();
+        }
+        else {
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备 0x%02X 暂无数据", addr);
+        }
+    }
+
+    ImGui::EndChild(); // 右侧结束
+
+    // ===== 配置弹窗逻辑 =====
     static std::unordered_map<uint8_t, int> deviceBaudIndexMap;
     static std::unordered_map<uint8_t, int> deviceNewAddrMap;
 
@@ -238,7 +302,7 @@ void ShowDualAxisSensor()
             ImGui::Text(u8"配置设备 0x%02X", addr);
 
             if (deviceBaudIndexMap.find(addr) == deviceBaudIndexMap.end())
-                deviceBaudIndexMap[addr] = 2; // 默认9600
+                deviceBaudIndexMap[addr] = 2;
             if (deviceNewAddrMap.find(addr) == deviceNewAddrMap.end())
                 deviceNewAddrMap[addr] = addr;
 
@@ -253,7 +317,7 @@ void ShowDualAxisSensor()
             if (ImGui::Button(u8"应用设置"))
             {
                 try {
-                    uint8_t baudCode = 0xB0 + deviceBaudIndexMap[addr]; // B0 对应 2400
+                    uint8_t baudCode = 0xB0 + deviceBaudIndexMap[addr];
                     uint8_t newAddr = static_cast<uint8_t>(deviceNewAddrMap[addr]);
 
                     auto it = dualAxisParsers.find(addr);
@@ -282,171 +346,10 @@ void ShowDualAxisSensor()
     ImGui::End(); // 主窗口
 }
 
-//void ShowDualAxisSensor()
-//{
-//    if (!ImGui::Begin(u8"双轴柔性传感器")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    // 创建一个水平布局，左侧为子窗口
-//    ImGui::BeginChild("LeftSidebar", ImVec2(200, 0), true); // 左侧固定宽度为200像素
-//
-//    ImGui::Text(u8"显示设备:");
-//    for (uint8_t addr : collectdualAxisDeveiceAddresses)
-//    {
-//        if (displayFlags.find(addr) == displayFlags.end())
-//            displayFlags[addr] = false;
-//
-//        char label[32];
-//        sprintf_s(label, u8"地址: 0x%02X", addr);
-//        ImGui::Checkbox(label, &displayFlags[addr]);
-//    }
-//
-//    ImGui::EndChild(); // 结束左侧子窗口
-//
-//    ImGui::SameLine(); // 右侧紧跟着左侧显示
-//
-//    // 右侧主区域
-//    ImGui::BeginChild("MainArea", ImVec2(0, 0), true); // 剩余区域自动占满
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "2400","4800","9600", "14400","19200","28800", "38400", "57600", "115200","128000","153600","230400","250000",
-//"256000","345600","691200" };
-//    static int selectedBaudIndex = 15;
-//    static bool isConnected = false;
-//    static std::atomic<bool> collecting = false;
-//
-//    ShowSerialPortSelector(availablePorts, selectedPortIndex, u8"串口号");
-//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex, u8"波特率");
-//
-//    if (!isConnected)
-//    {
-//        if (ImGui::Button(u8"连接"))
-//        {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                serialDualAxis.open(availablePorts[selectedPortIndex], baudRate);
-//                isConnected = true;
-//                collecting = true;
-//                initializedualAxisParsers();
-//                pollingThread = std::thread([] {
-//                    while (collecting)
-//                    {
-//                        for (uint8_t addr : dualAxisDeviceAddresses) {
-//                            auto& parser = *dualAxisParsers[addr];
-//                            auto angles = parser.readAngles();
-//                            std::cout << "扫描中...addr: " << std::hex << (int)addr << std::endl;
-//                            std::cout << "angles.filtered_horizontal = " << angles.filtered_horizontal << std::endl;
-//                            if (angles.filtered_horizontal != 0 && angles.filtered_horizontal<360 && angles.filtered_horizontal>-360)
-//                            {
-//                                //std::lock_guard<std::mutex> lock(dataMutex);
-//                            }
-//                            loadingAddress(addr, angles.filtered_horizontal);
-//                        }
-//                        break;
-//                    }
-//                    });
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"扫描失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else
-//    {
-//        if (ImGui::Button(u8"停止扫描"))
-//        {
-//            collecting = false;
-//            if (pollingThread.joinable())
-//                pollingThread.join();
-//            isConnected = false;
-//            dualAxisParsers.clear();
-//            displayFlags.clear();
-//        }
-//    }
-//
-//
-//    ImGui::Separator();
-//ImGui::Text(u8"设备配置");
-//
-//static std::unordered_map<uint8_t, int> deviceBaudIndexMap;
-//static std::unordered_map<uint8_t, int> deviceNewAddrMap;
-//const char* deviceBaudRates[] = { "2400","4800","9600", "14400","19200","28800", "38400", "57600", "115200","128000","153600","230400","250000",
-//"256000","345600","691200"};
-//
-//for (uint8_t addr : collectdualAxisDeveiceAddresses)
-//{
-//    if (!displayFlags[addr])
-//        continue; // 只显示勾选中的设备
-//
-//    ImGui::PushID(addr); // 避免控件重复冲突
-//
-//    ImGui::Separator();
-//    char title[32];
-//    sprintf_s(title, u8"设备 0x%02X", addr);
-//    ImGui::Text(title);
-//
-//    if (deviceBaudIndexMap.find(addr) == deviceBaudIndexMap.end())
-//        deviceBaudIndexMap[addr] = 0; // 默认选中9600
-//    if (deviceNewAddrMap.find(addr) == deviceNewAddrMap.end())
-//        deviceNewAddrMap[addr] = addr; // 默认当前地址
-//
-//    // 波特率选择
-//    ImGui::Text(u8"设置波特率:");
-//    ImGui::Combo("##BaudRate", &deviceBaudIndexMap[addr], deviceBaudRates, IM_ARRAYSIZE(deviceBaudRates));
-//
-//    // 地址输入框
-//    ImGui::Text(u8"新地址:");
-//    ImGui::InputInt("##NewAddress", &deviceNewAddrMap[addr]);
-//    if (deviceNewAddrMap[addr] < 0) deviceNewAddrMap[addr] = 0;
-//    if (deviceNewAddrMap[addr] > 255) deviceNewAddrMap[addr] = 255;
-//
-//    if (ImGui::Button(u8"应用设置")) {
-//        try {
-//            uint8_t baudCode = 0xB8;
-//            switch (deviceBaudIndexMap[addr]) {
-//            case 0: baudCode = 0xB0; break; // 2400
-//            case 1: baudCode = 0xB1; break; // 4800
-//            case 2: baudCode = 0xB2; break; // 9600
-//            case 3: baudCode = 0xB3; break; // 14400
-//            case 4: baudCode = 0xB4; break; // 19200
-//            case 5: baudCode = 0xB5; break; // 28800
-//            case 6: baudCode = 0xB6; break; // 38400
-//            case 7: baudCode = 0xB7; break; // 57600
-//            case 8: baudCode = 0xB8; break; // 115200
-//            case 9: baudCode = 0xB9; break; // 128000
-//            case 10: baudCode = 0xBA; break;// 153600
-//            case 11: baudCode = 0xBB; break;// 230400
-//            case 12: baudCode = 0xBC; break;// 250000
-//            case 13: baudCode = 0xBD; break;// 256000
-//            case 14: baudCode = 0xBE; break;// 345600
-//            case 15: baudCode = 0xBF; break;// 691200
-//            }
-//
-//            uint8_t newAddr = static_cast<uint8_t>(deviceNewAddrMap[addr]);
-//
-//            auto it = dualAxisParsers.find(addr);
-//            if (it != dualAxisParsers.end()) {
-//                it->second->changeSerialConfig(baudCode, 0x00, newAddr); // 无校验
-//                ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"设置成功！");
-//            } else {
-//                ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"设备解析器不存在");
-//            }
-//
-//        } catch (const std::exception& e) {
-//            ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"设置失败: %s", e.what());
-//        }
-//    }
-//
-//    ImGui::PopID();
-//}
-//
-//    ImGui::EndChild(); // 结束右侧主区域
-//
-//    ImGui::End(); // 结束整个窗口
-//}
+
+
+
+
 
 
 // Data stored per platform window
