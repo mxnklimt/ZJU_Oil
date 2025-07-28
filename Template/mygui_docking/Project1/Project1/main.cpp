@@ -190,28 +190,53 @@ void ShowDualAxisSensor()
 
                 pollingThread = std::thread([&] {
                     while (collecting) {
-                        for (uint8_t addr : dualAxisDeviceAddresses) {
-                            try {
-                                auto& parser = *dualAxisParsers[addr];
-                                auto angles = parser.readAngles();
+                        if (scaning == true)
+                        {
+							scaning == false;
+                        }
+						if (scaning == true)
+						{
+                            for (uint8_t addr : dualAxisDeviceAddresses) {
+                                try {
+                                    auto& parser = *dualAxisParsers[addr];
+                                    auto angles = parser.readAngles();
 
-                                // 只接受有效角度
-                                if (angles.filtered_horizontal != 0 &&
-                                    angles.filtered_horizontal < 360 &&
-                                    angles.filtered_horizontal > -360) {
+                                    // 只接受有效角度
+                                    if (angles.filtered_horizontal != 0 &&
+                                        angles.filtered_horizontal < 360 &&
+                                        angles.filtered_horizontal > -360) {
 
-                                    std::lock_guard<std::mutex> lock(dataMutex);
-                                    dualAxisDataMap[addr] = angles;
+                                        std::lock_guard<std::mutex> lock(dataMutex);
+                                        dualAxisDataMap[addr] = angles;
 
-                                    if (std::find(collectdualAxisDeveiceAddresses.begin(), collectdualAxisDeveiceAddresses.end(), addr) == collectdualAxisDeveiceAddresses.end()) {
-                                        collectdualAxisDeveiceAddresses.push_back(addr);
+                                        if (std::find(collectdualAxisDeveiceAddresses.begin(), collectdualAxisDeveiceAddresses.end(), addr) == collectdualAxisDeveiceAddresses.end()) {
+                                            collectdualAxisDeveiceAddresses.push_back(addr);
+                                        }
                                     }
                                 }
+                                catch (const std::exception& e) {
+                                    std::cerr << "读取失败: 0x" << std::hex << (int)addr << " 错误: " << e.what() << std::endl;
+                                }
                             }
-                            catch (const std::exception& e) {
-                                std::cerr << "读取失败: 0x" << std::hex << (int)addr << " 错误: " << e.what() << std::endl;
-                            }
+						}
+                        else if (scaning == false)
+                        {
+							for (uint8_t addr : collectdualAxisDeveiceAddresses)
+							{
+								try {
+									auto& parser = *dualAxisParsers[addr];
+									auto angles = parser.readAngles();
+									std::lock_guard<std::mutex> lock(dataMutex);
+									dualAxisDataMap[addr] = angles;
+									std::cout <<"filtered_horizontal = " << angles.filtered_horizontal << std::endl;
+									std::cout <<"filtered_vertical = " << angles.filtered_vertical << std::endl;
+								}
+								catch (const std::exception& e) {
+									std::cerr << "读取失败: 0x" << std::hex << (int)addr << " 错误: " << e.what() << std::endl;
+								}
+							}
                         }
+                        
                         std::this_thread::sleep_for(std::chrono::milliseconds(5));
                     }
                     });
@@ -334,10 +359,12 @@ void ShowDualAxisSensor()
                     }
                     else {
                         ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"找不到该设备的解析器");
+                        std::cout << "找不到该设备的解析器" << std::endl;
                     }
                 }
                 catch (const std::exception& e) {
                     ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"设置失败: %s", e.what());
+                    std::cout << "设置失败" << std::endl;
                 }
             }
 
