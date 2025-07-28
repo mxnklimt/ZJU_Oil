@@ -84,7 +84,7 @@ void ShowBaudRateSelector(const char* const* baudRates, int baudRateCount, int& 
 
 RS485Manager serialDualAxis;
 std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
-std::vector<uint8_t> dualAxisDeviceAddresses = { 0x0C, 0x02 };//经过init以后，使得所有串口号进入
+std::vector<uint8_t> dualAxisDeviceAddresses = {  };//经过init以后，使得所有串口号进入
 static std::thread pollingThread;
 std::vector<uint8_t> collectdualAxisDeveiceAddresses;
 static std::unordered_map<uint8_t, bool> displayFlags;
@@ -114,6 +114,7 @@ void loadingAddress(uint8_t addr,double data1)
 		collectdualAxisDeveiceAddresses.push_back(addr);//将扫描到有数据的，已经连接的设备地址存入
     }
 }
+
 
 void ShowDualAxisSensor()
 {
@@ -165,7 +166,8 @@ void ShowDualAxisSensor()
     static bool isConnected = false;
     static std::atomic<bool> collecting = false;
     static std::thread pollingThread;
-
+    static std::thread dataThread;
+    static bool scaning = true;
     ImGui::Text(u8"串口配置");
     ShowSerialPortSelector(availablePorts, selectedPortIndex, u8"串口号");
     ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex, u8"波特率");
@@ -186,33 +188,35 @@ void ShowDualAxisSensor()
 
                 initializedualAxisParsers();
 
-                pollingThread = std::thread([] {
-                    for (uint8_t addr : dualAxisDeviceAddresses) {
-                        try {
-                            auto& parser = *dualAxisParsers[addr];
-                            auto angles = parser.readAngles();
+                pollingThread = std::thread([&] {
+                    while (collecting) {
+                        for (uint8_t addr : dualAxisDeviceAddresses) {
+                            try {
+                                auto& parser = *dualAxisParsers[addr];
+                                auto angles = parser.readAngles();
 
-                            if (angles.filtered_horizontal != 0 &&
-                                angles.filtered_horizontal < 360 &&
-                                angles.filtered_horizontal > -360) {
+                                // 只接受有效角度
+                                if (angles.filtered_horizontal != 0 &&
+                                    angles.filtered_horizontal < 360 &&
+                                    angles.filtered_horizontal > -360) {
 
-                                std::lock_guard<std::mutex> lock(dataMutex);
-                                dualAxisDataMap[addr] = angles;
+                                    std::lock_guard<std::mutex> lock(dataMutex);
+                                    dualAxisDataMap[addr] = angles;
 
-                                // 避免重复添加地址
-                                if (std::find(collectdualAxisDeveiceAddresses.begin(), collectdualAxisDeveiceAddresses.end(), addr) == collectdualAxisDeveiceAddresses.end()) {
-                                    collectdualAxisDeveiceAddresses.push_back(addr);
+                                    if (std::find(collectdualAxisDeveiceAddresses.begin(), collectdualAxisDeveiceAddresses.end(), addr) == collectdualAxisDeveiceAddresses.end()) {
+                                        collectdualAxisDeveiceAddresses.push_back(addr);
+                                    }
                                 }
-
-                                std::cout << "扫描成功: 0x" << std::hex << (int)addr << ", angle: " << angles.filtered_horizontal << std::endl;
+                            }
+                            catch (const std::exception& e) {
+                                std::cerr << "读取失败: 0x" << std::hex << (int)addr << " 错误: " << e.what() << std::endl;
                             }
                         }
-                        catch (const std::exception& e) {
-                            std::cerr << "读取失败: 0x" << std::hex << (int)addr << " 错误: " << e.what() << std::endl;
-                        }
+                        std::this_thread::sleep_for(std::chrono::milliseconds(5));
                     }
-                    collecting = false;
                     });
+
+
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"扫描失败: %s", e.what());
@@ -223,11 +227,13 @@ void ShowDualAxisSensor()
     {
         if (ImGui::Button(u8"停止扫描"))
         {
+            scaning = true;
             collecting = false;
             if (pollingThread.joinable())
                 pollingThread.join();
             isConnected = false;
             dualAxisParsers.clear();
+			collectdualAxisDeveiceAddresses.clear();
             displayFlags.clear();
         }
     }
@@ -324,6 +330,7 @@ void ShowDualAxisSensor()
                     if (it != dualAxisParsers.end()) {
                         it->second->changeSerialConfig(baudCode, 0x00, newAddr);
                         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"设置成功！");
+                        std::cout << "设置成功" << std::endl;
                     }
                     else {
                         ImGui::TextColored(ImVec4(1, 1, 0, 1), u8"找不到该设备的解析器");
