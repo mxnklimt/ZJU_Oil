@@ -157,6 +157,7 @@
     <ClInclude Include="JY61P\Com.h" />
     <ClInclude Include="JY61P\REG.h" />
     <ClInclude Include="JY61P\wit_c_sdk.h" />
+    <ClInclude Include="LaserSensor\LaserSensorProtocol.h" />
     <ClInclude Include="OpenXLSX\external\nowide\nowide\args.hpp" />
     <ClInclude Include="OpenXLSX\external\nowide\nowide\cenv.hpp" />
     <ClInclude Include="OpenXLSX\external\nowide\nowide\config.hpp" />
@@ -269,6 +270,7 @@
     <ClCompile Include="ui\sheetdata.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="imgui.ini" />
     <None Include="Implot\implot-master.zip" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

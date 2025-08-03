@@ -255,6 +255,9 @@
     <ClInclude Include="data\CollectData.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="LaserSensor\LaserSensorProtocol.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">
@@ -410,5 +413,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Implot\implot-master.zip" />
+    <None Include="imgui.ini" />
   </ItemGroup>
 </Project>

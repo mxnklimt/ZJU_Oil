@@ -1,3 +1,4 @@
+//RS485Manager.h
 #pragma once
 #define NOMINMAX
 #include <windows.h>
