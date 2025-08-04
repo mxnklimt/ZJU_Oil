@@ -4,6 +4,14 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <deque>
+#include <unordered_map>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 
 class LaserSensorProtocol {
 public:
@@ -22,8 +30,83 @@ public:
         return parseDistance(response);
     }
 
+    // 开始连续采集数据
+    void startContinuousCollection() {
+        if (!isCollecting) {
+            isCollecting = true;
+            collectedData.clear();
+            collectionThread = std::thread([this]() {
+                while (isCollecting) {
+                    try {
+                        auto distance = getDistance();
+                        auto now = std::chrono::system_clock::now();
+
+                        std::lock_guard<std::mutex> lock(dataMutex);
+                        collectedData.emplace_back(now, distance);
+                    }
+                    catch (const std::exception& e) {
+                        std::cerr << "采集数据时出错: " << e.what() << std::endl;
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 100ms采样间隔
+                }
+                });
+        }
+    }
+
+    // 停止连续采集并返回采集的数据
+    std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> stopContinuousCollection() {
+        if (isCollecting) {
+            isCollecting = false;
+            if (collectionThread.joinable()) {
+                collectionThread.join();
+            }
+
+            std::lock_guard<std::mutex> lock(dataMutex);
+            return collectedData;
+        }
+        return {};
+    }
+
+    // 保存采集的数据到Excel文件
+    void saveDataToExcel(const std::string& filePath) {
+        std::lock_guard<std::mutex> lock(dataMutex);
+
+        try {
+            OpenXLSX::XLDocument doc;
+            doc.create(filePath, false);
+            doc.open(filePath);
+            auto wks = doc.workbook().worksheet("Sheet1");
+
+            // 写入表头
+            wks.cell(1, 1).value() = "Time";
+            wks.cell(1, 2).value() = "Distance (mm)";
+
+            // 写入数据
+            for (size_t row = 0; row < collectedData.size(); ++row) {
+                const auto& [timestamp, distance] = collectedData[row];
+                auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+                std::tm tm;
+                localtime_s(&tm, &time_t);
+                std::ostringstream oss;
+                oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+                wks.cell(row + 2, 1).value() = oss.str();
+                wks.cell(row + 2, 2).value() = distance;
+            }
+
+            doc.save();
+            doc.close();
+        }
+        catch (const std::exception& e) {
+            throw std::runtime_error("保存数据到Excel失败: " + std::string(e.what()));
+        }
+    }
+
 private:
     RS485Manager& rs485Manager;
+    std::atomic<bool> isCollecting{ false };
+    std::thread collectionThread;
+    std::mutex dataMutex;
+    std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
 
     // 发送测距命令
     void sendDistanceCommand() {

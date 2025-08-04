@@ -13,6 +13,7 @@ public:
 	static std::vector<std::string> listAvailableSerialPorts();
 	static void ShowSynchronizedCapture();
 	static void ShowExcel();
+	static void ShowLaserSensor();
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;
 };

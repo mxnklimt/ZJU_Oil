@@ -30,6 +30,7 @@
 #include"wit_c_sdk.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
 #include"data/CollectData.h"
+#include"LaserSensor/LaserSensorProtocol.h"
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -39,6 +40,7 @@ void Application::ShowWindow()
     static bool show_plot3d_2 = true;
     static bool DualAxis = true;
     static bool SynchronizedCapture = true;
+	static bool show_laser_sensor = true; // 激光传感器选项
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -51,6 +53,7 @@ void Application::ShowWindow()
             ImGui::MenuItem("ADXL355", nullptr, &ADXL355);
             ImGui::MenuItem("JY61P", nullptr, &JY61P);
             ImGui::MenuItem("DualAxis", nullptr, &DualAxis);
+			ImGui::MenuItem("LaserSensor", nullptr, &show_laser_sensor); // 显示激光传感器选项
             ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
@@ -67,6 +70,12 @@ void Application::ShowWindow()
     //--------------------------------------------------------------------------------------------------------------------------------
     //读取Excel数据，显示图
     Application::ShowExcel();
+
+    //-------------------------------------------------------------------------------
+	if (show_laser_sensor) {
+		// 显示激光传感器数据
+		Application::ShowLaserSensor();
+	}
     
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
@@ -547,7 +556,7 @@ void Application::ShowDualAxisSensor() {
 
                             std::this_thread::sleep_for(std::chrono::milliseconds(10));
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     }
                     });
 
@@ -612,32 +621,45 @@ void Application::ShowDualAxisSensor() {
 
                 static_cast<int>(collectedData.size()));
         }
-        //Application::ShowSynchronizedCapture();
-        ImGui::Separator();
-        ImGui::Text(u8"选择要显示的数据设备：");
 
+        ImGui::Separator();
+
+        // 开始左右分栏布局
+
+        ImGui::Columns(2, "MainColumns", true);
+        ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);
+        ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);
+        // 左侧栏 - Checkbox选择
+        ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
+        //ImGui::Text(u8"选择要显示的数据设备：");
         for (uint8_t addr : dualAxisDeviceAddresses) {
             if (displayFlags.find(addr) == displayFlags.end())
                 displayFlags[addr] = false;
 
             char label[32];
-            sprintf_s(label, sizeof(label), u8"显示设备 0x%02X", addr);
+            sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
             ImGui::Checkbox(label, &displayFlags[addr]);
         }
+        ImGui::EndChild();
 
-        auto renderAngleCard = [](const char* label, float value) {
-            ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-            ImGui::Dummy(ImVec2(0.0f, 10.0f));
-            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
-            ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
-            ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-            ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
-            ImGui::EndChild();
-            ImGui::NextColumn();
-            };
+        // 切换到右侧栏
+        ImGui::NextColumn();
 
+        // 右侧栏 - 数据显示
+        ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
         {
+            auto renderAngleCard = [](const char* label, float value) {
+                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("000.0000 °").x) * 0.5f);
+                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °", value);
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"%s", label);
+                ImGui::EndChild();
+                ImGui::NextColumn();
+                };
+
             std::lock_guard<std::mutex> lock(dataMutex);
             for (uint8_t addr : dualAxisDeviceAddresses) {
                 if (!displayFlags[addr]) continue;
@@ -651,8 +673,6 @@ void Application::ShowDualAxisSensor() {
                     ImGui::PushID(addr);  // 避免 BeginChild 重名
                     ImGui::PushFont(DataFont);
                     ImGui::Columns(2, nullptr, false);
-
-                    
 
                     renderAngleCard(u8"水平角度", angles.filtered_horizontal);
                     renderAngleCard(u8"垂直角度", angles.filtered_vertical);
@@ -668,7 +688,10 @@ void Application::ShowDualAxisSensor() {
                 }
             }
         }
-        
+        ImGui::EndChild();
+
+        // 结束分栏
+        ImGui::Columns(1);
     }
 
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
@@ -1248,7 +1271,94 @@ void Application::ShowADXL355() {
     ImGui::End();
 }
 
+// 在应用程序类中添加激光传感器相关代码
+void Application::ShowLaserSensor() {
+    if (!ImGui::Begin("Laser Sensor")) {
+        ImGui::End();
+        return;
+    }
 
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 0;
+    static bool isConnected = false;
+    static std::unique_ptr<LaserSensorProtocol> laserSensor;
+
+    // 采集控制相关变量
+    static std::atomic<bool> isCollecting = false;
+    static std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
+
+    // 串口选择
+    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+    // 波特率选择
+    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
+                isConnected = true;
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            if (isCollecting) {
+                isCollecting = false;
+                collectedData = laserSensor->stopContinuousCollection();
+            }
+            serialManager.close();
+            isConnected = false;
+            laserSensor.reset();
+        }
+
+        // 单次测量
+        if (ImGui::Button(u8"单次测量")) {
+            try {
+                uint16_t distance = laserSensor->getDistance();
+                ImGui::Text("当前距离: %d mm", distance);
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "测量失败: %s", e.what());
+            }
+        }
+
+        // 连续采集控制
+        if (!isCollecting) {
+            if (ImGui::Button(u8"开始连续采集")) {
+                isCollecting = true;
+                laserSensor->startContinuousCollection();
+            }
+        }
+        else {
+            if (ImGui::Button(u8"停止采集并保存")) {
+                isCollecting = false;
+                collectedData = laserSensor->stopContinuousCollection();
+
+                try {
+                    std::string saveFilePath = generateUniqueFileName("LaserSensor_data");
+                    laserSensor->saveDataToExcel(saveFilePath);
+                    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+                }
+                catch (const std::exception& e) {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+                }
+            }
+
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据...");
+        }
+    }
+
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+    ImGui::End();
+}
 
 
 void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selectedIndex, const char* label) {
