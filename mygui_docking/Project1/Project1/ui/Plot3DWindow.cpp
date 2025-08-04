@@ -876,6 +876,76 @@ void Application::ShowJY61P() {
                 if (dataCollectionThread.joinable())
                     dataCollectionThread.join();
 
+                //try {
+                //    std::string saveFilePath = generateUniqueFileName("JY61P_data");
+                //    OpenXLSX::XLDocument doc;
+                //    doc.create(saveFilePath, false);
+                //    doc.open(saveFilePath);
+                //    auto wks = doc.workbook().worksheet("Sheet1");
+
+                //    // 写入表头
+                //    wks.cell(1, 1).value() = "Time";
+                //    int col = 2;
+                //    for (uint8_t addr : jy61pDeviceAddresses) {
+                //        std::stringstream ss;
+                //        ss << "Device 0x" << std::uppercase << std::hex
+                //            << std::setw(2) << std::setfill('0') << (int)addr;
+
+                //        wks.cell(1, col++) = ss.str() + " Accel X";
+                //        wks.cell(1, col++) = ss.str() + " Accel Y";
+                //        wks.cell(1, col++) = ss.str() + " Accel Z";
+
+                //        wks.cell(1, col++) = ss.str() + " Gyro X";
+                //        wks.cell(1, col++) = ss.str() + " Gyro Y";
+                //        wks.cell(1, col++) = ss.str() + " Gyro Z";
+
+                //        wks.cell(1, col++) = ss.str() + " Angle X";
+                //        wks.cell(1, col++) = ss.str() + " Angle Y";
+                //        wks.cell(1, col++) = ss.str() + " Angle Z";
+                //    }
+
+                //    // 写入数据
+                //    std::lock_guard<std::mutex> lock(collectedDataMutex);
+                //    for (size_t row = 0; row < collectedData.size(); ++row) {
+                //        const auto& [timestamp, snapshot] = collectedData[row];
+
+                //        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+                //        std::tm tm;
+                //        localtime_s(&tm, &time_t);
+                //        std::ostringstream oss;
+                //        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+                //        wks.cell(row + 2, 1).value() = oss.str();
+
+                //        int col = 2;
+                //        for (uint8_t addr : jy61pDeviceAddresses) {
+                //            if (snapshot.find(addr) != snapshot.end()) {
+                //                const auto& angle = snapshot.at(addr);
+                //                wks.cell(row + 2, col++) = angle.a[0];
+                //                wks.cell(row + 2, col++) = angle.a[1];
+                //                wks.cell(row + 2, col++) = angle.a[2];
+
+                //                wks.cell(row + 2, col++) = angle.w[0];
+                //                wks.cell(row + 2, col++) = angle.w[1];
+                //                wks.cell(row + 2, col++) = angle.w[2];
+
+                //                wks.cell(row + 2, col++) = angle.Angle[0];
+                //                wks.cell(row + 2, col++) = angle.Angle[1];
+                //                wks.cell(row + 2, col++) = angle.Angle[2];
+                //            }
+                //            else {
+                //                col += 9; // 跳过无数据设备
+                //            }
+                //        }
+                //    }
+
+                //    doc.save();
+                //    doc.close();
+
+                //    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+                //}
+                //catch (const std::exception& e) {
+                //    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+                //}
                 try {
                     std::string saveFilePath = generateUniqueFileName("JY61P_data");
                     OpenXLSX::XLDocument doc;
@@ -885,55 +955,58 @@ void Application::ShowJY61P() {
 
                     // 写入表头
                     wks.cell(1, 1).value() = "Time";
-                    int col = 2;
-                    for (uint8_t addr : jy61pDeviceAddresses) {
-                        std::stringstream ss;
-                        ss << "Device 0x" << std::uppercase << std::hex
-                            << std::setw(2) << std::setfill('0') << (int)addr;
-
-                        wks.cell(1, col++) = ss.str() + " Accel X";
-                        wks.cell(1, col++) = ss.str() + " Accel Y";
-                        wks.cell(1, col++) = ss.str() + " Accel Z";
-
-                        wks.cell(1, col++) = ss.str() + " Gyro X";
-                        wks.cell(1, col++) = ss.str() + " Gyro Y";
-                        wks.cell(1, col++) = ss.str() + " Gyro Z";
-
-                        wks.cell(1, col++) = ss.str() + " Angle X";
-                        wks.cell(1, col++) = ss.str() + " Angle Y";
-                        wks.cell(1, col++) = ss.str() + " Angle Z";
-                    }
+                    wks.cell(1, 2).value() = "Device Addr";
+                    wks.cell(1, 3).value() = "Accel X";
+                    wks.cell(1, 4).value() = "Accel Y";
+                    wks.cell(1, 5).value() = "Accel Z";
+                    wks.cell(1, 6).value() = "Gyro X";
+                    wks.cell(1, 7).value() = "Gyro Y";
+                    wks.cell(1, 8).value() = "Gyro Z";
+                    wks.cell(1, 9).value() = "Angle X";
+                    wks.cell(1, 10).value() = "Angle Y";
+                    wks.cell(1, 11).value() = "Angle Z";
 
                     // 写入数据
                     std::lock_guard<std::mutex> lock(collectedDataMutex);
-                    for (size_t row = 0; row < collectedData.size(); ++row) {
-                        const auto& [timestamp, snapshot] = collectedData[row];
+                    int row = 2; // 从第2行开始写入数据
 
+                    for (const auto& [timestamp, snapshot] : collectedData) {
                         auto time_t = std::chrono::system_clock::to_time_t(timestamp);
                         std::tm tm;
                         localtime_s(&tm, &time_t);
                         std::ostringstream oss;
                         oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-                        wks.cell(row + 2, 1).value() = oss.str();
+                        std::string timeStr = oss.str();
 
-                        int col = 2;
                         for (uint8_t addr : jy61pDeviceAddresses) {
                             if (snapshot.find(addr) != snapshot.end()) {
                                 const auto& angle = snapshot.at(addr);
-                                wks.cell(row + 2, col++) = angle.a[0];
-                                wks.cell(row + 2, col++) = angle.a[1];
-                                wks.cell(row + 2, col++) = angle.a[2];
 
-                                wks.cell(row + 2, col++) = angle.w[0];
-                                wks.cell(row + 2, col++) = angle.w[1];
-                                wks.cell(row + 2, col++) = angle.w[2];
+                                // 写入时间戳
+                                wks.cell(row, 1).value() = timeStr;
 
-                                wks.cell(row + 2, col++) = angle.Angle[0];
-                                wks.cell(row + 2, col++) = angle.Angle[1];
-                                wks.cell(row + 2, col++) = angle.Angle[2];
-                            }
-                            else {
-                                col += 9; // 跳过无数据设备
+                                // 写入设备地址
+                                std::stringstream addr_ss;
+                                addr_ss << "0x" << std::uppercase << std::hex
+                                    << std::setw(2) << std::setfill('0') << (int)addr;
+                                wks.cell(row, 2).value() = addr_ss.str();
+
+                                // 写入加速度数据
+                                wks.cell(row, 3).value() = angle.a[0];
+                                wks.cell(row, 4).value() = angle.a[1];
+                                wks.cell(row, 5).value() = angle.a[2];
+
+                                // 写入陀螺仪数据
+                                wks.cell(row, 6).value() = angle.w[0];
+                                wks.cell(row, 7).value() = angle.w[1];
+                                wks.cell(row, 8).value() = angle.w[2];
+
+                                // 写入角度数据
+                                wks.cell(row, 9).value() = angle.Angle[0];
+                                wks.cell(row, 10).value() = angle.Angle[1];
+                                wks.cell(row, 11).value() = angle.Angle[2];
+
+                                row++; // 移动到下一行
                             }
                         }
                     }
@@ -954,55 +1027,77 @@ void Application::ShowJY61P() {
                 static_cast<int>(collectedData.size()));
         }
 
-        ImGui::Separator();
-        ImGui::Text(u8"选择要显示的数据设备：");
-        for (uint8_t addr : jy61pDeviceAddresses) {
-            if (displayFlags.find(addr) == displayFlags.end())
-                displayFlags[addr] = false;
+        // 设备选择与显示
+        if (!jy61pDeviceAddresses.empty()) {
+            // 开始左右分栏布局，左侧20%，右侧80%
+            ImGui::Columns(2, "MainColumns", false);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);  // 左侧占20%
+            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);  // 右侧占80%
 
-            char label[32];
-            sprintf_s(label, sizeof(label), u8"显示设备 0x%02X", addr);
-            ImGui::Checkbox(label, &displayFlags[addr]);
-        }
-
-        std::lock_guard<std::mutex> lock(jy61pDataMutex);
-        for (uint8_t addr : jy61pDeviceAddresses) {
-            if (!displayFlags[addr]) continue;
-            if (jy61pDataMap[addr].dataQue.empty()) continue;
-
-            auto& data = jy61pDataMap[addr].dataQue.back();
+            // 左侧栏 - Checkbox选择
+            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
             ImGui::Separator();
-            ImGui::Text(u8"当前显示设备: 0x%02X", addr);
-            extern ImFont* DataFont;
-            ImGui::PushID(addr);
-            ImGui::PushFont(DataFont);
-            ImGui::Columns(3, nullptr, false);
+            ImGui::Text(u8"选择要显示的数据设备：");
+            for (uint8_t addr : jy61pDeviceAddresses) {
+                if (displayFlags.find(addr) == displayFlags.end())
+                    displayFlags[addr] = false;
 
-            auto renderCard = [](const char* label, float value, ImVec4 color, const char* fmt) {
-                ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-                ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(fmt).x) * 0.5f);
-                ImGui::TextColored(color, fmt, value);
-                ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-                ImGui::EndChild();
-                ImGui::NextColumn();
-                };
+                char label[32];
+                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
+                ImGui::Checkbox(label, &displayFlags[addr]);
+            }
+            ImGui::EndChild();
 
-            renderCard(u8"加速度X", data.a[0], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
-            renderCard(u8"加速度Y", data.a[1], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
-            renderCard(u8"加速度Z", data.a[2], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
-            renderCard(u8"角速度X", data.w[0], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
-            renderCard(u8"角速度Y", data.w[1], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
-            renderCard(u8"角速度Z", data.w[2], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
-            renderCard(u8"角度X", data.Angle[0], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
-            renderCard(u8"角度Y", data.Angle[1], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
-            renderCard(u8"角度Z", data.Angle[2], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+            // 切换到右侧栏
+            ImGui::NextColumn();
 
+            // 右侧栏 - 数据显示
+            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+            {
+                std::lock_guard<std::mutex> lock(jy61pDataMutex);
+                for (uint8_t addr : jy61pDeviceAddresses) {
+                    if (!displayFlags[addr]) continue;
+                    if (jy61pDataMap[addr].dataQue.empty()) continue;
+
+                    auto& data = jy61pDataMap[addr].dataQue.back();
+                    ImGui::Separator();
+                    ImGui::Text(u8"0x%02X", addr);
+                    extern ImFont* DataFont;
+                    ImGui::PushID(addr);
+                    ImGui::PushFont(DataFont);
+                    ImGui::Columns(3, nullptr, false);
+
+                    auto renderCard = [](const char* label, float value, ImVec4 color, const char* fmt) {
+                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(fmt).x) * 0.5f);
+                        ImGui::TextColored(color, fmt, value);
+                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                        ImGui::EndChild();
+                        ImGui::NextColumn();
+                        };
+
+                    renderCard(u8"加速度X", data.a[0], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+                    renderCard(u8"加速度Y", data.a[1], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+                    renderCard(u8"加速度Z", data.a[2], ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g");
+                    renderCard(u8"角速度X", data.w[0], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+                    renderCard(u8"角速度Y", data.w[1], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+                    renderCard(u8"角速度Z", data.w[2], ImVec4(0.4f, 0.8f, 1.0f, 1.0f), u8"%.4f °/s");
+                    renderCard(u8"角度X", data.Angle[0], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+                    renderCard(u8"角度Y", data.Angle[1], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+                    renderCard(u8"角度Z", data.Angle[2], ImVec4(0.6f, 1.0f, 0.6f, 1.0f), u8"%.4f °");
+
+                    ImGui::Columns(1);
+                    ImGui::PopFont();
+                    ImGui::PopID();
+                }
+            }
+            ImGui::EndChild();
+
+            // 结束分栏
             ImGui::Columns(1);
-            ImGui::PopFont();
-            ImGui::PopID();
         }
     }
 
@@ -1031,7 +1126,7 @@ void Application::ShowADXL355() {
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-    static int selectedBaudIndex = 0;
+    static int selectedBaudIndex = 4;
     static bool isConnected = false;
     static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
 
@@ -1153,6 +1248,55 @@ void Application::ShowADXL355() {
                 if (adxl355CollectionThread.joinable())
                     adxl355CollectionThread.join();
 
+                //try {
+                //    std::string saveFilePath = generateUniqueFileName("ADXL355_data");
+                //    OpenXLSX::XLDocument doc;
+                //    doc.create(saveFilePath, false);
+                //    doc.open(saveFilePath);
+                //    auto wks = doc.workbook().worksheet("Sheet1");
+
+                //    // 写入表头
+                //    wks.cell(1, 1).value() = "Time";
+                //    int col = 2;
+                //    for (uint8_t addr : adxl355DeviceAddresses) {
+                //        std::stringstream ss;
+                //        ss << "Device 0x" << std::uppercase << std::hex
+                //            << std::setw(2) << std::setfill('0') << (int)addr;
+                //        wks.cell(1, col++) = ss.str() + " Accel X";
+                //        wks.cell(1, col++) = ss.str() + " Accel Y";
+                //        wks.cell(1, col++) = ss.str() + " Accel Z";
+                //    }
+
+                //    // 写入数据
+                //    std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
+                //    for (size_t row = 0; row < adxl355CollectedData.size(); ++row) {
+                //        const auto& [timestamp, snapshot] = adxl355CollectedData[row];
+                //        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+                //        std::tm tm;
+                //        localtime_s(&tm, &time_t);
+                //        std::ostringstream oss;
+                //        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+                //        wks.cell(row + 2, 1).value() = oss.str();
+
+                //        int col = 2;
+                //        for (uint8_t addr : adxl355DeviceAddresses) {
+                //            if (snapshot.find(addr) != snapshot.end()) {
+                //                const auto& data = snapshot.at(addr);
+                //                wks.cell(row + 2, col++) = data.x;
+                //                wks.cell(row + 2, col++) = data.y;
+                //                wks.cell(row + 2, col++) = data.z;
+                //            }
+                //            else {
+                //                col += 3;
+                //            }
+                //        }
+                //    }
+
+                //    doc.save();
+                //    doc.close();
+
+                //    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+                //}
                 try {
                     std::string saveFilePath = generateUniqueFileName("ADXL355_data");
                     OpenXLSX::XLDocument doc;
@@ -1162,37 +1306,41 @@ void Application::ShowADXL355() {
 
                     // 写入表头
                     wks.cell(1, 1).value() = "Time";
-                    int col = 2;
-                    for (uint8_t addr : adxl355DeviceAddresses) {
-                        std::stringstream ss;
-                        ss << "Device 0x" << std::uppercase << std::hex
-                            << std::setw(2) << std::setfill('0') << (int)addr;
-                        wks.cell(1, col++) = ss.str() + " Accel X";
-                        wks.cell(1, col++) = ss.str() + " Accel Y";
-                        wks.cell(1, col++) = ss.str() + " Accel Z";
-                    }
+                    wks.cell(1, 2).value() = "Device Addr";
+                    int col = 3;
+                    wks.cell(1, col++).value() = "Accel X";
+                    wks.cell(1, col++).value() = "Accel Y";
+                    wks.cell(1, col++).value() = "Accel Z";
 
                     // 写入数据
                     std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
-                    for (size_t row = 0; row < adxl355CollectedData.size(); ++row) {
-                        const auto& [timestamp, snapshot] = adxl355CollectedData[row];
+                    int row = 2; // 从第2行开始写入数据
+                    for (const auto& [timestamp, snapshot] : adxl355CollectedData) {
                         auto time_t = std::chrono::system_clock::to_time_t(timestamp);
                         std::tm tm;
                         localtime_s(&tm, &time_t);
                         std::ostringstream oss;
                         oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-                        wks.cell(row + 2, 1).value() = oss.str();
 
-                        int col = 2;
                         for (uint8_t addr : adxl355DeviceAddresses) {
                             if (snapshot.find(addr) != snapshot.end()) {
                                 const auto& data = snapshot.at(addr);
-                                wks.cell(row + 2, col++) = data.x;
-                                wks.cell(row + 2, col++) = data.y;
-                                wks.cell(row + 2, col++) = data.z;
-                            }
-                            else {
-                                col += 3;
+
+                                // 写入时间戳
+                                wks.cell(row, 1).value() = oss.str();
+
+                                // 写入设备地址
+                                std::stringstream addr_ss;
+                                addr_ss << "0x" << std::uppercase << std::hex
+                                    << std::setw(2) << std::setfill('0') << (int)addr;
+                                wks.cell(row, 2).value() = addr_ss.str();
+
+                                // 写入加速度数据
+                                wks.cell(row, 3).value() = data.x;
+                                wks.cell(row, 4).value() = data.y;
+                                wks.cell(row, 5).value() = data.z;
+
+                                row++; // 移动到下一行
                             }
                         }
                     }
@@ -1202,6 +1350,7 @@ void Application::ShowADXL355() {
 
                     ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
                 }
+                
                 catch (const std::exception& e) {
                     ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
                 }
@@ -1213,7 +1362,15 @@ void Application::ShowADXL355() {
         }
 
         // 设备选择与显示
+        // 设备选择与显示
         if (!adxl355DeviceAddresses.empty()) {
+            // 开始左右分栏布局，左侧20%，右侧80%
+            ImGui::Columns(2, "ADXL355DisplayColumns", false);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);  // 左侧占20%
+            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);  // 右侧占80%
+
+            // 左侧栏 - Checkbox选择
+            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
             ImGui::Separator();
             for (uint8_t addr : adxl355DeviceAddresses) {
                 if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
@@ -1223,47 +1380,59 @@ void Application::ShowADXL355() {
                 sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
                 ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
             }
+            ImGui::EndChild();
 
-            std::lock_guard<std::mutex> lock(ADXL355Mutex);
-            for (uint8_t addr : adxl355DeviceAddresses) {
-                if (!deviceDisplayFlags[addr]) continue;
+            // 切换到右侧栏
+            ImGui::NextColumn();
 
-                auto it = adxl355DataMap.find(addr);
-                if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
-                    const auto& data = it->second.dataQue.back();
+            // 右侧栏 - 数据显示
+            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+            {
+                std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                for (uint8_t addr : adxl355DeviceAddresses) {
+                    if (!deviceDisplayFlags[addr]) continue;
 
-                    extern ImFont* DataFont;
-                    ImGui::Separator();
-                    ImGui::Text(u8"设备 0x%02X", addr);
-                    ImGui::PushID(addr);
-                    ImGui::PushFont(DataFont);
-                    ImGui::Columns(3, nullptr, false);
+                    auto it = adxl355DataMap.find(addr);
+                    if (it != adxl355DataMap.end() && !it->second.dataQue.empty()) {
+                        const auto& data = it->second.dataQue.back();
 
-                    auto renderAccelCard = [](const char* label, float value) {
-                        ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-                        ImGui::Dummy(ImVec2(0.0f, 10.0f));
-                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
-                        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
-                        ImGui::Dummy(ImVec2(0.0f, 5.0f));
-                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
-                        ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
-                        ImGui::EndChild();
-                        ImGui::NextColumn();
-                        };
+                        extern ImFont* DataFont;
+                        ImGui::Separator();
+                        ImGui::Text(u8"设备 0x%02X", addr);
+                        ImGui::PushID(addr);
+                        ImGui::PushFont(DataFont);
+                        ImGui::Columns(3, nullptr, false);
 
-                    renderAccelCard(u8"加速度X", data.x);
-                    renderAccelCard(u8"加速度Y", data.y);
-                    renderAccelCard(u8"加速度Z", data.z);
+                        auto renderAccelCard = [](const char* label, float value) {
+                            ImGui::BeginChild(label, ImVec2(0, 120), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                            ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0.0000 g").x) * 0.5f);
+                            ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.4f g", value);
+                            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                            ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                            ImGui::EndChild();
+                            ImGui::NextColumn();
+                            };
 
-                    ImGui::Columns(1);
-                    ImGui::PopFont();
-                    ImGui::PopID();
+                        renderAccelCard(u8"加速度X", data.x);
+                        renderAccelCard(u8"加速度Y", data.y);
+                        renderAccelCard(u8"加速度Z", data.z);
+
+                        ImGui::Columns(1);
+                        ImGui::PopFont();
+                        ImGui::PopID();
+                    }
+                    else {
+                        ImGui::Separator();
+                        ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+                    }
                 }
-                else {
-                    ImGui::Separator();
-                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
-                }
-            }
+    }
+            ImGui::EndChild();
+
+            // 结束分栏
+            ImGui::Columns(1);
         }
     }
 
