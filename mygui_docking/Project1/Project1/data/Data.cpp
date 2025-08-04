@@ -14,7 +14,7 @@ std::mutex ADXL355Mutex;
 std::atomic<bool> collectingADXL355 = false;
 std::thread adxl355Thread;       //线程
 ADXL355Data adxl355Data;         //数据结构
-std::vector<uint8_t> adxl355DeviceAddresses = { 0x00 ,0x01 };
+std::vector<uint8_t> adxl355DeviceAddresses = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
 std::map<uint8_t, std::thread> adxl355Threads;
 std::map<uint8_t, ADXL355Data> adxl355DataMap;
 std::map<uint8_t, ADXL355Parser> adxl355Parsers;
@@ -30,7 +30,7 @@ std::thread JY61PThread;       //线程
 std::mutex JY61PMutex;
 std::deque<JY61PData> JY61PData_dataQue; // 存储数据的队列
 JY61PData jy61pData;
-std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C, 0x0D };
+std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 //DualAxis数据
