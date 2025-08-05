@@ -31,6 +31,7 @@
 #include"DualAxisSensor/DualAxisSensorParser.h"
 #include"data/CollectData.h"
 #include"LaserSensor/LaserSensorProtocol.h"
+#include"EMA/EmaFilter.h"
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -545,6 +546,11 @@ void Application::ShowDualAxisSensor() {
                                 auto& parser = *dualAxisParsers[addr];
                                 auto angles = parser.readAngles();
 
+                                // 使用外部的 emaFilterManager 和 alpha
+                                emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
+                                angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
+                                angles.EMA_vertical = emaFilterManager.getVertical(addr);
+
                                 {
                                     std::lock_guard<std::mutex> lock(dataMutex);
                                     dualAxisDataMap[addr] = angles;
@@ -559,7 +565,6 @@ void Application::ShowDualAxisSensor() {
                         std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     }
                     });
-
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"连接失败: %s", e.what());
@@ -600,7 +605,7 @@ void Application::ShowDualAxisSensor() {
                             collectedData.emplace_back(now, currentData);
                         }
 
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                        std::this_thread::sleep_for(std::chrono::seconds(10));
                     }
                     });
             }

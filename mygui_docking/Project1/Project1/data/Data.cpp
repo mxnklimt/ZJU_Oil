@@ -33,12 +33,16 @@ JY61PData jy61pData;
 std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+
 //DualAxis数据
 RS485Manager serialDualAxis;
-//std::vector<uint8_t> dualAxisDeviceAddresses = { 0x03, 0x0C };
-std::vector<uint8_t> dualAxisDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };
+std::vector<uint8_t> dualAxisDeviceAddresses = { 0x03, 0x0C };
+//std::vector<uint8_t> dualAxisDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };
 std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 std::mutex dualAxisMutex;
 //map中的uint8是0x01, 0x02, 0x03等设备地址
 //std::unique_ptr是指向这个类的智能指针，unique_ptr 表示独占所有权：一个对象只能被一个指针拥有，不能复制，只能移动
 std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
+
+std::map<uint8_t, double>dualAxis_Save1;
+std::map<uint8_t, double>dualAxis_Save2;

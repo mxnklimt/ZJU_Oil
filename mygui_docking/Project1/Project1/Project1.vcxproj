@@ -140,6 +140,7 @@
     <ClInclude Include="data\CollectData.h" />
     <ClInclude Include="data\Data.h" />
     <ClInclude Include="DualAxisSensor\DualAxisSensorParser.h" />
+    <ClInclude Include="EMA\EmaFilter.h" />
     <ClInclude Include="file\ReadFile.h" />
     <ClInclude Include="Imgui\imconfig.h" />
     <ClInclude Include="Imgui\imgui.h" />
@@ -219,6 +220,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="data\Data.cpp" />
+    <ClCompile Include="EMA\EmaFilter.cpp" />
     <ClCompile Include="file\ReadFile.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />
     <ClCompile Include="Imgui\imgui_demo.cpp" />

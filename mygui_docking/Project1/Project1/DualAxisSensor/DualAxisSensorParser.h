@@ -36,6 +36,8 @@ public:
         double filtered_vertical;    // 滤波后的垂直轴角度
         double raw_horizontal;       // 原始水平轴角度
         double raw_vertical;         // 原始垂直轴角度
+        double EMA_horizontal;       // EMA指数平滑法滤波后的数据
+        double EMA_vertical;         // EMA指数平滑后的数据
     };
 
     // 构造函数
@@ -82,7 +84,6 @@ public:
         data.filtered_vertical = parseAngle(response[5], response[6]);
         data.raw_horizontal = parseAngle(response[7], response[8]);
         data.raw_vertical = parseAngle(response[9], response[10]);
-
         return data;
     }
 

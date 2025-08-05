@@ -72,3 +72,5 @@ extern std::vector<uint8_t> dualAxisDeviceAddresses;
 extern RS485Manager serialDualAxis;
 extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 extern std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
+extern struct save;
+extern std::map<uint8_t, save>dualAxis_Save;
