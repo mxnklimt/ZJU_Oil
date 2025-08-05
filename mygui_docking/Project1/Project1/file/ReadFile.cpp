@@ -113,6 +113,8 @@ void StopAndSaveDualAxisData(
         wks.cell(1, 4).value() = "Filtered Vertical";
         wks.cell(1, 5).value() = "Raw Horizontal";
         wks.cell(1, 6).value() = "Raw Vertical";
+		wks.cell(1, 7).value() = "EMA Horizontal";
+		wks.cell(1, 8).value() = "EMA Vertical";
 
         // Êý¾Ý
         std::lock_guard<std::mutex> lock(collectedDataMutex);
@@ -141,7 +143,8 @@ void StopAndSaveDualAxisData(
                     wks.cell(row, 4).value() = angles.filtered_vertical;
                     wks.cell(row, 5).value() = angles.raw_horizontal;
                     wks.cell(row, 6).value() = angles.raw_vertical;
-
+					wks.cell(row, 7).value() = angles.EMA_horizontal;
+					wks.cell(row, 8).value() = angles.EMA_vertical;
                     row++;
                 }
             }

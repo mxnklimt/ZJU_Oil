@@ -539,32 +539,131 @@ void Application::ShowDualAxisSensor() {
 				// 初始化设备地址列表
                 initializedualAxisParsers();
 				// 启动数据采集线程
+                //pollingThread = std::thread([] {
+                //    while (collecting) {
+                //        for (uint8_t addr : dualAxisDeviceAddresses) {
+                //            try {
+                //                auto& parser = *dualAxisParsers[addr];
+                //                auto angles = parser.readAngles();
+
+                //                // 使用外部的 emaFilterManager 和 alpha
+                //                emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
+                //                angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
+                //                angles.EMA_vertical = emaFilterManager.getVertical(addr);
+
+                //                {
+                //                    std::lock_guard<std::mutex> lock(dataMutex);
+                //                    dualAxisDataMap[addr] = angles;
+                //                }
+                //            }
+                //            catch (const std::exception& e) {
+                //                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
+                //            }
+
+                //            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                //        }
+                //        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                //    }
+                //    });
+                
+                //pollingThread = std::thread([] {
+                //    while (collecting) {
+                //        std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
+
+                //        for (uint8_t addr : dualAxisDeviceAddresses) {
+                //            try {
+                //                auto& parser = *dualAxisParsers[addr];
+                //                auto angles = parser.readAngles(); // 当前读取的角度数据
+
+                //                // 获取10秒前的滤波值作为 EMA 的前一时刻
+                //                double prevH = 0.0, prevV = 0.0;
+                //                if (lastFilteredMap.count(addr)) {
+                //                    prevH = lastFilteredMap[addr].first;
+                //                    prevV = lastFilteredMap[addr].second;
+                //                }
+
+                //                // 进行EMA计算（使用10秒前的数据）
+                //                emaFilterManager.update(addr, prevH, prevV, angles.filtered_horizontal, angles.filtered_vertical, alpha);
+                //                angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
+                //                angles.EMA_vertical = emaFilterManager.getVertical(addr);
+
+                //                // 保存当前filtered作为下一轮的“10秒前数据”
+                //                lastFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
+
+                //                // 缓存到 newDataMap
+                //                angleDataMap[addr] = angles;
+                //            }
+                //            catch (const std::exception& e) {
+                //                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
+                //            }
+
+                //            std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // 避免读串口太快
+                //        }
+
+                //        // 一轮采集后更新共享数据
+                //        {
+                //            std::lock_guard<std::mutex> lock(dataMutex);
+                //            dualAxisDataMap = std::move(angleDataMap);
+                //        }
+
+                //        std::this_thread::sleep_for(std::chrono::seconds(0)); // 等待0秒进入下一轮
+                //    }
+                //    });
                 pollingThread = std::thread([] {
+                    std::map<uint8_t, std::pair<double, double>> previousFilteredMap;  // 上一轮采集的 filtered 值
+
                     while (collecting) {
+                        std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
+                        std::map<uint8_t, std::pair<double, double>> currentFilteredMap;  // 当前这轮采集得到的 filtered
+
                         for (uint8_t addr : dualAxisDeviceAddresses) {
                             try {
                                 auto& parser = *dualAxisParsers[addr];
                                 auto angles = parser.readAngles();
 
-                                // 使用外部的 emaFilterManager 和 alpha
-                                emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
-                                angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
-                                angles.EMA_vertical = emaFilterManager.getVertical(addr);
-
-                                {
-                                    std::lock_guard<std::mutex> lock(dataMutex);
-                                    dualAxisDataMap[addr] = angles;
+                                // 从上一轮采集中取出“10秒前”的 filtered 值
+                                double prevH = 0.0, prevV = 0.0;
+                                if (previousFilteredMap.count(addr)) {
+                                    prevH = previousFilteredMap[addr].first;
+                                    prevV = previousFilteredMap[addr].second;
                                 }
+                                if (!emaFilterManager.has(addr)) {
+                                    // 第一次采集：用 filtered 初始化
+                                    emaFilterManager.set(addr, angles.filtered_horizontal, angles.filtered_vertical);
+                                    angles.EMA_horizontal = angles.filtered_horizontal;
+                                    angles.EMA_vertical = angles.filtered_vertical;
+                                }
+                                else {
+                                    emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
+                                    angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
+                                    angles.EMA_vertical = emaFilterManager.getVertical(addr);
+                                }
+                                // 存储当前这轮的 filtered，稍后再整体替换 previousFilteredMap
+                                currentFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
+
+                                // 存储到本地缓存
+                                angleDataMap[addr] = angles;
                             }
                             catch (const std::exception& e) {
                                 std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
                             }
 
-                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                            std::this_thread::sleep_for(std::chrono::milliseconds(1000));  // 每个设备采集间隔
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+                        // 全部采集完后：统一更新 shared map
+                        {
+                            std::lock_guard<std::mutex> lock(dataMutex);
+                            dualAxisDataMap = std::move(angleDataMap);
+                        }
+
+                        // 替换 previousFilteredMap 为当前这轮的 filtered，用于下一轮 EMA
+                        previousFilteredMap = std::move(currentFilteredMap);
+
+                        // 每轮间隔 0 秒（实际总耗时就是设备个数 * 1 秒）
                     }
                     });
+
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"连接失败: %s", e.what());
@@ -622,9 +721,9 @@ void Application::ShowDualAxisSensor() {
             }
             // 显示采集状态
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据... 已记录 %d 条",
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据... 已记录 %d 行",
 
-                static_cast<int>(collectedData.size()));
+                static_cast<int>(collectedData.size())*10);
         }
 
         ImGui::Separator();
