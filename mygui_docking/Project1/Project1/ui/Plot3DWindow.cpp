@@ -298,7 +298,13 @@ void Application::ShowSynchronizedCapture() {
 
                 SaveJY61PToXLSX(jy61pBuffer);
                 SaveADXL355ToXLSX(adxl355Buffer);
-                SaveDualAxisToXLSX(dualAxisBuffer);
+                /*SaveDualAxisToXLSX(dualAxisBuffer);*/
+                SaveDualAxisToXLSX(
+                    dualAxisBuffer,
+                    dualAxisDeviceAddresses,
+                    "DualAxis_sync",
+                    dataMutex
+                );
                 });
         }
     }
@@ -539,76 +545,6 @@ void Application::ShowDualAxisSensor() {
 				// 初始化设备地址列表
                 initializedualAxisParsers();
 				// 启动数据采集线程
-                //pollingThread = std::thread([] {
-                //    while (collecting) {
-                //        for (uint8_t addr : dualAxisDeviceAddresses) {
-                //            try {
-                //                auto& parser = *dualAxisParsers[addr];
-                //                auto angles = parser.readAngles();
-
-                //                // 使用外部的 emaFilterManager 和 alpha
-                //                emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
-                //                angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
-                //                angles.EMA_vertical = emaFilterManager.getVertical(addr);
-
-                //                {
-                //                    std::lock_guard<std::mutex> lock(dataMutex);
-                //                    dualAxisDataMap[addr] = angles;
-                //                }
-                //            }
-                //            catch (const std::exception& e) {
-                //                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
-                //            }
-
-                //            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                //        }
-                //        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                //    }
-                //    });
-                
-                //pollingThread = std::thread([] {
-                //    while (collecting) {
-                //        std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
-
-                //        for (uint8_t addr : dualAxisDeviceAddresses) {
-                //            try {
-                //                auto& parser = *dualAxisParsers[addr];
-                //                auto angles = parser.readAngles(); // 当前读取的角度数据
-
-                //                // 获取10秒前的滤波值作为 EMA 的前一时刻
-                //                double prevH = 0.0, prevV = 0.0;
-                //                if (lastFilteredMap.count(addr)) {
-                //                    prevH = lastFilteredMap[addr].first;
-                //                    prevV = lastFilteredMap[addr].second;
-                //                }
-
-                //                // 进行EMA计算（使用10秒前的数据）
-                //                emaFilterManager.update(addr, prevH, prevV, angles.filtered_horizontal, angles.filtered_vertical, alpha);
-                //                angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
-                //                angles.EMA_vertical = emaFilterManager.getVertical(addr);
-
-                //                // 保存当前filtered作为下一轮的“10秒前数据”
-                //                lastFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
-
-                //                // 缓存到 newDataMap
-                //                angleDataMap[addr] = angles;
-                //            }
-                //            catch (const std::exception& e) {
-                //                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
-                //            }
-
-                //            std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // 避免读串口太快
-                //        }
-
-                //        // 一轮采集后更新共享数据
-                //        {
-                //            std::lock_guard<std::mutex> lock(dataMutex);
-                //            dualAxisDataMap = std::move(angleDataMap);
-                //        }
-
-                //        std::this_thread::sleep_for(std::chrono::seconds(0)); // 等待0秒进入下一轮
-                //    }
-                //    });
                 pollingThread = std::thread([] {
                     std::map<uint8_t, std::pair<double, double>> previousFilteredMap;  // 上一轮采集的 filtered 值
 
@@ -1351,56 +1287,6 @@ void Application::ShowADXL355() {
                 isCollectingADXL355 = false;
                 if (adxl355CollectionThread.joinable())
                     adxl355CollectionThread.join();
-
-                //try {
-                //    std::string saveFilePath = generateUniqueFileName("ADXL355_data");
-                //    OpenXLSX::XLDocument doc;
-                //    doc.create(saveFilePath, false);
-                //    doc.open(saveFilePath);
-                //    auto wks = doc.workbook().worksheet("Sheet1");
-
-                //    // 写入表头
-                //    wks.cell(1, 1).value() = "Time";
-                //    int col = 2;
-                //    for (uint8_t addr : adxl355DeviceAddresses) {
-                //        std::stringstream ss;
-                //        ss << "Device 0x" << std::uppercase << std::hex
-                //            << std::setw(2) << std::setfill('0') << (int)addr;
-                //        wks.cell(1, col++) = ss.str() + " Accel X";
-                //        wks.cell(1, col++) = ss.str() + " Accel Y";
-                //        wks.cell(1, col++) = ss.str() + " Accel Z";
-                //    }
-
-                //    // 写入数据
-                //    std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
-                //    for (size_t row = 0; row < adxl355CollectedData.size(); ++row) {
-                //        const auto& [timestamp, snapshot] = adxl355CollectedData[row];
-                //        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
-                //        std::tm tm;
-                //        localtime_s(&tm, &time_t);
-                //        std::ostringstream oss;
-                //        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-                //        wks.cell(row + 2, 1).value() = oss.str();
-
-                //        int col = 2;
-                //        for (uint8_t addr : adxl355DeviceAddresses) {
-                //            if (snapshot.find(addr) != snapshot.end()) {
-                //                const auto& data = snapshot.at(addr);
-                //                wks.cell(row + 2, col++) = data.x;
-                //                wks.cell(row + 2, col++) = data.y;
-                //                wks.cell(row + 2, col++) = data.z;
-                //            }
-                //            else {
-                //                col += 3;
-                //            }
-                //        }
-                //    }
-
-                //    doc.save();
-                //    doc.close();
-
-                //    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
-                //}
                 try {
                     std::string saveFilePath = generateUniqueFileName("ADXL355_data");
                     OpenXLSX::XLDocument doc;

@@ -12,78 +12,7 @@
 #include "ReadFile.h"
 #include "OpenXLSX/OpenXLSX.hpp"
 #include "data/Data.h"
-//void StopAndSaveDualAxisData(
-//    std::atomic<bool>& isCollectingData,
-//    std::thread& dataCollectionThread,
-//    const std::vector<uint8_t>& deviceAddresses,
-//    const std::vector<std::pair<std::chrono::system_clock::time_point,
-//    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& collectedData,
-//    std::mutex& collectedDataMutex,
-//    const std::string& baseFileName
-//) {
-//    isCollectingData = false;
-//    if (dataCollectionThread.joinable()) {
-//        dataCollectionThread.join();
-//    }
-//
-//    try {
-//        std::string saveFilePath = generateUniqueFileName(baseFileName);
-//        OpenXLSX::XLDocument doc;
-//
-//        doc.create(saveFilePath, false);
-//        doc.open(saveFilePath);
-//        auto wks = doc.workbook().worksheet("Sheet1");
-//
-//        // 表头
-//        wks.cell(1, 1).value() = "Time Stack";
-//        int col = 2;
-//        for (uint8_t addr : deviceAddresses) {
-//            std::stringstream ss;
-//            ss << "Device 0x" << std::uppercase << std::hex
-//                << std::setw(2) << std::setfill('0') << static_cast<int>(addr);
-//            std::string name = ss.str();
-//
-//            wks.cell(1, col++).value() = name + " Filtered Horizontal";
-//            wks.cell(1, col++).value() = name + " Filtered Vertical";
-//            wks.cell(1, col++).value() = name + " Raw Horizontal";
-//            wks.cell(1, col++).value() = name + " Raw Vertical";
-//        }
-//
-//        // 数据
-//        std::lock_guard<std::mutex> lock(collectedDataMutex);
-//        for (size_t row = 0; row < collectedData.size(); ++row) {
-//            const auto& [timestamp, dataMap] = collectedData[row];
-//            auto time_t = std::chrono::system_clock::to_time_t(timestamp);
-//            std::tm tm;
-//            localtime_s(&tm, &time_t);
-//            std::ostringstream oss;
-//            oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-//            wks.cell(row + 2, 1).value() = oss.str();
-//
-//            int col = 2;
-//            for (uint8_t addr : deviceAddresses) {
-//                if (dataMap.find(addr) != dataMap.end()) {
-//                    const auto& angles = dataMap.at(addr);
-//                    wks.cell(row + 2, col++).value() = angles.filtered_horizontal;
-//                    wks.cell(row + 2, col++).value() = angles.filtered_vertical;
-//                    wks.cell(row + 2, col++).value() = angles.raw_horizontal;
-//                    wks.cell(row + 2, col++).value() = angles.raw_vertical;
-//                }
-//                else {
-//                    col += 4;
-//                }
-//            }
-//        }
-//
-//        doc.save();
-//        doc.close();
-//
-//        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
-//    }
-//    catch (const std::exception& e) {
-//        ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
-//    }
-//}
+
 void StopAndSaveDualAxisData(
     std::atomic<bool>& isCollectingData,
     std::thread& dataCollectionThread,
@@ -159,45 +88,45 @@ void StopAndSaveDualAxisData(
         ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
     }
 }
-void SaveDualAxisToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
-    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& data) {
-    std::string saveFilePath = generateUniqueFileName("DualAxis_sync");
-    OpenXLSX::XLDocument doc;
-    doc.create(saveFilePath, false);
-    doc.open(saveFilePath);
-    auto wks = doc.workbook().worksheet("Sheet1");
-
-    wks.cell(1, 1).value() = "Time";
-    int col = 2;
-    for (uint8_t addr : dualAxisDeviceAddresses) {
-        std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-        wks.cell(1, col++) = ss.str() + " Filtered Horizontal";
-        wks.cell(1, col++) = ss.str() + " Filtered Vertical";
-        wks.cell(1, col++) = ss.str() + " Raw Horizontal";
-        wks.cell(1, col++) = ss.str() + " Raw Vertical";
-    }
-
-    for (size_t row = 0; row < data.size(); ++row) {
-        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-        std::tm tm; localtime_s(&tm, &time_t);
-        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-        wks.cell(row + 2, 1).value() = oss.str();
-
-        int col = 2;
-        for (uint8_t addr : dualAxisDeviceAddresses) {
-            if (data[row].second.count(addr)) {
-                auto& val = data[row].second.at(addr);
-                wks.cell(row + 2, col++) = val.filtered_horizontal;
-                wks.cell(row + 2, col++) = val.filtered_vertical;
-                wks.cell(row + 2, col++) = val.raw_horizontal;
-                wks.cell(row + 2, col++) = val.raw_vertical;
-            }
-            else col += 4;
-        }
-    }
-    doc.save(); doc.close();
-}
+//void SaveDualAxisToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+//    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& data) {
+//    std::string saveFilePath = generateUniqueFileName("DualAxis_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    doc.open(saveFilePath);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    wks.cell(1, 1).value() = "Time";
+//    int col = 2;
+//    for (uint8_t addr : dualAxisDeviceAddresses) {
+//        std::stringstream ss;
+//        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+//        wks.cell(1, col++) = ss.str() + " Filtered Horizontal";
+//        wks.cell(1, col++) = ss.str() + " Filtered Vertical";
+//        wks.cell(1, col++) = ss.str() + " Raw Horizontal";
+//        wks.cell(1, col++) = ss.str() + " Raw Vertical";
+//    }
+//
+//    for (size_t row = 0; row < data.size(); ++row) {
+//        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+//        std::tm tm; localtime_s(&tm, &time_t);
+//        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+//        wks.cell(row + 2, 1).value() = oss.str();
+//
+//        int col = 2;
+//        for (uint8_t addr : dualAxisDeviceAddresses) {
+//            if (data[row].second.count(addr)) {
+//                auto& val = data[row].second.at(addr);
+//                wks.cell(row + 2, col++) = val.filtered_horizontal;
+//                wks.cell(row + 2, col++) = val.filtered_vertical;
+//                wks.cell(row + 2, col++) = val.raw_horizontal;
+//                wks.cell(row + 2, col++) = val.raw_vertical;
+//            }
+//            else col += 4;
+//        }
+//    }
+//    doc.save(); doc.close();
+//}
 void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
     std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
@@ -235,6 +164,75 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
     }
     doc.save(); doc.close();
 }
+void SaveDualAxisToXLSX(
+    const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::map<uint8_t, DualAxisSensorParser::AngleData>>>& collectedData,
+    const std::vector<uint8_t>& deviceAddresses,
+    const std::string& baseFileName,
+    std::mutex& collectedDataMutex
+) {
+    try {
+        std::string saveFilePath = generateUniqueFileName(baseFileName);
+        OpenXLSX::XLDocument doc;
+
+        doc.create(saveFilePath, false);
+        doc.open(saveFilePath);
+        auto wks = doc.workbook().worksheet("Sheet1");
+
+        // 表头
+        wks.cell(1, 1).value() = "Time";
+        wks.cell(1, 2).value() = "Device Addr";
+        wks.cell(1, 3).value() = "Filtered Horizontal";
+        wks.cell(1, 4).value() = "Filtered Vertical";
+        wks.cell(1, 5).value() = "Raw Horizontal";
+        wks.cell(1, 6).value() = "Raw Vertical";
+        wks.cell(1, 7).value() = "EMA Horizontal";
+        wks.cell(1, 8).value() = "EMA Vertical";
+
+        // 数据写入
+        std::lock_guard<std::mutex> lock(collectedDataMutex);
+        int row = 2; // 从第2行开始
+        for (const auto& [timestamp, dataMap] : collectedData) {
+            auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+            std::tm tm;
+            localtime_s(&tm, &time_t);
+            std::ostringstream oss;
+            oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+            std::string timeStr = oss.str();
+
+            for (uint8_t addr : deviceAddresses) {
+                if (dataMap.count(addr)) {
+                    const auto& angles = dataMap.at(addr);
+
+                    wks.cell(row, 1).value() = timeStr;
+
+                    std::stringstream addrSS;
+                    addrSS << "0x" << std::uppercase << std::hex
+                        << std::setw(2) << std::setfill('0') << static_cast<int>(addr);
+                    wks.cell(row, 2).value() = addrSS.str();
+
+                    wks.cell(row, 3).value() = angles.filtered_horizontal;
+                    wks.cell(row, 4).value() = angles.filtered_vertical;
+                    wks.cell(row, 5).value() = angles.raw_horizontal;
+                    wks.cell(row, 6).value() = angles.raw_vertical;
+                    wks.cell(row, 7).value() = angles.EMA_horizontal;
+                    wks.cell(row, 8).value() = angles.EMA_vertical;
+
+                    row++;
+                }
+            }
+        }
+
+        doc.save();
+        doc.close();
+
+        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+    }
+    catch (const std::exception& e) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+    }
+}
+
 void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
     std::string saveFilePath = generateUniqueFileName("JY61P_sync");

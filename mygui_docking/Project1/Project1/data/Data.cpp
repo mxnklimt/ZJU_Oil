@@ -44,5 +44,3 @@ std::mutex dualAxisMutex;
 //std::unique_ptr是指向这个类的智能指针，unique_ptr 表示独占所有权：一个对象只能被一个指针拥有，不能复制，只能移动
 std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
 
-std::map<uint8_t, double>dualAxis_Save1;
-std::map<uint8_t, double>dualAxis_Save2;
