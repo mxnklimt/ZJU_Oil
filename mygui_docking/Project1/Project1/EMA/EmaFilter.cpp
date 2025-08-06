@@ -66,3 +66,87 @@ double EmaFilterManager::getZ(uint8_t addr) const {
     auto it = adxl355EmaStates_.find(addr);
     return it != adxl355EmaStates_.end() ? it->second.z : 0.0;
 }
+void EmaFilterManager::setXYZ(uint8_t addr, double x, double y, double z) {
+    adxl355EmaStates_[addr] = EmaStateXYZ{ x, y, z, true };
+}
+bool EmaFilterManager::hasXYZ(uint8_t addr) const {
+    auto it = adxl355EmaStates_.find(addr);
+    return it != adxl355EmaStates_.end() && it->second.initialized;
+}
+void EmaFilterManager::update9Axis(uint8_t addr, const float a[3], const float w[3], const float angle[3], double alpha) {
+    auto& state = jy61pEmaStates_[addr];
+    if (!state.initialized) {
+        state.ax = a[0]; state.ay = a[1]; state.az = a[2];
+        state.wx = w[0]; state.wy = w[1]; state.wz = w[2];
+        state.roll = angle[0]; state.pitch = angle[1]; state.yaw = angle[2];
+        state.initialized = true;
+    }
+    else if (state.ax == a[0] && state.ay == a[1] && state.az == a[2])
+    {
+        state.ax = a[0]; state.ay = a[1]; state.az = a[2];
+        state.wx = w[0]; state.wy = w[1]; state.wz = w[2];
+        state.roll = angle[0]; state.pitch = angle[1]; state.yaw = angle[2];
+    }
+    else {
+        state.ax = alpha * a[0] + (1.0 - alpha) * state.ax;
+        state.ay = alpha * a[1] + (1.0 - alpha) * state.ay;
+        state.az = alpha * a[2] + (1.0 - alpha) * state.az;
+
+        state.wx = alpha * w[0] + (1.0 - alpha) * state.wx;
+        state.wy = alpha * w[1] + (1.0 - alpha) * state.wy;
+        state.wz = alpha * w[2] + (1.0 - alpha) * state.wz;
+
+        state.roll = alpha * angle[0] + (1.0 - alpha) * state.roll;
+        state.pitch = alpha * angle[1] + (1.0 - alpha) * state.pitch;
+        state.yaw = alpha * angle[2] + (1.0 - alpha) * state.yaw;
+    }
+}
+
+//void EmaFilterManager::get9Axis(uint8_t addr, float a[3], float w[3], float angle[3]) const {
+//    auto it = jy61pEmaStates_.find(addr);
+//    if (it != jy61pEmaStates_.end()) {
+//        const auto& state = it->second;
+//        a[0] = state.ax; a[1] = state.ay; a[2] = state.az;
+//        w[0] = state.wx; w[1] = state.wy; w[2] = state.wz;
+//        angle[0] = state.roll; angle[1] = state.pitch; angle[2] = state.yaw;
+//    }
+//    else {
+//        a[0] = a[1] = a[2] = 0;
+//        w[0] = w[1] = w[2] = 0;
+//        angle[0] = angle[1] = angle[2] = 0;
+//    }
+//}
+void EmaFilterManager::get9Axis(uint8_t addr, float a[3], float w[3], float angle[3]) const {
+    auto it = jy61pEmaStates_.find(addr);
+    if (it == jy61pEmaStates_.end() || !it->second.initialized) {
+        // 未初始化，返回0（或你也可以返回NaN用于调试）
+        a[0] = a[1] = a[2] = 0.0f;
+        w[0] = w[1] = w[2] = 0.0f;
+        angle[0] = angle[1] = angle[2] = 0.0f;
+        return;
+    }
+
+    const auto& state = it->second;
+    a[0] = state.ax; a[1] = state.ay; a[2] = state.az;
+    w[0] = state.wx; w[1] = state.wy; w[2] = state.wz;
+    angle[0] = state.roll; angle[1] = state.pitch; angle[2] = state.yaw;
+}
+
+bool EmaFilterManager::has9Axis(uint8_t addr) const {
+    auto it = jy61pEmaStates_.find(addr);
+    return it != jy61pEmaStates_.end() && it->second.initialized;
+}
+
+void EmaFilterManager::set9Axis(uint8_t addr, const float a[3], const float w[3], const float angle[3]) {
+    jy61pEmaStates_[addr] = {
+        a[0], a[1], a[2],
+        w[0], w[1], w[2],
+        angle[0], angle[1], angle[2],
+        true
+    };
+}
+void EmaFilterManager::clearAll() {
+    emaStates_.clear();
+    adxl355EmaStates_.clear();
+    jy61pEmaStates_.clear();
+}

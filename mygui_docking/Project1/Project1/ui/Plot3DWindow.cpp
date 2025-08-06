@@ -223,7 +223,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::End();
         return;
     }
-
+    
     static std::atomic<bool> isSyncCollecting = false;
     static std::thread syncCollectionThread;
 
@@ -255,7 +255,11 @@ void Application::ShowSynchronizedCapture() {
     if (!isSyncCollecting) {
         if (ImGui::Button(u8"开始同步采集", ImVec2(200, 40))) {
             isSyncCollecting = true;
-
+            adxlxlsxing = true;
+            jy61xlsxing = true;
+			dualAxisxlsxing = true;
+			emaFilterManager.clearAll(); // 清除EMA状态
+            
             syncCollectionThread = std::thread([] {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
@@ -311,14 +315,17 @@ void Application::ShowSynchronizedCapture() {
     else {
         if (ImGui::Button(u8" 停止采集并保存", ImVec2(200, 40))) {
             isSyncCollecting = false;
+            jy61xlsxing = false;
+			adxlxlsxing = false;
+			dualAxisxlsxing = false;
             if (syncCollectionThread.joinable()) syncCollectionThread.join();
         }
 
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8" 同步采集中...");
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", jy61pCount.load());
-        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", adxl355Count.load());
-        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8"双轴传感器 已记录 %d 条", dualAxisCount.load());
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", 10 * jy61pCount.load());
+        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10*adxl355Count.load());
+        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8"双轴传感器 已记录 %d 条", 10 *dualAxisCount.load());
     }
 
     //  操作说明
@@ -545,6 +552,61 @@ void Application::ShowDualAxisSensor() {
 				// 初始化设备地址列表
                 initializedualAxisParsers();
 				// 启动数据采集线程
+                //pollingThread = std::thread([] {
+                //    std::map<uint8_t, std::pair<double, double>> previousFilteredMap;  // 上一轮采集的 filtered 值
+
+                //    while (collecting) {
+                //        std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
+                //        std::map<uint8_t, std::pair<double, double>> currentFilteredMap;  // 当前这轮采集得到的 filtered
+
+                //        for (uint8_t addr : dualAxisDeviceAddresses) {
+                //            try {
+                //                auto& parser = *dualAxisParsers[addr];
+                //                auto angles = parser.readAngles();
+
+                //                // 从上一轮采集中取出“10秒前”的 filtered 值
+                //                double prevH = 0.0, prevV = 0.0;
+                //                if (previousFilteredMap.count(addr)) {
+                //                    prevH = previousFilteredMap[addr].first;
+                //                    prevV = previousFilteredMap[addr].second;
+                //                }
+                //                if (!emaFilterManager.has(addr)) {
+                //                    // 第一次采集：用 filtered 初始化
+                //                    emaFilterManager.set(addr, angles.filtered_horizontal, angles.filtered_vertical);
+                //                    angles.EMA_horizontal = angles.filtered_horizontal;
+                //                    angles.EMA_vertical = angles.filtered_vertical;
+                //                }
+                //                else {
+                //                    emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
+                //                    angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
+                //                    angles.EMA_vertical = emaFilterManager.getVertical(addr);
+                //                }
+                //                // 存储当前这轮的 filtered，稍后再整体替换 previousFilteredMap
+                //                currentFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
+
+                //                // 存储到本地缓存
+                //                angleDataMap[addr] = angles;
+                //            }
+                //            catch (const std::exception& e) {
+                //                std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
+                //            }
+
+                //            std::this_thread::sleep_for(std::chrono::milliseconds(1000));  // 每个设备采集间隔
+                //        }
+
+                //        // 全部采集完后：统一更新 shared map
+                //        {
+                //            std::lock_guard<std::mutex> lock(dataMutex);
+                //            dualAxisDataMap = std::move(angleDataMap);
+                //        }
+
+                //        // 替换 previousFilteredMap 为当前这轮的 filtered，用于下一轮 EMA
+                //        previousFilteredMap = std::move(currentFilteredMap);
+
+                //        // 每轮间隔 0 秒（实际总耗时就是设备个数 * 1 秒）
+                //    }
+                //    });
+
                 pollingThread = std::thread([] {
                     std::map<uint8_t, std::pair<double, double>> previousFilteredMap;  // 上一轮采集的 filtered 值
 
@@ -557,25 +619,33 @@ void Application::ShowDualAxisSensor() {
                                 auto& parser = *dualAxisParsers[addr];
                                 auto angles = parser.readAngles();
 
-                                // 从上一轮采集中取出“10秒前”的 filtered 值
-                                double prevH = 0.0, prevV = 0.0;
-                                if (previousFilteredMap.count(addr)) {
-                                    prevH = previousFilteredMap[addr].first;
-                                    prevV = previousFilteredMap[addr].second;
-                                }
-                                if (!emaFilterManager.has(addr)) {
-                                    // 第一次采集：用 filtered 初始化
-                                    emaFilterManager.set(addr, angles.filtered_horizontal, angles.filtered_vertical);
-                                    angles.EMA_horizontal = angles.filtered_horizontal;
-                                    angles.EMA_vertical = angles.filtered_vertical;
+                                // 仅在 dualAxisxlsxing == true 时计算 EMA
+                                if (dualAxisxlsxing) {
+                                    double prevH = 0.0, prevV = 0.0;
+                                    if (previousFilteredMap.count(addr)) {
+                                        prevH = previousFilteredMap[addr].first;
+                                        prevV = previousFilteredMap[addr].second;
+                                    }
+
+                                    if (!emaFilterManager.has(addr)) {
+                                        emaFilterManager.set(addr, angles.filtered_horizontal, angles.filtered_vertical);
+                                        angles.EMA_horizontal = angles.filtered_horizontal;
+                                        angles.EMA_vertical = angles.filtered_vertical;
+                                    }
+                                    else {
+                                        emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
+                                        angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
+                                        angles.EMA_vertical = emaFilterManager.getVertical(addr);
+                                    }
+
+                                    // 存储当前这轮的 filtered
+                                    currentFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
                                 }
                                 else {
-                                    emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
-                                    angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
-                                    angles.EMA_vertical = emaFilterManager.getVertical(addr);
+                                    // 如果不计算 EMA，就设为 0 或原始值（根据你需求选择）
+                                    angles.EMA_horizontal = 0.0;
+                                    angles.EMA_vertical = 0.0;
                                 }
-                                // 存储当前这轮的 filtered，稍后再整体替换 previousFilteredMap
-                                currentFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
 
                                 // 存储到本地缓存
                                 angleDataMap[addr] = angles;
@@ -584,21 +654,21 @@ void Application::ShowDualAxisSensor() {
                                 std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
                             }
 
-                            std::this_thread::sleep_for(std::chrono::milliseconds(1000));  // 每个设备采集间隔
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
                         }
 
-                        // 全部采集完后：统一更新 shared map
                         {
                             std::lock_guard<std::mutex> lock(dataMutex);
                             dualAxisDataMap = std::move(angleDataMap);
                         }
 
-                        // 替换 previousFilteredMap 为当前这轮的 filtered，用于下一轮 EMA
-                        previousFilteredMap = std::move(currentFilteredMap);
-
-                        // 每轮间隔 0 秒（实际总耗时就是设备个数 * 1 秒）
+                        // 仅在开启 EMA 计算时，更新 previousFilteredMap
+                        if (dualAxisxlsxing) {
+                            previousFilteredMap = std::move(currentFilteredMap);
+                        }
                     }
                     });
+
 
             }
             catch (const std::exception& e) {
@@ -623,6 +693,7 @@ void Application::ShowDualAxisSensor() {
             if (ImGui::Button(u8"开始采集")) {
                 isCollectingData = true;
                 collectedData.clear();
+                
 
                 // 启动数据采集线程
                 dataCollectionThread = std::thread([&]() {
@@ -828,36 +899,65 @@ void Application::ShowJY61P() {
                 isConnected = true;
                 collecting = true;
 
-                pollingThread = std::thread([] {
-                    while (collecting) {
-                        for (uint8_t addr : jy61pDeviceAddresses) {
-                            try {
-                                WitInit(WIT_PROTOCOL_MODBUS, addr);
-                                WitSerialWriteRegister(SensorUartSend);
-                                WitRegisterCallBack(CopeSensorData);
-                                WitReadReg(AX, 15);
-                                Sleep(20);
+pollingThread = std::thread([] {
+    while (collecting) {
+        for (uint8_t addr : jy61pDeviceAddresses) {
+            try {
+                // 初始化传感器并读取寄存器
+                WitInit(WIT_PROTOCOL_MODBUS, addr);
+                WitSerialWriteRegister(SensorUartSend);
+                WitRegisterCallBack(CopeSensorData);
+                WitReadReg(AX, 15); // 读取9轴数据
+                Sleep(20);
 
-                                JY61PData::angle temp;
-                                for (int i = 0; i < 3; ++i) {
-                                    temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
-                                    temp.w[i] = sReg[GX + i] / 32768.0f * 2000.0f;
-                                    temp.Angle[i] = sReg[Roll + i] / 32768.0f * 180.0f;
-                                }
+                JY61PData::angle temp;
 
-                                std::lock_guard<std::mutex> lock(jy61pDataMutex);
-                                jy61pDataMap[addr].dataQue.push_back(temp);
-                                if (jy61pDataMap[addr].dataQue.size() > MAX_POINTS)
-                                    jy61pDataMap[addr].dataQue.pop_front();
-                            }
-                            catch (const std::exception& e) {
-                                std::cerr << "JY61P 地址 0x" << std::hex << (int)addr << " 读取失败: " << e.what() << std::endl;
-                            }
-                            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                        }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                // 解码原始数据
+                for (int i = 0; i < 3; ++i) {
+                    temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
+                    temp.w[i] = sReg[GX + i] / 32768.0f * 2000.0f;
+                    temp.Angle[i] = sReg[Roll + i] / 32768.0f * 180.0f;
+                }
+
+                if (!emaFilterManager.has9Axis(addr)&& jy61xlsxing == true) {
+                    // === 第一次采集：用原始值初始化 ===
+                    emaFilterManager.set9Axis(addr, temp.a, temp.w, temp.Angle);
+
+                    // ✔️ 获取初始化后的 EMA 值
+                    emaFilterManager.get9Axis(addr, temp.EMA_a, temp.EMA_w, temp.EMA_Angle);
+                    // 打印调试
+                    for (int i = 0; i < 3; ++i) {
+                        std::cout << "Init Raw a[" << i << "]: " << temp.a[i] << ", EMA a[" << i << "]: " << temp.EMA_a[i] << std::endl;
                     }
-                    });
+                }
+                else if(emaFilterManager.has9Axis(addr) && jy61xlsxing == true){
+                    // === 后续采集：进行 EMA 滤波更新 ===
+                    emaFilterManager.update9Axis(addr, temp.a, temp.w, temp.Angle, alpha);
+                    emaFilterManager.get9Axis(addr, temp.EMA_a, temp.EMA_w, temp.EMA_Angle);
+                }
+
+                // 存入缓冲队列
+                {
+                    std::lock_guard<std::mutex> lock(jy61pDataMutex);
+                    jy61pDataMap[addr].dataQue.push_back(temp);
+                    if (jy61pDataMap[addr].dataQue.size() > MAX_POINTS)
+                        jy61pDataMap[addr].dataQue.pop_front();
+                }
+            }
+            catch (const std::exception& e) {
+                std::cerr << "JY61P 地址 0x" << std::hex << (int)addr << " 读取失败: " << e.what() << std::endl;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 每个设备 20ms 采样间隔
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));  // 每轮采样后的间隔
+    }
+    });
+
+
+                
+
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
@@ -883,6 +983,8 @@ void Application::ShowJY61P() {
         if (!isCollectingData) {
             if (ImGui::Button(u8"开始采集")) {
                 isCollectingData = true;
+                emaFilterManager.clearAll(); // 清除EMA状态
+                jy61xlsxing = true;
                 {
                     std::lock_guard<std::mutex> lock(collectedDataMutex);
                     collectedData.clear();
@@ -913,79 +1015,9 @@ void Application::ShowJY61P() {
         else {
             if (ImGui::Button(u8"停止采集并保存")) {
                 isCollectingData = false;
+                jy61xlsxing = false;
                 if (dataCollectionThread.joinable())
                     dataCollectionThread.join();
-
-                //try {
-                //    std::string saveFilePath = generateUniqueFileName("JY61P_data");
-                //    OpenXLSX::XLDocument doc;
-                //    doc.create(saveFilePath, false);
-                //    doc.open(saveFilePath);
-                //    auto wks = doc.workbook().worksheet("Sheet1");
-
-                //    // 写入表头
-                //    wks.cell(1, 1).value() = "Time";
-                //    int col = 2;
-                //    for (uint8_t addr : jy61pDeviceAddresses) {
-                //        std::stringstream ss;
-                //        ss << "Device 0x" << std::uppercase << std::hex
-                //            << std::setw(2) << std::setfill('0') << (int)addr;
-
-                //        wks.cell(1, col++) = ss.str() + " Accel X";
-                //        wks.cell(1, col++) = ss.str() + " Accel Y";
-                //        wks.cell(1, col++) = ss.str() + " Accel Z";
-
-                //        wks.cell(1, col++) = ss.str() + " Gyro X";
-                //        wks.cell(1, col++) = ss.str() + " Gyro Y";
-                //        wks.cell(1, col++) = ss.str() + " Gyro Z";
-
-                //        wks.cell(1, col++) = ss.str() + " Angle X";
-                //        wks.cell(1, col++) = ss.str() + " Angle Y";
-                //        wks.cell(1, col++) = ss.str() + " Angle Z";
-                //    }
-
-                //    // 写入数据
-                //    std::lock_guard<std::mutex> lock(collectedDataMutex);
-                //    for (size_t row = 0; row < collectedData.size(); ++row) {
-                //        const auto& [timestamp, snapshot] = collectedData[row];
-
-                //        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
-                //        std::tm tm;
-                //        localtime_s(&tm, &time_t);
-                //        std::ostringstream oss;
-                //        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-                //        wks.cell(row + 2, 1).value() = oss.str();
-
-                //        int col = 2;
-                //        for (uint8_t addr : jy61pDeviceAddresses) {
-                //            if (snapshot.find(addr) != snapshot.end()) {
-                //                const auto& angle = snapshot.at(addr);
-                //                wks.cell(row + 2, col++) = angle.a[0];
-                //                wks.cell(row + 2, col++) = angle.a[1];
-                //                wks.cell(row + 2, col++) = angle.a[2];
-
-                //                wks.cell(row + 2, col++) = angle.w[0];
-                //                wks.cell(row + 2, col++) = angle.w[1];
-                //                wks.cell(row + 2, col++) = angle.w[2];
-
-                //                wks.cell(row + 2, col++) = angle.Angle[0];
-                //                wks.cell(row + 2, col++) = angle.Angle[1];
-                //                wks.cell(row + 2, col++) = angle.Angle[2];
-                //            }
-                //            else {
-                //                col += 9; // 跳过无数据设备
-                //            }
-                //        }
-                //    }
-
-                //    doc.save();
-                //    doc.close();
-
-                //    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
-                //}
-                //catch (const std::exception& e) {
-                //    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
-                //}
                 try {
                     std::string saveFilePath = generateUniqueFileName("JY61P_data");
                     OpenXLSX::XLDocument doc;
@@ -1005,6 +1037,16 @@ void Application::ShowJY61P() {
                     wks.cell(1, 9).value() = "Angle X";
                     wks.cell(1, 10).value() = "Angle Y";
                     wks.cell(1, 11).value() = "Angle Z";
+					wks.cell(1, 12).value() = "EMA Accel X";
+					wks.cell(1, 13).value() = "EMA Accel Y";
+					wks.cell(1, 14).value() = "EMA Accel Z";
+					wks.cell(1, 15).value() = "EMA Gyro X";
+					wks.cell(1, 16).value() = "EMA Gyro Y";
+					wks.cell(1, 17).value() = "EMA Gyro Z";
+					wks.cell(1, 18).value() = "EMA Angle X";
+					wks.cell(1, 19).value() = "EMA Angle Y";
+					wks.cell(1, 20).value() = "EMA Angle Z";
+
 
                     // 写入数据
                     std::lock_guard<std::mutex> lock(collectedDataMutex);
@@ -1045,6 +1087,17 @@ void Application::ShowJY61P() {
                                 wks.cell(row, 9).value() = angle.Angle[0];
                                 wks.cell(row, 10).value() = angle.Angle[1];
                                 wks.cell(row, 11).value() = angle.Angle[2];
+
+								// 写入 EMA 滤波数据
+								wks.cell(row, 12).value() = angle.EMA_a[0];
+								wks.cell(row, 13).value() = angle.EMA_a[1];
+								wks.cell(row, 14).value() = angle.EMA_a[2];
+								wks.cell(row, 15).value() = angle.EMA_w[0];
+								wks.cell(row, 16).value() = angle.EMA_w[1];
+								wks.cell(row, 17).value() = angle.EMA_w[2];
+								wks.cell(row, 18).value() = angle.EMA_Angle[0];
+								wks.cell(row, 19).value() = angle.EMA_Angle[1];
+								wks.cell(row, 20).value() = angle.EMA_Angle[2];
 
                                 row++; // 移动到下一行
                             }
@@ -1193,40 +1246,6 @@ void Application::ShowADXL355() {
                     adxl355Parsers[addr] = ADXL355Parser(addr);
                     adxl355DataMap[addr] = ADXL355Data();
                 }
-
-                /*adxl355PollingThread = std::thread([]() {
-                    while (collectingADXL355) {
-                        for (uint8_t addr : adxl355DeviceAddresses) {
-                            try {
-                                std::vector<uint8_t> cmd;
-                                std::vector<uint8_t> response;
-                                ADXL355Parser::AccelerationData data;
-
-                                {
-                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-                                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-                                    serialManager.send(cmd);
-                                    response = serialManager.receiveADXL355Response();
-                                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-                                }
-
-                                {
-                                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-                                    auto& dq = adxl355DataMap[addr].dataQue;
-                                    dq.push_back(data);
-                                    if (dq.size() > MAX_POINTS)
-                                        dq.pop_front();
-                                }
-
-                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                            }
-                            catch (const std::exception& e) {
-                                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-                            }
-                        }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                    }
-                    });*/
                 adxl355PollingThread = std::thread([]() {
                     while (collectingADXL355) {
                         for (uint8_t addr : adxl355DeviceAddresses) {
@@ -1243,13 +1262,23 @@ void Application::ShowADXL355() {
                                     data = adxl355Parsers[addr].parseAccelerationResponse(response);
                                 }
 
-                                // === 调用 EmaFilterManager 执行三轴 EMA 滤波 ===
-                                emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+                                // === EMA 滤波逻辑完善 ===
+                                if (!emaFilterManager.hasXYZ(addr)&&adxlxlsxing == true) {
+                                    emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
+                                }
+                                else if(emaFilterManager.hasXYZ(addr) && adxlxlsxing == true) {
+                                    emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+                                }
+
                                 data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
                                 data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
                                 data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-								std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
-									<< "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+
+
+                                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
+                                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+
+                                // 存入缓存
                                 {
                                     std::lock_guard<std::mutex> lock2(ADXL355Mutex);
                                     auto& dq = adxl355DataMap[addr].dataQue;
@@ -1264,10 +1293,10 @@ void Application::ShowADXL355() {
                                 std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
                             }
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     }
                     });
-
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
@@ -1295,6 +1324,7 @@ void Application::ShowADXL355() {
         if (!isCollectingADXL355) {
             if (ImGui::Button(u8"开始采集")) {
                 isCollectingADXL355 = true;
+                adxlxlsxing = true;
                 {
                     std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
                     adxl355CollectedData.clear();
@@ -1324,10 +1354,13 @@ void Application::ShowADXL355() {
             }
         }
         else {
+     //       
             if (ImGui::Button(u8"停止采集并保存")) {
                 isCollectingADXL355 = false;
+                adxlxlsxing = false;
                 if (adxl355CollectionThread.joinable())
                     adxl355CollectionThread.join();
+
                 try {
                     std::string saveFilePath = generateUniqueFileName("ADXL355_data");
                     OpenXLSX::XLDocument doc;
@@ -1335,63 +1368,60 @@ void Application::ShowADXL355() {
                     doc.open(saveFilePath);
                     auto wks = doc.workbook().worksheet("Sheet1");
 
-                    // 写入表头
+                    // ===== 表头 =====
                     wks.cell(1, 1).value() = "Time";
                     wks.cell(1, 2).value() = "Device Addr";
-                    int col = 3;
-                    wks.cell(1, col++).value() = "Accel X";
-                    wks.cell(1, col++).value() = "Accel Y";
-                    wks.cell(1, col++).value() = "Accel Z";
-					wks.cell(1, col++).value() = "EMA Accel X";
-					wks.cell(1, col++).value() = "EMA Accel Y";
-					wks.cell(1, col++).value() = "EMA Accel Z";
+                    wks.cell(1, 3).value() = "Accel X";
+                    wks.cell(1, 4).value() = "Accel Y";
+                    wks.cell(1, 5).value() = "Accel Z";
+                    wks.cell(1, 6).value() = "EMA Accel X";
+                    wks.cell(1, 7).value() = "EMA Accel Y";
+                    wks.cell(1, 8).value() = "EMA Accel Z";
 
-                    // 写入数据
+                    // ===== 写入数据 =====
                     std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
-                    int row = 2; // 从第2行开始写入数据
+                    int row = 2;
                     for (const auto& [timestamp, snapshot] : adxl355CollectedData) {
+                        // 时间格式化
                         auto time_t = std::chrono::system_clock::to_time_t(timestamp);
                         std::tm tm;
                         localtime_s(&tm, &time_t);
                         std::ostringstream oss;
                         oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+                        std::string timeStr = oss.str();
 
-                        for (uint8_t addr : adxl355DeviceAddresses) {
-                            if (snapshot.find(addr) != snapshot.end()) {
-                                const auto& data = snapshot.at(addr);
+                        // 每个设备地址写一行
+                        for (const auto& [addr, data] : snapshot) {
+                            // 时间
+                            wks.cell(row, 1).value() = timeStr;
 
-                                // 写入时间戳
-                                wks.cell(row, 1).value() = oss.str();
+                            // 地址
+                            std::stringstream addr_ss;
+                            addr_ss << "0x" << std::uppercase << std::hex
+                                << std::setw(2) << std::setfill('0') << (int)addr;
+                            wks.cell(row, 2).value() = addr_ss.str();
 
-                                // 写入设备地址
-                                std::stringstream addr_ss;
-                                addr_ss << "0x" << std::uppercase << std::hex
-                                    << std::setw(2) << std::setfill('0') << (int)addr;
-                                wks.cell(row, 2).value() = addr_ss.str();
+                            // 数据
+                            wks.cell(row, 3).value() = data.x;
+                            wks.cell(row, 4).value() = data.y;
+                            wks.cell(row, 5).value() = data.z;
+                            wks.cell(row, 6).value() = data.EMA_x;
+                            wks.cell(row, 7).value() = data.EMA_y;
+                            wks.cell(row, 8).value() = data.EMA_z;
 
-                                // 写入加速度数据
-                                wks.cell(row, 3).value() = data.x;
-                                wks.cell(row, 4).value() = data.y;
-                                wks.cell(row, 5).value() = data.z;
-                                wks.cell(row, 6).value() = data.EMA_x;
-                                wks.cell(row, 7).value() = data.EMA_y;
-                                wks.cell(row, 8).value() = data.EMA_z;
-
-                                row++; // 移动到下一行
-                            }
+                            row++;
                         }
                     }
 
                     doc.save();
                     doc.close();
-
                     ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
                 }
-                
                 catch (const std::exception& e) {
                     ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
                 }
             }
+
 
             ImGui::SameLine();
             ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据... 已记录 %d 条",

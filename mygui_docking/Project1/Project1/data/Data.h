@@ -24,6 +24,7 @@ extern ADXL355Parser parser;
 extern std::thread adxl355Thread;       //线程
 extern class ADXL355Data adxl355Data;         //数据结构
 extern std::thread adxl355PollingThread;
+extern bool adxlxlsxing; // 是否正在保存数据到XLSX文件
 class ADXL355Data
 {
 public:
@@ -44,6 +45,9 @@ public:
 		float a[3] = { 0.0f, 0.0f, 0.0f }; // 加速度
 		float w[3] = { 0.0f, 0.0f, 0.0f }; // 角速度
 		float Angle[3] = { 0.0f, 0.0f, 0.0f }; // 姿态角
+		float EMA_a[3] = { 0.0f, 0.0f, 0.0f }; // EMA 加速度
+		float EMA_w[3] = { 0.0f, 0.0f, 0.0f }; // EMA 角速度
+		float EMA_Angle[3] = { 0.0f, 0.0f, 0.0f }; // EMA 姿态角
 	};
 
 	std::deque<angle> dataQue;//使用别的类里的结构体要加上作用域
@@ -59,7 +63,7 @@ extern class JY61PData jy61pData;         //数据结构
 extern std::mutex jy61pDataMutex;
 extern std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 extern std::vector<uint8_t> jy61pDeviceAddresses;
-
+extern bool jy61xlsxing; // 是否正在保存数据到XLSX文件
 
 struct Vec3 {
 	float x, y, z;
@@ -74,3 +78,4 @@ extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 extern std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
 extern struct save;
 extern std::map<uint8_t, save>dualAxis_Save;
+extern bool dualAxisxlsxing;

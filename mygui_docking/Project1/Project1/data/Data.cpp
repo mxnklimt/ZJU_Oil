@@ -20,6 +20,8 @@ std::map<uint8_t, ADXL355Data> adxl355DataMap;
 std::map<uint8_t, ADXL355Parser> adxl355Parsers;
 std::mutex RS485SendRecvMutex;
 std::thread adxl355PollingThread;
+
+bool adxlxlsxing = false; // 是否正在保存数据到XLSX文件
 //JY61P数据
 char s_cDataUpdate = 0;
 int iComPort = 7;
@@ -34,6 +36,7 @@ std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 
+bool jy61xlsxing = false; // 是否正在保存数据到XLSX文件
 //DualAxis数据
 RS485Manager serialDualAxis;
 //std::vector<uint8_t> dualAxisDeviceAddresses = { 0x03, 0x0C };
@@ -43,4 +46,4 @@ std::mutex dualAxisMutex;
 //map中的uint8是0x01, 0x02, 0x03等设备地址
 //std::unique_ptr是指向这个类的智能指针，unique_ptr 表示独占所有权：一个对象只能被一个指针拥有，不能复制，只能移动
 std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
-
+bool dualAxisxlsxing = false; // 是否正在保存数据到XLSX文件

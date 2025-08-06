@@ -165,6 +165,62 @@ void StopAndSaveDualAxisData(
 //    }
 //    doc.save(); doc.close();
 //}
+// 
+//void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+//    std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
+//
+//    std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    doc.open(saveFilePath);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    // 写表头
+//    wks.cell(1, 1).value() = "Time";
+//    int col = 2;
+//    for (uint8_t addr : adxl355DeviceAddresses) {
+//        std::stringstream ss;
+//        ss << "Device 0x" << std::uppercase << std::hex
+//            << std::setw(2) << std::setfill('0') << (int)addr;
+//
+//        wks.cell(1, col++).value() = ss.str() + " Accel X";
+//        wks.cell(1, col++).value() = ss.str() + " Accel Y";
+//        wks.cell(1, col++).value() = ss.str() + " Accel Z";
+//        wks.cell(1, col++).value() = ss.str() + " EMA X";
+//        wks.cell(1, col++).value() = ss.str() + " EMA Y";
+//        wks.cell(1, col++).value() = ss.str() + " EMA Z";
+//    }
+//
+//    // 写数据
+//    for (size_t row = 0; row < data.size(); ++row) {
+//        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+//        std::tm tm;
+//        localtime_s(&tm, &time_t);
+//        std::ostringstream oss;
+//        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+//
+//        wks.cell(row + 2, 1).value() = oss.str();
+//
+//        int col = 2;
+//        for (uint8_t addr : adxl355DeviceAddresses) {
+//            if (data[row].second.count(addr)) {
+//                const auto& val = data[row].second.at(addr);
+//                wks.cell(row + 2, col++) = val.x;
+//                wks.cell(row + 2, col++) = val.y;
+//                wks.cell(row + 2, col++) = val.z;
+//                wks.cell(row + 2, col++) = val.EMA_x;
+//                wks.cell(row + 2, col++) = val.EMA_y;
+//                wks.cell(row + 2, col++) = val.EMA_z;
+//            }
+//            else {
+//                col += 6; // 跳过该设备的 6 列
+//            }
+//        }
+//    }
+//
+//    doc.save();
+//    doc.close();
+//}
 void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
 
@@ -174,46 +230,46 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
     doc.open(saveFilePath);
     auto wks = doc.workbook().worksheet("Sheet1");
 
-    // 写表头
+    // ===== 写表头 =====
     wks.cell(1, 1).value() = "Time";
-    int col = 2;
-    for (uint8_t addr : adxl355DeviceAddresses) {
-        std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex
-            << std::setw(2) << std::setfill('0') << (int)addr;
+    wks.cell(1, 2).value() = "Device Addr";
+    wks.cell(1, 3).value() = "Accel X";
+    wks.cell(1, 4).value() = "Accel Y";
+    wks.cell(1, 5).value() = "Accel Z";
+    wks.cell(1, 6).value() = "EMA Accel X";
+    wks.cell(1, 7).value() = "EMA Accel Y";
+    wks.cell(1, 8).value() = "EMA Accel Z";
 
-        wks.cell(1, col++).value() = ss.str() + " Accel X";
-        wks.cell(1, col++).value() = ss.str() + " Accel Y";
-        wks.cell(1, col++).value() = ss.str() + " Accel Z";
-        wks.cell(1, col++).value() = ss.str() + " EMA X";
-        wks.cell(1, col++).value() = ss.str() + " EMA Y";
-        wks.cell(1, col++).value() = ss.str() + " EMA Z";
-    }
-
-    // 写数据
-    for (size_t row = 0; row < data.size(); ++row) {
-        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+    // ===== 写入数据，每个时间戳-设备单独一行 =====
+    int row = 2;
+    for (const auto& [timestamp, snapshot] : data) {
+        // 格式化时间戳
+        auto time_t = std::chrono::system_clock::to_time_t(timestamp);
         std::tm tm;
         localtime_s(&tm, &time_t);
         std::ostringstream oss;
         oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        std::string timeStr = oss.str();
 
-        wks.cell(row + 2, 1).value() = oss.str();
+        for (const auto& [addr, val] : snapshot) {
+            // 写时间
+            wks.cell(row, 1).value() = timeStr;
 
-        int col = 2;
-        for (uint8_t addr : adxl355DeviceAddresses) {
-            if (data[row].second.count(addr)) {
-                const auto& val = data[row].second.at(addr);
-                wks.cell(row + 2, col++) = val.x;
-                wks.cell(row + 2, col++) = val.y;
-                wks.cell(row + 2, col++) = val.z;
-                wks.cell(row + 2, col++) = val.EMA_x;
-                wks.cell(row + 2, col++) = val.EMA_y;
-                wks.cell(row + 2, col++) = val.EMA_z;
-            }
-            else {
-                col += 6; // 跳过该设备的 6 列
-            }
+            // 写设备地址
+            std::stringstream ss;
+            ss << "0x" << std::uppercase << std::hex
+                << std::setw(2) << std::setfill('0') << (int)addr;
+            wks.cell(row, 2).value() = ss.str();
+
+            // 写加速度数据
+            wks.cell(row, 3).value() = val.x;
+            wks.cell(row, 4).value() = val.y;
+            wks.cell(row, 5).value() = val.z;
+            wks.cell(row, 6).value() = val.EMA_x;
+            wks.cell(row, 7).value() = val.EMA_y;
+            wks.cell(row, 8).value() = val.EMA_z;
+
+            row++; // 下一行
         }
     }
 
@@ -290,55 +346,148 @@ void SaveDualAxisToXLSX(
     }
 }
 
+//void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+//    std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
+//    std::string saveFilePath = generateUniqueFileName("JY61P_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    doc.open(saveFilePath);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    wks.cell(1, 1).value() = "Time";
+//    int col = 2;
+//    for (uint8_t addr : jy61pDeviceAddresses) {
+//        std::stringstream ss;
+//        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+//        wks.cell(1, col++) = ss.str() + " Accel X";
+//        wks.cell(1, col++) = ss.str() + " Accel Y";
+//        wks.cell(1, col++) = ss.str() + " Accel Z";
+//        wks.cell(1, col++) = ss.str() + " Gyro X";
+//        wks.cell(1, col++) = ss.str() + " Gyro Y";
+//        wks.cell(1, col++) = ss.str() + " Gyro Z";
+//        wks.cell(1, col++) = ss.str() + " Angle X";
+//        wks.cell(1, col++) = ss.str() + " Angle Y";
+//        wks.cell(1, col++) = ss.str() + " Angle Z";
+//    }
+//
+//    for (size_t row = 0; row < data.size(); ++row) {
+//        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+//        std::tm tm; localtime_s(&tm, &time_t);
+//        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+//        wks.cell(row + 2, 1).value() = oss.str();
+//
+//        int col = 2;
+//        for (uint8_t addr : jy61pDeviceAddresses) {
+//            if (data[row].second.count(addr)) {
+//                auto& angle = data[row].second.at(addr);
+//                wks.cell(row + 2, col++) = angle.a[0];
+//                wks.cell(row + 2, col++) = angle.a[1];
+//                wks.cell(row + 2, col++) = angle.a[2];
+//                wks.cell(row + 2, col++) = angle.w[0];
+//                wks.cell(row + 2, col++) = angle.w[1];
+//                wks.cell(row + 2, col++) = angle.w[2];
+//                wks.cell(row + 2, col++) = angle.Angle[0];
+//                wks.cell(row + 2, col++) = angle.Angle[1];
+//                wks.cell(row + 2, col++) = angle.Angle[2];
+//            }
+//            else col += 9;
+//        }
+//    }
+//    doc.save(); doc.close();
+//}
 void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
-    std::string saveFilePath = generateUniqueFileName("JY61P_sync");
-    OpenXLSX::XLDocument doc;
-    doc.create(saveFilePath, false);
-    doc.open(saveFilePath);
-    auto wks = doc.workbook().worksheet("Sheet1");
 
-    wks.cell(1, 1).value() = "Time";
-    int col = 2;
-    for (uint8_t addr : jy61pDeviceAddresses) {
-        std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-        wks.cell(1, col++) = ss.str() + " Accel X";
-        wks.cell(1, col++) = ss.str() + " Accel Y";
-        wks.cell(1, col++) = ss.str() + " Accel Z";
-        wks.cell(1, col++) = ss.str() + " Gyro X";
-        wks.cell(1, col++) = ss.str() + " Gyro Y";
-        wks.cell(1, col++) = ss.str() + " Gyro Z";
-        wks.cell(1, col++) = ss.str() + " Angle X";
-        wks.cell(1, col++) = ss.str() + " Angle Y";
-        wks.cell(1, col++) = ss.str() + " Angle Z";
-    }
+    try {
+        std::string saveFilePath = generateUniqueFileName("JY61P_sync");
+        OpenXLSX::XLDocument doc;
+        doc.create(saveFilePath, false);
+        doc.open(saveFilePath);
+        auto wks = doc.workbook().worksheet("Sheet1");
 
-    for (size_t row = 0; row < data.size(); ++row) {
-        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-        std::tm tm; localtime_s(&tm, &time_t);
-        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-        wks.cell(row + 2, 1).value() = oss.str();
+        // 写表头
+        wks.cell(1, 1).value() = "Time";
+        wks.cell(1, 2).value() = "Device Addr";
 
-        int col = 2;
-        for (uint8_t addr : jy61pDeviceAddresses) {
-            if (data[row].second.count(addr)) {
-                auto& angle = data[row].second.at(addr);
-                wks.cell(row + 2, col++) = angle.a[0];
-                wks.cell(row + 2, col++) = angle.a[1];
-                wks.cell(row + 2, col++) = angle.a[2];
-                wks.cell(row + 2, col++) = angle.w[0];
-                wks.cell(row + 2, col++) = angle.w[1];
-                wks.cell(row + 2, col++) = angle.w[2];
-                wks.cell(row + 2, col++) = angle.Angle[0];
-                wks.cell(row + 2, col++) = angle.Angle[1];
-                wks.cell(row + 2, col++) = angle.Angle[2];
+        // 下面依次写所有数据字段
+        wks.cell(1, 3).value() = "Accel X";
+        wks.cell(1, 4).value() = "Accel Y";
+        wks.cell(1, 5).value() = "Accel Z";
+        wks.cell(1, 6).value() = "Gyro X";
+        wks.cell(1, 7).value() = "Gyro Y";
+        wks.cell(1, 8).value() = "Gyro Z";
+        wks.cell(1, 9).value() = "Angle X";
+        wks.cell(1, 10).value() = "Angle Y";
+        wks.cell(1, 11).value() = "Angle Z";
+        wks.cell(1, 12).value() = "EMA Accel X";
+        wks.cell(1, 13).value() = "EMA Accel Y";
+        wks.cell(1, 14).value() = "EMA Accel Z";
+        wks.cell(1, 15).value() = "EMA Gyro X";
+        wks.cell(1, 16).value() = "EMA Gyro Y";
+        wks.cell(1, 17).value() = "EMA Gyro Z";
+        wks.cell(1, 18).value() = "EMA Angle X";
+        wks.cell(1, 19).value() = "EMA Angle Y";
+        wks.cell(1, 20).value() = "EMA Angle Z";
+
+        int row = 2;
+        for (const auto& [timestamp, snapshot] : data) {
+            // 格式化时间字符串
+            auto time_t = std::chrono::system_clock::to_time_t(timestamp);
+            std::tm tm{};
+#ifdef _WIN32
+            localtime_s(&tm, &time_t);
+#else
+            localtime_r(&time_t, &tm);
+#endif
+            std::ostringstream oss;
+            oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+            std::string timeStr = oss.str();
+
+            // 每个设备单独写一行
+            for (uint8_t addr : jy61pDeviceAddresses) {
+                if (snapshot.find(addr) != snapshot.end()) {
+                    const auto& angle = snapshot.at(addr);
+
+                    wks.cell(row, 1).value() = timeStr;
+                    std::stringstream ss;
+                    ss << "0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+                    wks.cell(row, 2).value() = ss.str();
+
+                    wks.cell(row, 3).value() = angle.a[0];
+                    wks.cell(row, 4).value() = angle.a[1];
+                    wks.cell(row, 5).value() = angle.a[2];
+                    wks.cell(row, 6).value() = angle.w[0];
+                    wks.cell(row, 7).value() = angle.w[1];
+                    wks.cell(row, 8).value() = angle.w[2];
+                    wks.cell(row, 9).value() = angle.Angle[0];
+                    wks.cell(row, 10).value() = angle.Angle[1];
+                    wks.cell(row, 11).value() = angle.Angle[2];
+
+                    wks.cell(row, 12).value() = angle.EMA_a[0];
+                    wks.cell(row, 13).value() = angle.EMA_a[1];
+                    wks.cell(row, 14).value() = angle.EMA_a[2];
+                    wks.cell(row, 15).value() = angle.EMA_w[0];
+                    wks.cell(row, 16).value() = angle.EMA_w[1];
+                    wks.cell(row, 17).value() = angle.EMA_w[2];
+                    wks.cell(row, 18).value() = angle.EMA_Angle[0];
+                    wks.cell(row, 19).value() = angle.EMA_Angle[1];
+                    wks.cell(row, 20).value() = angle.EMA_Angle[2];
+
+                    row++;
+                }
             }
-            else col += 9;
         }
+
+        doc.save();
+        doc.close();
+        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
     }
-    doc.save(); doc.close();
+    catch (const std::exception& e) {
+        ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+    }
 }
+
+
 std::string generateUniqueFileName(const std::string& baseName, const std::string& extension) {
     std::string filename = baseName + extension;
     int counter = 1;
