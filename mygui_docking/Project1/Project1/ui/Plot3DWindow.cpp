@@ -1194,7 +1194,7 @@ void Application::ShowADXL355() {
                     adxl355DataMap[addr] = ADXL355Data();
                 }
 
-                adxl355PollingThread = std::thread([]() {
+                /*adxl355PollingThread = std::thread([]() {
                     while (collectingADXL355) {
                         for (uint8_t addr : adxl355DeviceAddresses) {
                             try {
@@ -1218,7 +1218,47 @@ void Application::ShowADXL355() {
                                         dq.pop_front();
                                 }
 
-                                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                            }
+                            catch (const std::exception& e) {
+                                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+                            }
+                        }
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    }
+                    });*/
+                adxl355PollingThread = std::thread([]() {
+                    while (collectingADXL355) {
+                        for (uint8_t addr : adxl355DeviceAddresses) {
+                            try {
+                                std::vector<uint8_t> cmd;
+                                std::vector<uint8_t> response;
+                                ADXL355Parser::AccelerationData data;
+
+                                {
+                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+                                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+                                    serialManager.send(cmd);
+                                    response = serialManager.receiveADXL355Response();
+                                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
+                                }
+
+                                // === 调用 EmaFilterManager 执行三轴 EMA 滤波 ===
+                                emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+                                data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
+                                data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
+                                data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
+								std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
+									<< "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                                {
+                                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+                                    auto& dq = adxl355DataMap[addr].dataQue;
+                                    dq.push_back(data);
+                                    if (dq.size() > MAX_POINTS)
+                                        dq.pop_front();
+                                }
+
+                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                             }
                             catch (const std::exception& e) {
                                 std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
@@ -1227,6 +1267,7 @@ void Application::ShowADXL355() {
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     }
                     });
+
             }
             catch (const std::exception& e) {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());

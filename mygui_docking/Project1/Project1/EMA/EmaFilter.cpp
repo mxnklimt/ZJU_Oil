@@ -1,3 +1,4 @@
+//EmaFilter.cpp
 #include "EmaFilter.h"
 // ===== 全局变量定义区域（只定义一次）======
 EmaFilterManager emaFilterManager;
@@ -35,4 +36,33 @@ bool EmaFilterManager::has(uint8_t addr) const {
 
 void EmaFilterManager::set(uint8_t addr, double h, double v) {
     emaStates_[addr] = EmaState{ h, v, true };
+}
+void EmaFilterManager::updateXYZ(uint8_t addr, double currentX, double currentY, double currentZ, double alpha) {
+    auto& state = adxl355EmaStates_[addr];
+    if (!state.initialized) {
+        state.x = currentX;
+        state.y = currentY;
+        state.z = currentZ;
+        state.initialized = true;
+    }
+    else {
+        state.x = alpha * currentX + (1.0 - alpha) * state.x;
+        state.y = alpha * currentY + (1.0 - alpha) * state.y;
+        state.z = alpha * currentZ + (1.0 - alpha) * state.z;
+    }
+}
+
+double EmaFilterManager::getX(uint8_t addr) const {
+    auto it = adxl355EmaStates_.find(addr);
+    return it != adxl355EmaStates_.end() ? it->second.x : 0.0;
+}
+
+double EmaFilterManager::getY(uint8_t addr) const {
+    auto it = adxl355EmaStates_.find(addr);
+    return it != adxl355EmaStates_.end() ? it->second.y : 0.0;
+}
+
+double EmaFilterManager::getZ(uint8_t addr) const {
+    auto it = adxl355EmaStates_.find(addr);
+    return it != adxl355EmaStates_.end() ? it->second.z : 0.0;
 }

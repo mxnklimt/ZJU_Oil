@@ -11,6 +11,9 @@ public:
         float x;  // X轴加速度 (g)
         float y;  // Y轴加速度 (g)
         float z;  // Z轴加速度 (g)
+        float EMA_x;
+        float EMA_y;
+        float EMA_z;
     };
 
     ADXL355Parser(uint8_t deviceId = 0x00) : deviceId_(deviceId) {}
