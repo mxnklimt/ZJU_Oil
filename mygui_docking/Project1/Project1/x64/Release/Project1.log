@@ -1,4 +1,34 @@
-﻿  Plot3DWindow.cpp
+﻿  ReadFile.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(75,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(201,22): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(207,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(208,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(209,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(210,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(211,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(212,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(321,22): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(327,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(328,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(329,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(330,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(331,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(332,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(333,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(334,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(335,30): warning C4267: “参数”: 从“size_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(371,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(372,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(415,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+  Plot3DWindow.cpp
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
   
@@ -58,9 +88,9 @@ C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.3443
           ]
   
   正在生成代码
-  4 of 10852 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  3 of 10852 functions (<0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    187 functions had inline decision re-evaluated but remain unchanged
+    178 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Release\Project1.exe
   'pwsh.exe' 不是内部或外部命令，也不是可运行的程序

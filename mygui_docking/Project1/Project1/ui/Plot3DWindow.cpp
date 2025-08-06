@@ -1342,6 +1342,9 @@ void Application::ShowADXL355() {
                     wks.cell(1, col++).value() = "Accel X";
                     wks.cell(1, col++).value() = "Accel Y";
                     wks.cell(1, col++).value() = "Accel Z";
+					wks.cell(1, col++).value() = "EMA Accel X";
+					wks.cell(1, col++).value() = "EMA Accel Y";
+					wks.cell(1, col++).value() = "EMA Accel Z";
 
                     // 写入数据
                     std::lock_guard<std::mutex> lock(adxl355CollectedDataMutex);
@@ -1370,6 +1373,9 @@ void Application::ShowADXL355() {
                                 wks.cell(row, 3).value() = data.x;
                                 wks.cell(row, 4).value() = data.y;
                                 wks.cell(row, 5).value() = data.z;
+                                wks.cell(row, 6).value() = data.EMA_x;
+                                wks.cell(row, 7).value() = data.EMA_y;
+                                wks.cell(row, 8).value() = data.EMA_z;
 
                                 row++; // 移动到下一行
                             }

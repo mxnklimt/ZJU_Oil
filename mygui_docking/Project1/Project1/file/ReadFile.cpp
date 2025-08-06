@@ -127,43 +127,100 @@ void StopAndSaveDualAxisData(
 //    }
 //    doc.save(); doc.close();
 //}
+// 
+//void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
+//    std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
+//    std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    doc.open(saveFilePath);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    wks.cell(1, 1).value() = "Time";
+//    int col = 2;
+//    for (uint8_t addr : adxl355DeviceAddresses) {
+//        std::stringstream ss;
+//        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
+//        wks.cell(1, col++) = ss.str() + " Accel X";
+//        wks.cell(1, col++) = ss.str() + " Accel Y";
+//        wks.cell(1, col++) = ss.str() + " Accel Z";
+//    }
+//
+//    for (size_t row = 0; row < data.size(); ++row) {
+//        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
+//        std::tm tm; localtime_s(&tm, &time_t);
+//        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+//        wks.cell(row + 2, 1).value() = oss.str();
+//
+//        int col = 2;
+//        for (uint8_t addr : adxl355DeviceAddresses) {
+//            if (data[row].second.count(addr)) {
+//                auto& val = data[row].second.at(addr);
+//                wks.cell(row + 2, col++) = val.x;
+//                wks.cell(row + 2, col++) = val.y;
+//                wks.cell(row + 2, col++) = val.z;
+//            }
+//            else col += 3;
+//        }
+//    }
+//    doc.save(); doc.close();
+//}
 void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
+
     std::string saveFilePath = generateUniqueFileName("ADXL355_sync");
     OpenXLSX::XLDocument doc;
     doc.create(saveFilePath, false);
     doc.open(saveFilePath);
     auto wks = doc.workbook().worksheet("Sheet1");
 
+    // 写表头
     wks.cell(1, 1).value() = "Time";
     int col = 2;
     for (uint8_t addr : adxl355DeviceAddresses) {
         std::stringstream ss;
-        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-        wks.cell(1, col++) = ss.str() + " Accel X";
-        wks.cell(1, col++) = ss.str() + " Accel Y";
-        wks.cell(1, col++) = ss.str() + " Accel Z";
+        ss << "Device 0x" << std::uppercase << std::hex
+            << std::setw(2) << std::setfill('0') << (int)addr;
+
+        wks.cell(1, col++).value() = ss.str() + " Accel X";
+        wks.cell(1, col++).value() = ss.str() + " Accel Y";
+        wks.cell(1, col++).value() = ss.str() + " Accel Z";
+        wks.cell(1, col++).value() = ss.str() + " EMA X";
+        wks.cell(1, col++).value() = ss.str() + " EMA Y";
+        wks.cell(1, col++).value() = ss.str() + " EMA Z";
     }
 
+    // 写数据
     for (size_t row = 0; row < data.size(); ++row) {
         auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-        std::tm tm; localtime_s(&tm, &time_t);
-        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        std::tm tm;
+        localtime_s(&tm, &time_t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+
         wks.cell(row + 2, 1).value() = oss.str();
 
         int col = 2;
         for (uint8_t addr : adxl355DeviceAddresses) {
             if (data[row].second.count(addr)) {
-                auto& val = data[row].second.at(addr);
+                const auto& val = data[row].second.at(addr);
                 wks.cell(row + 2, col++) = val.x;
                 wks.cell(row + 2, col++) = val.y;
                 wks.cell(row + 2, col++) = val.z;
+                wks.cell(row + 2, col++) = val.EMA_x;
+                wks.cell(row + 2, col++) = val.EMA_y;
+                wks.cell(row + 2, col++) = val.EMA_z;
             }
-            else col += 3;
+            else {
+                col += 6; // 跳过该设备的 6 列
+            }
         }
     }
-    doc.save(); doc.close();
+
+    doc.save();
+    doc.close();
 }
+
 void SaveDualAxisToXLSX(
     const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::map<uint8_t, DualAxisSensorParser::AngleData>>>& collectedData,
