@@ -6,6 +6,7 @@
 #include <thread>
 #include <atomic>
 #include <map>
+#include <unordered_set>
 #include <unordered_map>
 #include"ADXL355/ADXL355Parser.h"
 #include"RS485/RS485Manager.h"
@@ -36,18 +37,20 @@ extern std::map<uint8_t, class ADXL355Data> adxl355DataMap;
 extern std::map<uint8_t, class ADXL355Parser> adxl355Parsers;
 extern std::mutex RS485SendRecvMutex;
 
+extern std::unordered_set<uint8_t> adxl355NeedInitEMASet;  // 保存开始时初始化的地址
+extern std::mutex adxl355InitMutex;
 //JY61P
 class JY61PData
 {
 public:
 	struct angle
 	{
-		float a[3] = { 0.0f, 0.0f, 0.0f }; // 加速度
-		float w[3] = { 0.0f, 0.0f, 0.0f }; // 角速度
-		float Angle[3] = { 0.0f, 0.0f, 0.0f }; // 姿态角
-		float EMA_a[3] = { 0.0f, 0.0f, 0.0f }; // EMA 加速度
-		float EMA_w[3] = { 0.0f, 0.0f, 0.0f }; // EMA 角速度
-		float EMA_Angle[3] = { 0.0f, 0.0f, 0.0f }; // EMA 姿态角
+		double a[3] = { 0.0f, 0.0f, 0.0f }; // 加速度
+		double w[3] = { 0.0f, 0.0f, 0.0f }; // 角速度
+		double Angle[3] = { 0.0f, 0.0f, 0.0f }; // 姿态角
+		double EMA_a[3] = { 0.0f, 0.0f, 0.0f }; // EMA 加速度
+		double EMA_w[3] = { 0.0f, 0.0f, 0.0f }; // EMA 角速度
+		double EMA_Angle[3] = { 0.0f, 0.0f, 0.0f }; // EMA 姿态角
 	};
 
 	std::deque<angle> dataQue;//使用别的类里的结构体要加上作用域

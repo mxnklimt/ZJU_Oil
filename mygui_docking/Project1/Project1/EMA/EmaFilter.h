@@ -2,6 +2,7 @@
 #pragma once
 #include <unordered_map>
 #include <cstdint>
+#include <mutex>
 // ADXL355 三轴加速度 EMA 状态
 struct EmaStateXYZ {
     double x = 0.0;
@@ -38,15 +39,17 @@ public:
 	void setXYZ(uint8_t addr, double x, double y, double z);
 	bool hasXYZ(uint8_t addr) const;              // 是否已经初始化三轴 EMA
 
-    void update9Axis(uint8_t addr, const float a[3], const float w[3], const float angle[3], double alpha);
-    void get9Axis(uint8_t addr, float a[3], float w[3], float angle[3]) const;
+    void update9Axis(uint8_t addr, const double a[3], const double w[3], const double angle[3], double alpha);
+    void get9Axis(uint8_t addr, double a[3], double w[3], double angle[3]) const;
     bool has9Axis(uint8_t addr) const;
-    void set9Axis(uint8_t addr, const float a[3], const float w[3], const float angle[3]);
+    void set9Axis(uint8_t addr, const double a[3], const double w[3], const double angle[3]);
     void clearAll();
 private:
     std::unordered_map<uint8_t, EmaState> emaStates_;
     std::unordered_map<uint8_t, EmaStateXYZ> adxl355EmaStates_;
     std::unordered_map<uint8_t, EmaState9Axis> jy61pEmaStates_;
+    std::mutex mtx;
+    std::unordered_map<uint8_t, std::tuple<double, double, double>> lastEmaMapXYZ;
     
 };
 

@@ -3,6 +3,7 @@
 #include"data/Data.h"  
 #include<unordered_map>
 #include"DualAxisSensor/DualAxisSensorParser.h"
+#include<unordered_set>
 //cpp中定义全局变量
 
 std::mutex dataMutex;
@@ -14,12 +15,17 @@ std::mutex ADXL355Mutex;
 std::atomic<bool> collectingADXL355 = false;
 std::thread adxl355Thread;       //线程
 ADXL355Data adxl355Data;         //数据结构
-std::vector<uint8_t> adxl355DeviceAddresses = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
+std::vector<uint8_t> adxl355DeviceAddresses = {0x01,0x02,0x03,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
+//如果列表里有用不了的设备，线程时间轴会对不上
 std::map<uint8_t, std::thread> adxl355Threads;
 std::map<uint8_t, ADXL355Data> adxl355DataMap;
 std::map<uint8_t, ADXL355Parser> adxl355Parsers;
 std::mutex RS485SendRecvMutex;
 std::thread adxl355PollingThread;
+
+std::unordered_set<uint8_t> adxl355NeedInitEMASet;  // 保存开始时初始化的地址
+std::mutex adxl355InitMutex;
+
 
 bool adxlxlsxing = false; // 是否正在保存数据到XLSX文件
 //JY61P数据
