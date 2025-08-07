@@ -8,7 +8,7 @@ void initializedualAxisParsers() {
         //为每个设备地址创建一个DualAxisSensorParser实例，并且初始化地址和串口对象
         dualAxisParsers[addr] = std::make_unique<DualAxisSensorParser>(serialDualAxis, addr);
         // 设置采样率
-        dualAxisParsers[addr]->setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_1_Hz);
+        dualAxisParsers[addr]->setSamplingRate(DualAxisSensorParser::SamplingRate::ADS_100_Hz);
     }
 }
 

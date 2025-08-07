@@ -562,63 +562,7 @@ void Application::ShowDualAxisSensor() {
                 pollingThread = std::thread([] {
                     std::map<uint8_t, std::pair<double, double>> previousFilteredMap;  // 上一轮采集的 filtered 值
 
-                    //while (collecting) {
-                    //    std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
-                    //    std::map<uint8_t, std::pair<double, double>> currentFilteredMap;  // 当前这轮采集得到的 filtered
-
-                    //    for (uint8_t addr : dualAxisDeviceAddresses) {
-                    //        try {
-                    //            auto& parser = *dualAxisParsers[addr];
-                    //            auto angles = parser.readAngles();
-
-                    //            // 仅在 dualAxisxlsxing == true 时计算 EMA
-                    //            if (dualAxisxlsxing) {
-                    //                double prevH = 0.0, prevV = 0.0;
-                    //                if (previousFilteredMap.count(addr)) {
-                    //                    prevH = previousFilteredMap[addr].first;
-                    //                    prevV = previousFilteredMap[addr].second;
-                    //                }
-
-                    //                if (!emaFilterManager.has(addr)) {
-                    //                    emaFilterManager.set(addr, angles.filtered_horizontal, angles.filtered_vertical);
-                    //                    angles.EMA_horizontal = angles.filtered_horizontal;
-                    //                    angles.EMA_vertical = angles.filtered_vertical;
-                    //                }
-                    //                else {
-                    //                    emaFilterManager.update(addr, angles.filtered_horizontal, angles.filtered_vertical, alpha);
-                    //                    angles.EMA_horizontal = emaFilterManager.getHorizontal(addr);
-                    //                    angles.EMA_vertical = emaFilterManager.getVertical(addr);
-                    //                }
-
-                    //                // 存储当前这轮的 filtered
-                    //                currentFilteredMap[addr] = { angles.filtered_horizontal, angles.filtered_vertical };
-                    //            }
-                    //            else {
-                    //                // 如果不计算 EMA，就设为 0 或原始值（根据你需求选择）
-                    //                angles.EMA_horizontal = 0.0;
-                    //                angles.EMA_vertical = 0.0;
-                    //            }
-
-                    //            // 存储到本地缓存
-                    //            angleDataMap[addr] = angles;
-                    //        }
-                    //        catch (const std::exception& e) {
-                    //            std::cerr << "[设备 0x" << std::hex << (int)addr << "] 读取失败: " << e.what() << std::endl;
-                    //        }
-
-                    //        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    //    }
-
-                    //    {
-                    //        std::lock_guard<std::mutex> lock(dataMutex);
-                    //        dualAxisDataMap = std::move(angleDataMap);
-                    //    }
-
-                    //    // 仅在开启 EMA 计算时，更新 previousFilteredMap
-                    //    if (dualAxisxlsxing) {
-                    //        previousFilteredMap = std::move(currentFilteredMap);
-                    //    }
-                    //}
+       
                     // 采集线程
                     while (collecting) {
                         std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
@@ -1504,11 +1448,11 @@ adxl355PollingThread = std::thread([]() {
                 }
 
                 // 原始值打印
-                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
-                    << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;
+               /* std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
+                    << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;*/
 
                 if (adxlxlsxing) {
-                    std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 正在保存，处理 EMA..." << std::endl;
+                    /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 正在保存，处理 EMA..." << std::endl;*/
 
                     bool needInit = false;
                     {
@@ -1516,39 +1460,39 @@ adxl355PollingThread = std::thread([]() {
                         if (adxl355NeedInitEMASet.count(addr)) {
                             needInit = true;
                             adxl355NeedInitEMASet.erase(addr);
-                            std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 检测到需要初始化 EMA。" << std::endl;
+                            /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 检测到需要初始化 EMA。" << std::endl;*/
                         }
                     }
 
                     if (needInit || !emaFilterManager.hasXYZ(addr)) {
                         emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-                        data.EMA_x = static_cast<float>(data.x);
-                        data.EMA_y = static_cast<float>(data.y);
-                        data.EMA_z = static_cast<float>(data.z);
-                        std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 初始化 EMA: "
-                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                        data.EMA_x = (data.x);
+                        data.EMA_y = (data.y);
+                        data.EMA_z = (data.z);
+                        /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 初始化 EMA: "
+                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
                     }
                     else if (data.EMA_x == 0.0f && data.EMA_y == 0.0f && data.EMA_z == 0.0f) {
                         data.EMA_x = data.x;
                         data.EMA_y = data.y;
                         data.EMA_z = data.z;
-                        std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 为 0，设置为当前值: "
-                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                        /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 为 0，设置为当前值: "
+                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
                     }
                     else {
                         emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
-                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
-                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-                        std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 更新后: "
-                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                        data.EMA_x = (emaFilterManager.getX(addr));
+                        data.EMA_y = (emaFilterManager.getY(addr));
+                        data.EMA_z = (emaFilterManager.getZ(addr));
+                       /* std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 更新后: "
+                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
                     }
                 }
                 else {
                     data.EMA_x = 0.0f;
                     data.EMA_y = 0.0f;
                     data.EMA_z = 0.0f;
-                    std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 未开始保存，EMA 设为 0" << std::endl;
+                    /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 未开始保存，EMA 设为 0" << std::endl;*/
                 }
 
                 {
@@ -1559,7 +1503,7 @@ adxl355PollingThread = std::thread([]() {
                         dq.pop_front();
                 }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(80));
+                std::this_thread::sleep_for(std::chrono::milliseconds(75));
             }
             catch (const std::exception& e) {
                 std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;

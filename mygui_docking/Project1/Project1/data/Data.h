@@ -82,3 +82,8 @@ extern std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
 extern struct save;
 extern std::map<uint8_t, save>dualAxis_Save;
 extern bool dualAxisxlsxing;
+
+extern std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
+
+
+extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;

@@ -53,3 +53,7 @@ std::mutex dualAxisMutex;
 //std::unique_ptr是指向这个类的智能指针，unique_ptr 表示独占所有权：一个对象只能被一个指针拥有，不能复制，只能移动
 std::map<uint8_t, std::unique_ptr<DualAxisSensorParser>> dualAxisParsers;
 bool dualAxisxlsxing = false; // 是否正在保存数据到XLSX文件
+
+std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
+// 在 dualAxisDataMap 定义附近添加这个：
+std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;

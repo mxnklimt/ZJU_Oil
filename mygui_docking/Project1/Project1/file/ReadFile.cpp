@@ -1,7 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
+#include <OpenXLSX.hpp>
+#include <iostream>
+#include <unordered_map>
+#include <cmath>
 #include <regex>
 #include <ctime>
 #include <iomanip>
@@ -12,6 +15,7 @@
 #include "ReadFile.h"
 #include "OpenXLSX/OpenXLSX.hpp"
 #include "data/Data.h"
+#include "EMA/EmaFilter.h"
 
 void StopAndSaveDualAxisData(
     std::atomic<bool>& isCollectingData,
@@ -88,6 +92,84 @@ void StopAndSaveDualAxisData(
         ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
     }
 }
+void VerifyAndFixADXL355EMA(const std::string& filePath, double alpha) {
+    try {
+        OpenXLSX::XLDocument doc;
+        doc.open(filePath);
+        auto wks = doc.workbook().worksheet("Sheet1");
+
+        std::unordered_map<std::string, std::tuple<double, double, double>> lastEmaMap;
+        int row = 2;
+        int fixCount = 0;
+
+        while (true) {
+            auto timeCell = wks.cell(row, 1);
+            if (timeCell.value().type() == OpenXLSX::XLValueType::Empty) break;
+
+            std::string addrStr = wks.cell(row, 2).value().get<std::string>();
+
+            double rawX = wks.cell(row, 3).value().get<double>();
+            double rawY = wks.cell(row, 4).value().get<double>();
+            double rawZ = wks.cell(row, 5).value().get<double>();
+
+            double savedEmaX = wks.cell(row, 6).value().get<double>();
+            double savedEmaY = wks.cell(row, 7).value().get<double>();
+            double savedEmaZ = wks.cell(row, 8).value().get<double>();
+
+            // 获取上一次 EMA，如果没有就用当前 raw 初始化
+            double prevEmaX = rawX, prevEmaY = rawY, prevEmaZ = rawZ;
+
+            if (lastEmaMap.count(addrStr)) {
+                std::tie(prevEmaX, prevEmaY, prevEmaZ) = lastEmaMap[addrStr];
+            }
+
+            // 计算新的 EMA
+            double calcEmaX = alpha * rawX + (1 - alpha) * prevEmaX;
+            double calcEmaY = alpha * rawY + (1 - alpha) * prevEmaY;
+            double calcEmaZ = alpha * rawZ + (1 - alpha) * prevEmaZ;
+
+            // 浮点误差阈值
+            const double epsilon = 1e-6;
+
+            bool needFix =
+                std::abs(savedEmaX - calcEmaX) > epsilon ||
+                std::abs(savedEmaY - calcEmaY) > epsilon ||
+                std::abs(savedEmaZ - calcEmaZ) > epsilon;
+
+            if (needFix) {
+                std::cout << "[修正] 行 " << row << "，设备 " << addrStr
+                    << "\n -> EMA_X 原: " << savedEmaX << " 计算: " << calcEmaX
+                    << "\n -> EMA_Y 原: " << savedEmaY << " 计算: " << calcEmaY
+                    << "\n -> EMA_Z 原: " << savedEmaZ << " 计算: " << calcEmaZ << "\n";
+
+                wks.cell(row, 6).value() = calcEmaX;
+                wks.cell(row, 7).value() = calcEmaY;
+                wks.cell(row, 8).value() = calcEmaZ;
+
+                fixCount++;
+            }
+
+            // 更新缓存
+            lastEmaMap[addrStr] = { calcEmaX, calcEmaY, calcEmaZ };
+
+            row++;
+        }
+
+        doc.save();
+        doc.close();
+
+        if (fixCount == 0) {
+            std::cout << "所有 ADXL355 EMA 数据均正确，无需修正。\n";
+        }
+        else {
+            std::cout << "共修正了 " << fixCount << " 行 ADXL355 EMA 数据。\n";
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "ADXL355 EMA 验证修正失败：" << e.what() << "\n";
+    }
+}
+
 
 void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::map<uint8_t, ADXL355Parser::AccelerationData>>>& data) {
@@ -112,6 +194,7 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
     int row = 2;
     for (const auto& [timestamp, snapshot] : data) {
         // 格式化时间戳
+        
         auto time_t = std::chrono::system_clock::to_time_t(timestamp);
         std::tm tm;
         localtime_s(&tm, &time_t);
@@ -120,6 +203,10 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
         std::string timeStr = oss.str();
 
         for (const auto& [addr, val] : snapshot) {
+            // 如果三个 EMA 都是 0，就跳过这一行，不写入
+            if (val.EMA_x == 0.0 && val.EMA_y == 0.0 && val.EMA_z == 0.0) {
+                continue; // 跳过
+            }
             // 写时间
             wks.cell(row, 1).value() = timeStr;
 
@@ -143,7 +230,83 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
 
     doc.save();
     doc.close();
+    VerifyAndFixADXL355EMA(saveFilePath,alpha); // 放在 save() 和 close() 后面
+
 }
+
+
+
+void VerifyAndFixEMA(const std::string& filePath, double alpha) {
+    try {
+        OpenXLSX::XLDocument doc;
+        doc.open(filePath);
+        auto wks = doc.workbook().worksheet("Sheet1");
+
+        std::unordered_map<std::string, std::pair<double, double>> lastEmaMap;
+        int row = 2;
+        int fixCount = 0;
+
+        while (true) {
+            auto timeCell = wks.cell(row, 1);
+            if (timeCell.value().type() == OpenXLSX::XLValueType::Empty) break;
+
+            std::string addrStr = wks.cell(row, 2).value().get<std::string>();
+
+            double rawH = wks.cell(row, 5).value().get<double>();
+            double rawV = wks.cell(row, 6).value().get<double>();
+            double savedEmaH = wks.cell(row, 7).value().get<double>();
+            double savedEmaV = wks.cell(row, 8).value().get<double>();
+
+            // 获取上一个 EMA，如果没有则用当前 raw 初始化
+            double prevEmaH = rawH;
+            double prevEmaV = rawV;
+
+            if (lastEmaMap.count(addrStr)) {
+                prevEmaH = lastEmaMap[addrStr].first;
+                prevEmaV = lastEmaMap[addrStr].second;
+            }
+
+            // 计算理论 EMA
+            double calcEmaH = alpha * rawH + (1 - alpha) * prevEmaH;
+            double calcEmaV = alpha * rawV + (1 - alpha) * prevEmaV;
+
+            // 误差阈值，考虑浮点误差
+            const double epsilon = 1e-6;
+
+            bool needFix = (std::abs(savedEmaH - calcEmaH) > epsilon) || (std::abs(savedEmaV - calcEmaV) > epsilon);
+
+            if (needFix) {
+                std::cout << "[修正] 行 " << row << "，设备 " << addrStr
+                    << "，EMA_H 原值: " << savedEmaH << " 计算值: " << calcEmaH
+                    << "，EMA_V 原值: " << savedEmaV << " 计算值: " << calcEmaV << "\n";
+
+                wks.cell(row, 7).value() = calcEmaH;
+                wks.cell(row, 8).value() = calcEmaV;
+
+                fixCount++;
+            }
+
+            // 更新 EMA 缓存
+            lastEmaMap[addrStr] = { calcEmaH, calcEmaV };
+
+            row++;
+        }
+
+        doc.save();
+        doc.close();
+
+        if (fixCount == 0) {
+            std::cout << "所有 EMA 数据均符合计算结果，无需修正。\n";
+        }
+        else {
+            std::cout << "共修正了 " << fixCount << " 行 EMA 数据。\n";
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "EMA 验证修正失败：" << e.what() << "\n";
+    }
+}
+
 
 void SaveDualAxisToXLSX(
     const std::vector<std::pair<std::chrono::system_clock::time_point,
@@ -174,6 +337,9 @@ void SaveDualAxisToXLSX(
         std::lock_guard<std::mutex> lock(collectedDataMutex);
         int row = 2; // 从第2行开始
         for (const auto& [timestamp, dataMap] : collectedData) {
+
+            //------------------------------------------------------------
+
             auto time_t = std::chrono::system_clock::to_time_t(timestamp);
             std::tm tm;
             localtime_s(&tm, &time_t);
@@ -185,6 +351,10 @@ void SaveDualAxisToXLSX(
                 if (dataMap.count(addr)) {
                     const auto& angles = dataMap.at(addr);
 
+                    // 只要 EMA 全为 0，就跳过该设备的一行数据
+                    if (angles.EMA_horizontal == 0.0 && angles.EMA_vertical == 0.0) {
+                        continue;
+                    }
                     wks.cell(row, 1).value() = timeStr;
 
                     std::stringstream addrSS;
@@ -206,12 +376,13 @@ void SaveDualAxisToXLSX(
 
         doc.save();
         doc.close();
-
+        VerifyAndFixEMA(saveFilePath,alpha);
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
     }
     catch (const std::exception& e) {
         ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
     }
+    
 }
 
 //void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
