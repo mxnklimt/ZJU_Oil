@@ -260,7 +260,9 @@ void Application::ShowSynchronizedCapture() {
 			dualAxisxlsxing = true;
 			emaFilterManager.clearAll(); // 清除EMA状态
            
-           
+            for (auto addr : adxl355DeviceAddresses) {
+                adxl355NeedInitEMASet.insert(addr); // ✅ 添加这行
+            }
             syncCollectionThread = std::thread([] {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
@@ -642,7 +644,7 @@ void Application::ShowDualAxisSensor() {
                             }
 
                             angleDataMap[addr] = angles;
-                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            std::this_thread::sleep_for(std::chrono::milliseconds(85));
                         }
 
                         {
@@ -1340,86 +1342,232 @@ void Application::ShowADXL355() {
                 //        std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 //    }
                 //    });
-                adxl355PollingThread = std::thread([]() {
-                    while (collectingADXL355) {
-                        for (uint8_t addr : adxl355DeviceAddresses) {
-                            try {
-                                std::vector<uint8_t> cmd;
-                                std::vector<uint8_t> response;
-                                ADXL355Parser::AccelerationData data;
+                //adxl355PollingThread = std::thread([]() {
+                //    while (collectingADXL355) {
+                //        for (uint8_t addr : adxl355DeviceAddresses) {
+                //            try {
+                //                std::vector<uint8_t> cmd;
+                //                std::vector<uint8_t> response;
+                //                ADXL355Parser::AccelerationData data;
 
-                                {
-                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-                                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-                                    serialManager.send(cmd);
-                                    response = serialManager.receiveADXL355Response();
-                                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-                                }
+                //                {
+                //                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+                //                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+                //                    serialManager.send(cmd);
+                //                    response = serialManager.receiveADXL355Response();
+                //                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
+                //                }
 
-                                /*if (adxlxlsxing) {
-                                    if (!emaFilterManager.hasXYZ(addr)) {
-                                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-                                        data.EMA_x = static_cast<float>(data.x);
-                                        data.EMA_y = static_cast<float>(data.y);
-                                        data.EMA_z = static_cast<float>(data.z);
-                                    }
-                                    else {
-                                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-                                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
-                                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
-                                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-                                    }
-                                }*/
-                                if (adxlxlsxing) {
-                                    bool needInit = false;
-                                    {
-                                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
-                                        if (adxl355NeedInitEMASet.count(addr)) {
-                                            needInit = true;
-                                            adxl355NeedInitEMASet.erase(addr); // 初始化一次后移除
-                                        }
-                                    }
+                //                if (adxlxlsxing) {
+                //                    bool needInit = false;
+                //                    {
+                //                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
+                //                        if (adxl355NeedInitEMASet.count(addr)) {
+                //                            needInit = true;
+                //                            adxl355NeedInitEMASet.erase(addr); // 初始化一次后移除
+                //                        }
+                //                    }
 
-                                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
-                                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-                                        data.EMA_x = static_cast<float>(data.x);
-                                        data.EMA_y = static_cast<float>(data.y);
-                                        data.EMA_z = static_cast<float>(data.z);
-                                    }
-                                    else {
-                                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-                                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
-                                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
-                                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-                                    }
-                                }
+                //                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
+                //                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
+                //                        data.EMA_x = static_cast<float>(data.x);
+                //                        data.EMA_y = static_cast<float>(data.y);
+                //                        data.EMA_z = static_cast<float>(data.z);
+                //                    }
+                //                    else {
+                //                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+                //                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
+                //                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
+                //                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
+                //                    }
+                //                }
 
-                                else {
-                                    data.EMA_x = 0.0f;
-                                    data.EMA_y = 0.0f;
-                                    data.EMA_z = 0.0f;
-                                }
+                //                else {
+                //                    data.EMA_x = 0.0f;
+                //                    data.EMA_y = 0.0f;
+                //                    data.EMA_z = 0.0f;
+                //                }
 
-                                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
-                                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                //                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
+                //                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
 
-                                {
-                                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-                                    auto& dq = adxl355DataMap[addr].dataQue;
-                                    dq.push_back(data);
-                                    if (dq.size() > MAX_POINTS)
-                                        dq.pop_front();
-                                }
+                //                {
+                //                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+                //                    auto& dq = adxl355DataMap[addr].dataQue;
+                //                    dq.push_back(data);
+                //                    if (dq.size() > MAX_POINTS)
+                //                        dq.pop_front();
+                //                }
 
-                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                            }
-                            catch (const std::exception& e) {
-                                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-                            }
+                //                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                //            }
+                //            catch (const std::exception& e) {
+                //                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+                //            }
+                //        }
+                //        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                //    }
+                //    });
+//adxl355PollingThread = std::thread([]() {
+//    while (collectingADXL355) {
+//        for (uint8_t addr : adxl355DeviceAddresses) {
+//            try {
+//                std::vector<uint8_t> cmd;
+//                std::vector<uint8_t> response;
+//                ADXL355Parser::AccelerationData data;
+//
+//                {
+//                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+//                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+//                    serialManager.send(cmd);
+//                    response = serialManager.receiveADXL355Response();
+//                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
+//                }
+//
+//                // 打印原始值用于对比
+//                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
+//                    << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;
+//
+//                if (adxlxlsxing) {
+//                    bool needInit = false;
+//                    {
+//                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
+//                        if (adxl355NeedInitEMASet.count(addr)) {
+//                            needInit = true;
+//                            adxl355NeedInitEMASet.erase(addr);
+//                        }
+//                    }
+//
+//                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
+//                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
+//                        data.EMA_x = static_cast<float>(data.x);
+//                        data.EMA_y = static_cast<float>(data.y);
+//                        data.EMA_z = static_cast<float>(data.z);
+//                    }
+//                    else if (data.EMA_x == 0.0f && data.EMA_y == 0.0f && data.EMA_z == 0.0f) {
+//                        data.EMA_x = data.x;
+//                        data.EMA_y = data.y;
+//                        data.EMA_z = data.z;
+//                    }
+//                    else {
+//                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+//                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
+//                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
+//                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
+//                    }
+//
+//                }
+//                
+//                else {
+//                    data.EMA_x = 0.0f;
+//                    data.EMA_y = 0.0f;
+//                    data.EMA_z = 0.0f;
+//                }
+//                
+//
+//                // 打印滤波后结果
+//                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
+//                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+//
+//                {
+//                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+//                    auto& dq = adxl355DataMap[addr].dataQue;
+//                    dq.push_back(data);
+//                    if (dq.size() > MAX_POINTS)
+//                        dq.pop_front();
+//                }
+//
+//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//            }
+//            catch (const std::exception& e) {
+//                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+//            }
+//        }
+//
+//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//    }
+//    });
+adxl355PollingThread = std::thread([]() {
+    while (collectingADXL355) {
+        for (uint8_t addr : adxl355DeviceAddresses) {
+            try {
+                std::vector<uint8_t> cmd;
+                std::vector<uint8_t> response;
+                ADXL355Parser::AccelerationData data;
+
+                {
+                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+                    serialManager.send(cmd);
+                    response = serialManager.receiveADXL355Response();
+                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
+                }
+
+                // 原始值打印
+                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
+                    << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;
+
+                if (adxlxlsxing) {
+                    std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 正在保存，处理 EMA..." << std::endl;
+
+                    bool needInit = false;
+                    {
+                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
+                        if (adxl355NeedInitEMASet.count(addr)) {
+                            needInit = true;
+                            adxl355NeedInitEMASet.erase(addr);
+                            std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 检测到需要初始化 EMA。" << std::endl;
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(90));
                     }
-                    });
+
+                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
+                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
+                        data.EMA_x = static_cast<float>(data.x);
+                        data.EMA_y = static_cast<float>(data.y);
+                        data.EMA_z = static_cast<float>(data.z);
+                        std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 初始化 EMA: "
+                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                    }
+                    else if (data.EMA_x == 0.0f && data.EMA_y == 0.0f && data.EMA_z == 0.0f) {
+                        data.EMA_x = data.x;
+                        data.EMA_y = data.y;
+                        data.EMA_z = data.z;
+                        std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 为 0，设置为当前值: "
+                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                    }
+                    else {
+                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
+                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
+                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
+                        std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 更新后: "
+                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
+                    }
+                }
+                else {
+                    data.EMA_x = 0.0f;
+                    data.EMA_y = 0.0f;
+                    data.EMA_z = 0.0f;
+                    std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 未开始保存，EMA 设为 0" << std::endl;
+                }
+
+                {
+                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+                    auto& dq = adxl355DataMap[addr].dataQue;
+                    dq.push_back(data);
+                    if (dq.size() > MAX_POINTS)
+                        dq.pop_front();
+                }
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(80));
+            }
+            catch (const std::exception& e) {
+                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+            }
+        }
+    }
+    });
+
 
             }
             catch (const std::exception& e) {
