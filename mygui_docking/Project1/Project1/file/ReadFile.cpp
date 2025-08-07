@@ -137,10 +137,10 @@ void VerifyAndFixADXL355EMA(const std::string& filePath, double alpha) {
                 std::abs(savedEmaZ - calcEmaZ) > epsilon;
 
             if (needFix) {
-                std::cout << "[修正] 行 " << row << "，设备 " << addrStr
+                /*std::cout << "[修正] 行 " << row << "，设备 " << addrStr
                     << "\n -> EMA_X 原: " << savedEmaX << " 计算: " << calcEmaX
                     << "\n -> EMA_Y 原: " << savedEmaY << " 计算: " << calcEmaY
-                    << "\n -> EMA_Z 原: " << savedEmaZ << " 计算: " << calcEmaZ << "\n";
+                    << "\n -> EMA_Z 原: " << savedEmaZ << " 计算: " << calcEmaZ << "\n";*/
 
                 wks.cell(row, 6).value() = calcEmaX;
                 wks.cell(row, 7).value() = calcEmaY;
@@ -159,10 +159,10 @@ void VerifyAndFixADXL355EMA(const std::string& filePath, double alpha) {
         doc.close();
 
         if (fixCount == 0) {
-            std::cout << "所有 ADXL355 EMA 数据均正确，无需修正。\n";
+            //std::cout << "所有 ADXL355 EMA 数据均正确，无需修正。\n";
         }
         else {
-            std::cout << "共修正了 " << fixCount << " 行 ADXL355 EMA 数据。\n";
+            //std::cout << "共修正了 " << fixCount << " 行 ADXL355 EMA 数据。\n";
         }
     }
     catch (const std::exception& e) {
@@ -235,6 +235,134 @@ void SaveADXL355ToXLSX(const std::vector<std::pair<std::chrono::system_clock::ti
 }
 
 
+void VerifyAndFixJY61PEMA(const std::string& filePath, double alpha) {
+    try {
+        OpenXLSX::XLDocument doc;
+        doc.open(filePath);
+        auto wks = doc.workbook().worksheet("Sheet1");
+
+        // 存储上一次的 EMA 数据，key 是设备地址字符串
+        struct EMAData {
+            double EMA_a[3]{ 0,0,0 };
+            double EMA_w[3]{ 0,0,0 };
+            double EMA_Angle[3]{ 0,0,0 };
+        };
+        std::unordered_map<std::string, EMAData> lastEmaMap;
+
+        int row = 2;
+        int fixCount = 0;
+        const double epsilon = 1e-6;
+
+        while (true) {
+            auto timeCell = wks.cell(row, 1);
+            if (timeCell.value().type() == OpenXLSX::XLValueType::Empty) break;
+
+            std::string addrStr = wks.cell(row, 2).value().get<std::string>();
+
+            // 读取原始数据（加速度、角速度、角度）
+            double a[3] = {
+                wks.cell(row, 3).value().get<double>(),
+                wks.cell(row, 4).value().get<double>(),
+                wks.cell(row, 5).value().get<double>()
+            };
+            double w[3] = {
+                wks.cell(row, 6).value().get<double>(),
+                wks.cell(row, 7).value().get<double>(),
+                wks.cell(row, 8).value().get<double>()
+            };
+            double Angle[3] = {
+                wks.cell(row, 9).value().get<double>(),
+                wks.cell(row, 10).value().get<double>(),
+                wks.cell(row, 11).value().get<double>()
+            };
+
+            // 读取保存的 EMA 数据
+            double savedEMA_a[3] = {
+                wks.cell(row, 12).value().get<double>(),
+                wks.cell(row, 13).value().get<double>(),
+                wks.cell(row, 14).value().get<double>()
+            };
+            double savedEMA_w[3] = {
+                wks.cell(row, 15).value().get<double>(),
+                wks.cell(row, 16).value().get<double>(),
+                wks.cell(row, 17).value().get<double>()
+            };
+            double savedEMA_Angle[3] = {
+                wks.cell(row, 18).value().get<double>(),
+                wks.cell(row, 19).value().get<double>(),
+                wks.cell(row, 20).value().get<double>()
+            };
+
+            // 取上一次 EMA，没有则初始化为当前 raw
+            EMAData lastEma = {};
+            if (lastEmaMap.count(addrStr)) {
+                lastEma = lastEmaMap[addrStr];
+            }
+            else {
+                for (int i = 0; i < 3; ++i) {
+                    lastEma.EMA_a[i] = a[i];
+                    lastEma.EMA_w[i] = w[i];
+                    lastEma.EMA_Angle[i] = Angle[i];
+                }
+            }
+
+            // 计算新的 EMA
+            EMAData calcEma;
+            for (int i = 0; i < 3; ++i) {
+                calcEma.EMA_a[i] = alpha * a[i] + (1 - alpha) * lastEma.EMA_a[i];
+                calcEma.EMA_w[i] = alpha * w[i] + (1 - alpha) * lastEma.EMA_w[i];
+                calcEma.EMA_Angle[i] = alpha * Angle[i] + (1 - alpha) * lastEma.EMA_Angle[i];
+            }
+
+            // 检查是否需要修正
+            bool needFix = false;
+            for (int i = 0; i < 3; ++i) {
+                if (std::abs(savedEMA_a[i] - calcEma.EMA_a[i]) > epsilon ||
+                    std::abs(savedEMA_w[i] - calcEma.EMA_w[i]) > epsilon ||
+                    std::abs(savedEMA_Angle[i] - calcEma.EMA_Angle[i]) > epsilon) {
+                    needFix = true;
+                    break;
+                }
+            }
+
+            if (needFix) {
+                fixCount++;
+                // 输出修正日志
+                //std::cout << "[修正] 行 " << row << "，设备 " << addrStr << "\n";
+                /*for (int i = 0; i < 3; ++i) {
+                    std::cout << " EMA_a[" << i << "] 原: " << savedEMA_a[i] << " 计算: " << calcEma.EMA_a[i] << "\n";
+                    std::cout << " EMA_w[" << i << "] 原: " << savedEMA_w[i] << " 计算: " << calcEma.EMA_w[i] << "\n";
+                    std::cout << " EMA_Angle[" << i << "] 原: " << savedEMA_Angle[i] << " 计算: " << calcEma.EMA_Angle[i] << "\n";
+                }*/
+
+                // 写回修正后的 EMA 值
+                for (int i = 0; i < 3; ++i) {
+                    wks.cell(row, 12 + i).value() = calcEma.EMA_a[i];
+                    wks.cell(row, 15 + i).value() = calcEma.EMA_w[i];
+                    wks.cell(row, 18 + i).value() = calcEma.EMA_Angle[i];
+                }
+            }
+
+            // 更新缓存
+            lastEmaMap[addrStr] = calcEma;
+
+            row++;
+        }
+
+        doc.save();
+        doc.close();
+
+        if (fixCount == 0) {
+            //std::cout << "所有 JY61P EMA 数据均正确，无需修正。\n";
+        }
+        else {
+            //std::cout << "共修正了 " << fixCount << " 行 JY61P EMA 数据。\n";
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "JY61P EMA 验证修正失败：" << e.what() << "\n";
+    }
+}
 
 void VerifyAndFixEMA(const std::string& filePath, double alpha) {
     try {
@@ -276,9 +404,9 @@ void VerifyAndFixEMA(const std::string& filePath, double alpha) {
             bool needFix = (std::abs(savedEmaH - calcEmaH) > epsilon) || (std::abs(savedEmaV - calcEmaV) > epsilon);
 
             if (needFix) {
-                std::cout << "[修正] 行 " << row << "，设备 " << addrStr
+                /*std::cout << "[修正] 行 " << row << "，设备 " << addrStr
                     << "，EMA_H 原值: " << savedEmaH << " 计算值: " << calcEmaH
-                    << "，EMA_V 原值: " << savedEmaV << " 计算值: " << calcEmaV << "\n";
+                    << "，EMA_V 原值: " << savedEmaV << " 计算值: " << calcEmaV << "\n";*/
 
                 wks.cell(row, 7).value() = calcEmaH;
                 wks.cell(row, 8).value() = calcEmaV;
@@ -434,6 +562,8 @@ void SaveDualAxisToXLSX(
 //    }
 //    doc.save(); doc.close();
 //}
+
+
 void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
 
@@ -470,6 +600,8 @@ void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time
 
         int row = 2;
         for (const auto& [timestamp, snapshot] : data) {
+
+
             // 格式化时间字符串
             auto time_t = std::chrono::system_clock::to_time_t(timestamp);
             std::tm tm{};
@@ -484,9 +616,13 @@ void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time
 
             // 每个设备单独写一行
             for (uint8_t addr : jy61pDeviceAddresses) {
+                
                 if (snapshot.find(addr) != snapshot.end()) {
                     const auto& angle = snapshot.at(addr);
-
+                    // 只要 EMA 全为 0，就跳过该设备的一行数据
+                    if (angle.EMA_a[1] == 0.0 && angle.EMA_a[2] == 0.0) {
+                        continue;
+                    }
                     wks.cell(row, 1).value() = timeStr;
                     std::stringstream ss;
                     ss << "0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
@@ -519,7 +655,9 @@ void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time
 
         doc.save();
         doc.close();
+        VerifyAndFixJY61PEMA(saveFilePath, alpha);
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+		
     }
     catch (const std::exception& e) {
         ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());

@@ -8,13 +8,12 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenX
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(82,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
   (编译源文件“file/ReadFile.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(559,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(560,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(603,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(697,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(698,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(741,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
   正在生成代码
-  391 of 11411 functions ( 3.4%) were compiled, the rest were copied from previous compilation.
-    135 functions were new in current compilation
-    489 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+  All 11533 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   已完成代码的生成
   Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Release\Project1.exe
   'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
