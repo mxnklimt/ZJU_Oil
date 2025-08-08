@@ -1606,7 +1606,7 @@ void Application::ShowLaserSensor() {
             ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
         }
         //显示-----------------------------------------------------------
-        if(isCollecting)
+        /*if(isCollecting)
         {
             std::lock_guard<std::mutex> lock(LasergetMutex);
             for (auto addr : laserDeviceAddresses) {
@@ -1618,7 +1618,69 @@ void Application::ShowLaserSensor() {
                     ImGui::Text(u8"设备 0x%02X: 无数据", addr);
                 }
             }
+        }*/
+        if (isCollecting) {
+            // 左右分栏布局，左侧20%，右侧80%
+            ImGui::Columns(2, "LaserSensorColumns", false);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);  // 左20%
+            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);  // 右80%
+
+            // -------- 左侧子窗口: 设备选择 --------
+            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
+            ImGui::Separator();
+
+            // 用一个 map<bool> 记录每个设备是否显示，声明为 static 或类成员
+            static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+            for (uint8_t addr : laserDeviceAddresses) {
+                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+                    deviceDisplayFlags[addr] = true;  // 默认显示
+
+                char label[32];
+                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
+                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
+            }
+            ImGui::EndChild();
+
+            // -------- 切换到右侧子窗口: 数据卡片显示 --------
+            ImGui::NextColumn();
+            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+
+            std::lock_guard<std::mutex> lock(LasergetMutex);
+            for (uint8_t addr : laserDeviceAddresses) {
+                if (!deviceDisplayFlags[addr]) continue;  // 未选中则跳过
+
+                auto it = collectedLasorMap.find(addr);
+                if (it != collectedLasorMap.end() && !it->second.empty()) {
+                    auto& lastData = it->second.back();
+
+                    ImGui::Separator();
+                    ImGui::Text(u8"设备 0x%02X", addr);
+                    ImGui::PushID(addr);
+
+                    // 这里做成1列或者多列都可以，示范1列卡片
+                    ImGui::BeginChild("DataCard", ImVec2(0, 60), true);
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("距离: 1234 mm").x) * 0.5f);
+
+                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %d mm", lastData.second);
+
+                    ImGui::EndChild();
+
+                    ImGui::PopID();
+                }
+                else {
+                    ImGui::Separator();
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+                }
+            }
+
+            ImGui::EndChild();
+
+            // 恢复单栏
+            ImGui::Columns(1);
         }
+
 
         
         
