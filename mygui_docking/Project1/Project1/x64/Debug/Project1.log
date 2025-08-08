@@ -30,7 +30,42 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Pl
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1508,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1509,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1510,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1774,29): error C2065: “collectedDataMap”: 未声明的标识符
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1774,27): error C2530: “dataVec”: 必须初始化引用
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1775,18): error C3536: “dataVec”: 初始化之前无法使用
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1777,61): error C3536: “lastVal”: 初始化之前无法使用
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18): warning C4244: “=”: 从“wchar_t”转换到“char”，可能丢失数据
+  (编译源文件“ui/Plot3DWindow.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(766,44):
+          查看对正在编译的函数 模板 实例化“std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,0>(_Iter,_Iter,const _Alloc &)”的引用
+          with
+          [
+              _Elem=wchar_t,
+              _Iter=std::_String_iterator<std::_String_val<std::_Simple_types<wchar_t>>>,
+              _Alloc=std::allocator<char>
+          ]
+              C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(766,32):
+              请参阅 "Application::listAvailableSerialPorts" 中对 "std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string" 的第一个引用
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xstring(793,17):
+          查看对正在编译的函数 模板 实例化“void std::basic_string<char,std::char_traits<char>,std::allocator<char>>::_Construct_from_iter<wchar_t*,wchar_t*,_Size_type>(_Iter,const _Sent,_Size)”的引用
+          with
+          [
+              _Size_type=unsigned __int64,
+              _Iter=wchar_t *,
+              _Sent=wchar_t *,
+              _Size=unsigned __int64
+          ]
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xstring(949,18):
+          查看对正在编译的函数 模板 实例化“_OutIt *std::_Copy_n_unchecked4<wchar_t*,_Size,char*>(_InIt,_SizeTy,_OutIt)”的引用
+          with
+          [
+              _OutIt=char *,
+              _Size=unsigned __int64,
+              _InIt=wchar_t *,
+              _SizeTy=unsigned __int64
+          ]
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\LaserSensor\LaserSensorProtocol.h(68,1): warning C4715: “LaserSensorProtocol::stopContinuousCollection”: 不是所有的控件路径都返回值
+LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/PROFILE”规范)
+Data.obj : warning LNK4075: 忽略“/EDITANDCONTINUE”(由于“/OPT:REF”规范)
+  Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Debug\Project1.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。

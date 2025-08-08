@@ -1530,174 +1530,7 @@ void Application::ShowADXL355() {
     ImGui::End();
 }
 
-// 在应用程序类中添加激光传感器相关代码
-//void Application::ShowLaserSensor() {
-//    if (!ImGui::Begin("Laser Sensor")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 4;
-//    static bool isConnected = false;
-//    static std::unique_ptr<LaserSensorProtocol> laserSensor;
-//
-//    // 采集控制相关变量
-//    static std::atomic<bool> isCollecting = false;
-//    static std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
-//
-//    // 串口选择
-//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-//    // 波特率选择
-//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
-//
-//    if (!isConnected) {
-//        if (ImGui::Button(u8"连接")) {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
-//                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
-//                isConnected = true;
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else {
-//        if (ImGui::Button(u8"断开")) {
-//            if (isCollecting) {
-//                isCollecting = false;
-//                collectedData = laserSensor->stopContinuousCollection();
-//            }
-//            serialManager.close();
-//            isConnected = false;
-//            laserSensor.reset();
-//        }
-//
-//        // 单次测量
-//        if (ImGui::Button(u8"单次测量")) {
-//            try {
-//                uint16_t distance = laserSensor->getDistance();
-//                ImGui::Text("当前距离: %d mm", distance);
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "测量失败: %s", e.what());
-//            }
-//        }
-//
-//        // 连续采集控制
-//        if (!isCollecting) {
-//            if (ImGui::Button(u8"开始连续采集")) {
-//                isCollecting = true;
-//                laserSensor->startContinuousCollection();
-//            }
-//        }
-//        else {
-//            if (ImGui::Button(u8"停止采集并保存")) {
-//                isCollecting = false;
-//                collectedData = laserSensor->stopContinuousCollection();
-//
-//                try {
-//                    std::string saveFilePath = generateUniqueFileName("LaserSensor_data");
-//                    //laserSensor->saveDataToExcel(saveFilePath);
-//                    //ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
-//                }
-//                catch (const std::exception& e) {
-//                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
-//                }
-//            }
-//
-//            ImGui::SameLine();
-//            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据...");
-//        }
-//    }
-//
-//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-//    ImGui::End();
-//}
-// 在应用程序类中添加激光传感器相关代码
-//void Application::ShowLaserSensor() {
-//    if (!ImGui::Begin("Laser Sensor")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 4;
-//    static bool isConnected = false;
-//    static std::unique_ptr<LaserSensorProtocol> laserSensor;
-//
-//    // 采集控制相关变量
-//    static std::atomic<bool> isCollecting = false;
-//    static std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
-//
-//    // 串口选择
-//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-//    // 波特率选择
-//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
-//
-//    if (!isConnected) {
-//        if (ImGui::Button(u8"连接")) {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
-//                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
-//                isConnected = true;
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else {
-//        if (ImGui::Button(u8"断开")) {
-//            if (isCollecting) {
-//                isCollecting = false;
-//                collectedData = laserSensor->stopContinuousCollection();
-//            }
-//            serialManager.close();
-//            isConnected = false;
-//            laserSensor.reset();
-//        }
-//
-//        // 单次测量
-//        if (ImGui::Button(u8"单次测量")) {
-//            try {
-//                uint16_t distance = laserSensor->getDistance();
-//                ImGui::Text("当前距离: %d mm", distance);
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "测量失败: %s", e.what());
-//            }
-//        }
-//
-//        // 连续采集控制
-//        if (!isCollecting) {
-//            if (ImGui::Button(u8"开始连续采集")) {
-//                isCollecting = true;
-//                laserSensor->startContinuousCollection();
-//            }
-//        }
-//        else {
-//            if (ImGui::Button(u8"停止采集")) {
-//                isCollecting = false;
-//                collectedData = laserSensor->stopContinuousCollection();
-//            }
-//
-//            ImGui::SameLine();
-//            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据...");
-//        }
-//    }
-//
-//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-//    ImGui::End();
-//}
-// 
+
 void Application::ShowLaserSensor() {
     if (!ImGui::Begin("Laser Sensor")) {
         ImGui::End();
@@ -1715,7 +1548,7 @@ void Application::ShowLaserSensor() {
 
     // 采集状态
     static std::atomic<bool> isCollecting = false;
-    static std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;
+    /*std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;*/
 
     // 串口选择
     ShowSerialPortSelector(availablePorts, selectedPortIndex);
@@ -1738,11 +1571,11 @@ void Application::ShowLaserSensor() {
         if (ImGui::Button(u8"断开")) {
             if (isCollecting) {
                 isCollecting = false;
-                collectedDataMap = laserSensor->stopContinuousCollection();
+                collectedLasorMap = laserSensor->stopContinuousCollection();
             }
             serialManager.close();
             isConnected = false;
-            laserSensor.reset();
+            //laserSensor.reset();
         }
 
         ImGui::SameLine();
@@ -1757,128 +1590,44 @@ void Application::ShowLaserSensor() {
             if (ImGui::Button(u8"开始采集所有设备")) {
                 isCollecting = true;
                 laserSensor->startContinuousCollection(laserDeviceAddresses);
+
+                
+                
             }
+
         }
         else {
             if (ImGui::Button(u8"停止采集")) {
                 isCollecting = false;
-                collectedDataMap = laserSensor->stopContinuousCollection();
+                
+                //collectedDataMap = laserSensor->stopContinuousCollection();
             }
             ImGui::SameLine();
             ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
         }
-
-        // 实时显示每台设备的最后一条数据
-        ImGui::Separator();
-        for (auto addr : laserDeviceAddresses) {
-            auto& dataVec = collectedDataMap[addr];
-            if (!dataVec.empty()) {
-                auto lastVal = dataVec.back().second;
-                ImGui::Text(u8"设备 0x%02X: %d mm", addr, lastVal);
-            }
-            else {
-                ImGui::Text(u8"设备 0x%02X: 无数据", addr);
+        //显示-----------------------------------------------------------
+        if(isCollecting)
+        {
+            std::lock_guard<std::mutex> lock(LasergetMutex);
+            for (auto addr : laserDeviceAddresses) {
+                auto& dataVec = collectedLasorMap[addr];
+                if (!dataVec.empty()) {
+                    ImGui::Text(u8"设备 0x%02X: %d mm", addr, dataVec.back().second);
+                }
+                else {
+                    ImGui::Text(u8"设备 0x%02X: 无数据", addr);
+                }
             }
         }
+
+        
+        
     }
 
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
     ImGui::End();
 }
-//void Application::ShowLaserSensor() {
-//    if (!ImGui::Begin("Laser Sensor")) {
-//        ImGui::End();
-//        return;
-//    }
-//
-//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
-//    static int selectedPortIndex = 0;
-//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-//    static int selectedBaudIndex = 4;
-//    static bool isConnected = false;
-//
-//    // 设备地址列表（扫描后更新）
-//    static std::vector<uint8_t> laserDeviceAddresses;
-//
-//    // 协议类实例
-//    static std::unique_ptr<LaserSensorProtocol> laserSensor;
-//
-//    // 采集状态
-//    static std::atomic<bool> isCollecting = false;
-//
-//    // 串口选择 UI
-//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
-//
-//    // 连接按钮
-//    if (!isConnected) {
-//        if (ImGui::Button(u8"连接")) {
-//            try {
-//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
-//                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
-//                isConnected = true;
-//            }
-//            catch (const std::exception& e) {
-//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
-//            }
-//        }
-//    }
-//    else {
-//        if (ImGui::Button(u8"断开")) {
-//            if (isCollecting) {
-//                isCollecting = false;
-//                laserSensor->stopContinuousCollection();
-//            }
-//            serialManager.close();
-//            isConnected = false;
-//            laserSensor.reset();
-//            laserDeviceAddresses.clear();
-//        }
-//
-//        ImGui::SameLine();
-//
-//        
-//
-//        // 显示扫描到的设备地址
-//        for (auto addr : laserDeviceAddresses) {
-//            ImGui::Text(u8"发现设备: 0x%02X", addr);
-//        }
-//
-//        // 开始/停止采集
-//        if (!isCollecting) {
-//            if (ImGui::Button(u8"开始采集所有设备") && !laserDeviceAddresses.empty()) {
-//                isCollecting = true;
-//                laserSensor->startContinuousCollection(laserDeviceAddresses);
-//            }
-//        }
-//        else {
-//            if (ImGui::Button(u8"停止采集")) {
-//                isCollecting = false;
-//                laserSensor->stopContinuousCollection();
-//            }
-//            ImGui::SameLine();
-//            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
-//        }
-//
-//        // 实时数据显示
-//        ImGui::Separator();
-//        auto latestData = laserSensor->getLatestData();
-//        for (auto addr : laserDeviceAddresses) {
-//            auto it = latestData.find(addr);
-//            if (it != latestData.end() && !it->second.empty()) {
-//                auto lastVal = it->second.back().second;
-//                ImGui::Text(u8"设备 0x%02X: %d mm", addr, lastVal);
-//            }
-//            else {
-//                ImGui::Text(u8"设备 0x%02X: 无数据", addr);
-//            }
-//        }
-//    }
-//
-//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
-//    ImGui::End();
-//}
+
 
 
 void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selectedIndex, const char* label) {

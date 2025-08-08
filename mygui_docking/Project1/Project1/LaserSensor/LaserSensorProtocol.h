@@ -35,7 +35,7 @@ public:
     void startContinuousCollection(const std::vector<uint8_t>& deviceAddresses) {
         if (isCollecting) return;
         isCollecting = true;
-        collectedDataMap.clear();
+        //collectedDataMap.clear();
 
         collectionThread = std::thread([this, deviceAddresses]() {
             while (isCollecting) {
@@ -44,7 +44,7 @@ public:
                     try {
                         uint16_t dist = getDistance(addr);
                         std::lock_guard<std::mutex> lock(LasergetMutex);
-                        collectedDataMap[addr].emplace_back(now, dist);
+                        collectedLasorMap[addr].emplace_back(now, dist);
                     }
                     catch (const std::exception& e) {
                         std::cerr << "地址 0x" << std::hex << int(addr) << " 采集失败: " << e.what() << "\n";
@@ -63,22 +63,23 @@ public:
         isCollecting = false;
         if (collectionThread.joinable()) collectionThread.join();
 
-        std::lock_guard<std::mutex> lock(LasergetMutex);
-        return collectedDataMap;
+        /*std::lock_guard<std::mutex> lock(LasergetMutex);
+        return collectedDataMap;*/
     }
     // 在类里加：
     std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>
         getLatestData() {
         std::lock_guard<std::mutex> lock(LasergetMutex);
-        return collectedDataMap; // 返回采集线程里最新的数据
+        return collectedLasorMap; // 返回采集线程里最新的数据
     }
+
 
 private:
     RS485Manager& rs485Manager;
     std::atomic<bool> isCollecting{ false };
     std::thread collectionThread;
    
-    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;
+    //std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;
 
     // CRC16 (MODBUS)
     uint16_t calculateCRC(const uint8_t* data, size_t length) {
