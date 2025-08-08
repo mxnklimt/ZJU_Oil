@@ -1237,282 +1237,87 @@ void Application::ShowADXL355() {
                     adxl355Parsers[addr] = ADXL355Parser(addr);
                     adxl355DataMap[addr] = ADXL355Data();
                 }
-                //adxl355PollingThread = std::thread([]() {
-                //    while (collectingADXL355) {
-                //        for (uint8_t addr : adxl355DeviceAddresses) {
-                //            try {
-                //                std::vector<uint8_t> cmd;
-                //                std::vector<uint8_t> response;
-                //                ADXL355Parser::AccelerationData data;
+                
+        adxl355PollingThread = std::thread([]() {
+            while (collectingADXL355) {
+                for (uint8_t addr : adxl355DeviceAddresses) {
+                    try {
+                        std::vector<uint8_t> cmd;
+                        std::vector<uint8_t> response;
+                        ADXL355Parser::AccelerationData data;
 
-                //                {
-                //                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-                //                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-                //                    serialManager.send(cmd);
-                //                    response = serialManager.receiveADXL355Response();
-                //                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-                //                }
-
-                //                // === EMA 滤波逻辑完善 ===
-                //                if (!emaFilterManager.hasXYZ(addr)&&adxlxlsxing == true) {
-                //                    emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-                //                }
-                //                else if(emaFilterManager.hasXYZ(addr) && adxlxlsxing == true) {
-                //                    emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-                //                }
-
-                //                data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
-                //                data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
-                //                data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-
-
-                //                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
-                //                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
-
-                //                // 存入缓存
-                //                {
-                //                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-                //                    auto& dq = adxl355DataMap[addr].dataQue;
-                //                    dq.push_back(data);
-                //                    if (dq.size() > MAX_POINTS)
-                //                        dq.pop_front();
-                //                }
-
-                //                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                //            }
-                //            catch (const std::exception& e) {
-                //                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-                //            }
-                //        }
-
-                //        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                //    }
-                //    });
-                //adxl355PollingThread = std::thread([]() {
-                //    while (collectingADXL355) {
-                //        for (uint8_t addr : adxl355DeviceAddresses) {
-                //            try {
-                //                std::vector<uint8_t> cmd;
-                //                std::vector<uint8_t> response;
-                //                ADXL355Parser::AccelerationData data;
-
-                //                {
-                //                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-                //                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-                //                    serialManager.send(cmd);
-                //                    response = serialManager.receiveADXL355Response();
-                //                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-                //                }
-
-                //                if (adxlxlsxing) {
-                //                    bool needInit = false;
-                //                    {
-                //                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
-                //                        if (adxl355NeedInitEMASet.count(addr)) {
-                //                            needInit = true;
-                //                            adxl355NeedInitEMASet.erase(addr); // 初始化一次后移除
-                //                        }
-                //                    }
-
-                //                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
-                //                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-                //                        data.EMA_x = static_cast<float>(data.x);
-                //                        data.EMA_y = static_cast<float>(data.y);
-                //                        data.EMA_z = static_cast<float>(data.z);
-                //                    }
-                //                    else {
-                //                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-                //                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
-                //                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
-                //                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-                //                    }
-                //                }
-
-                //                else {
-                //                    data.EMA_x = 0.0f;
-                //                    data.EMA_y = 0.0f;
-                //                    data.EMA_z = 0.0f;
-                //                }
-
-                //                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
-                //                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
-
-                //                {
-                //                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-                //                    auto& dq = adxl355DataMap[addr].dataQue;
-                //                    dq.push_back(data);
-                //                    if (dq.size() > MAX_POINTS)
-                //                        dq.pop_front();
-                //                }
-
-                //                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                //            }
-                //            catch (const std::exception& e) {
-                //                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-                //            }
-                //        }
-                //        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                //    }
-                //    });
-//adxl355PollingThread = std::thread([]() {
-//    while (collectingADXL355) {
-//        for (uint8_t addr : adxl355DeviceAddresses) {
-//            try {
-//                std::vector<uint8_t> cmd;
-//                std::vector<uint8_t> response;
-//                ADXL355Parser::AccelerationData data;
-//
-//                {
-//                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-//                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-//                    serialManager.send(cmd);
-//                    response = serialManager.receiveADXL355Response();
-//                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-//                }
-//
-//                // 打印原始值用于对比
-//                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
-//                    << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;
-//
-//                if (adxlxlsxing) {
-//                    bool needInit = false;
-//                    {
-//                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
-//                        if (adxl355NeedInitEMASet.count(addr)) {
-//                            needInit = true;
-//                            adxl355NeedInitEMASet.erase(addr);
-//                        }
-//                    }
-//
-//                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
-//                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-//                        data.EMA_x = static_cast<float>(data.x);
-//                        data.EMA_y = static_cast<float>(data.y);
-//                        data.EMA_z = static_cast<float>(data.z);
-//                    }
-//                    else if (data.EMA_x == 0.0f && data.EMA_y == 0.0f && data.EMA_z == 0.0f) {
-//                        data.EMA_x = data.x;
-//                        data.EMA_y = data.y;
-//                        data.EMA_z = data.z;
-//                    }
-//                    else {
-//                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-//                        data.EMA_x = static_cast<float>(emaFilterManager.getX(addr));
-//                        data.EMA_y = static_cast<float>(emaFilterManager.getY(addr));
-//                        data.EMA_z = static_cast<float>(emaFilterManager.getZ(addr));
-//                    }
-//
-//                }
-//                
-//                else {
-//                    data.EMA_x = 0.0f;
-//                    data.EMA_y = 0.0f;
-//                    data.EMA_z = 0.0f;
-//                }
-//                
-//
-//                // 打印滤波后结果
-//                std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 滤波结果: "
-//                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;
-//
-//                {
-//                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-//                    auto& dq = adxl355DataMap[addr].dataQue;
-//                    dq.push_back(data);
-//                    if (dq.size() > MAX_POINTS)
-//                        dq.pop_front();
-//                }
-//
-//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//            }
-//            catch (const std::exception& e) {
-//                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-//            }
-//        }
-//
-//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//    }
-//    });
-adxl355PollingThread = std::thread([]() {
-    while (collectingADXL355) {
-        for (uint8_t addr : adxl355DeviceAddresses) {
-            try {
-                std::vector<uint8_t> cmd;
-                std::vector<uint8_t> response;
-                ADXL355Parser::AccelerationData data;
-
-                {
-                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-                    cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-                    serialManager.send(cmd);
-                    response = serialManager.receiveADXL355Response();
-                    data = adxl355Parsers[addr].parseAccelerationResponse(response);
-                }
-
-                // 原始值打印
-               /* std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
-                    << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;*/
-
-                if (adxlxlsxing) {
-                    /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 正在保存，处理 EMA..." << std::endl;*/
-
-                    bool needInit = false;
-                    {
-                        std::lock_guard<std::mutex> lock(adxl355InitMutex);
-                        if (adxl355NeedInitEMASet.count(addr)) {
-                            needInit = true;
-                            adxl355NeedInitEMASet.erase(addr);
-                            /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 检测到需要初始化 EMA。" << std::endl;*/
+                        {
+                            std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+                            cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+                            serialManager.send(cmd);
+                            response = serialManager.receiveADXL355Response();
+                            data = adxl355Parsers[addr].parseAccelerationResponse(response);
                         }
-                    }
 
-                    if (needInit || !emaFilterManager.hasXYZ(addr)) {
-                        emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
-                        data.EMA_x = (data.x);
-                        data.EMA_y = (data.y);
-                        data.EMA_z = (data.z);
-                        /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 初始化 EMA: "
-                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
+                        // 原始值打印
+                       /* std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 原始值: "
+                            << "X: " << data.x << ", Y: " << data.y << ", Z: " << data.z << std::endl;*/
+
+                        if (adxlxlsxing) {
+                            /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 正在保存，处理 EMA..." << std::endl;*/
+
+                            bool needInit = false;
+                            {
+                                std::lock_guard<std::mutex> lock(adxl355InitMutex);
+                                if (adxl355NeedInitEMASet.count(addr)) {
+                                    needInit = true;
+                                    adxl355NeedInitEMASet.erase(addr);
+                                    /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 检测到需要初始化 EMA。" << std::endl;*/
+                                }
+                            }
+
+                            if (needInit || !emaFilterManager.hasXYZ(addr)) {
+                                emaFilterManager.setXYZ(addr, data.x, data.y, data.z);
+                                data.EMA_x = (data.x);
+                                data.EMA_y = (data.y);
+                                data.EMA_z = (data.z);
+                                /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 初始化 EMA: "
+                                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
+                            }
+                            else if (data.EMA_x == 0.0f && data.EMA_y == 0.0f && data.EMA_z == 0.0f) {
+                                data.EMA_x = data.x;
+                                data.EMA_y = data.y;
+                                data.EMA_z = data.z;
+                                /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 为 0，设置为当前值: "
+                                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
+                            }
+                            else {
+                                emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
+                                data.EMA_x = (emaFilterManager.getX(addr));
+                                data.EMA_y = (emaFilterManager.getY(addr));
+                                data.EMA_z = (emaFilterManager.getZ(addr));
+                               /* std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 更新后: "
+                                    << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
+                            }
+                        }
+                        else {
+                            data.EMA_x = 0.0f;
+                            data.EMA_y = 0.0f;
+                            data.EMA_z = 0.0f;
+                            /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 未开始保存，EMA 设为 0" << std::endl;*/
+                        }
+
+                        {
+                            std::lock_guard<std::mutex> lock2(ADXL355Mutex);
+                            auto& dq = adxl355DataMap[addr].dataQue;
+                            dq.push_back(data);
+                            if (dq.size() > MAX_POINTS)
+                                dq.pop_front();
+                        }
+
+                        std::this_thread::sleep_for(std::chrono::milliseconds(75));
                     }
-                    else if (data.EMA_x == 0.0f && data.EMA_y == 0.0f && data.EMA_z == 0.0f) {
-                        data.EMA_x = data.x;
-                        data.EMA_y = data.y;
-                        data.EMA_z = data.z;
-                        /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 为 0，设置为当前值: "
-                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
-                    }
-                    else {
-                        emaFilterManager.updateXYZ(addr, data.x, data.y, data.z, alpha);
-                        data.EMA_x = (emaFilterManager.getX(addr));
-                        data.EMA_y = (emaFilterManager.getY(addr));
-                        data.EMA_z = (emaFilterManager.getZ(addr));
-                       /* std::cout << u8"[设备 0x" << std::hex << (int)addr << "] EMA 更新后: "
-                            << "X: " << data.EMA_x << ", Y: " << data.EMA_y << ", Z: " << data.EMA_z << std::endl;*/
+                    catch (const std::exception& e) {
+                        std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
                     }
                 }
-                else {
-                    data.EMA_x = 0.0f;
-                    data.EMA_y = 0.0f;
-                    data.EMA_z = 0.0f;
-                    /*std::cout << u8"[设备 0x" << std::hex << (int)addr << "] 未开始保存，EMA 设为 0" << std::endl;*/
-                }
-
-                {
-                    std::lock_guard<std::mutex> lock2(ADXL355Mutex);
-                    auto& dq = adxl355DataMap[addr].dataQue;
-                    dq.push_back(data);
-                    if (dq.size() > MAX_POINTS)
-                        dq.pop_front();
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(75));
             }
-            catch (const std::exception& e) {
-                std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
-            }
-        }
-    }
-    });
+            });
 
 
             }
@@ -1726,6 +1531,173 @@ adxl355PollingThread = std::thread([]() {
 }
 
 // 在应用程序类中添加激光传感器相关代码
+//void Application::ShowLaserSensor() {
+//    if (!ImGui::Begin("Laser Sensor")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 4;
+//    static bool isConnected = false;
+//    static std::unique_ptr<LaserSensorProtocol> laserSensor;
+//
+//    // 采集控制相关变量
+//    static std::atomic<bool> isCollecting = false;
+//    static std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
+//
+//    // 串口选择
+//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+//    // 波特率选择
+//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+//
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+//                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
+//                isConnected = true;
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            if (isCollecting) {
+//                isCollecting = false;
+//                collectedData = laserSensor->stopContinuousCollection();
+//            }
+//            serialManager.close();
+//            isConnected = false;
+//            laserSensor.reset();
+//        }
+//
+//        // 单次测量
+//        if (ImGui::Button(u8"单次测量")) {
+//            try {
+//                uint16_t distance = laserSensor->getDistance();
+//                ImGui::Text("当前距离: %d mm", distance);
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "测量失败: %s", e.what());
+//            }
+//        }
+//
+//        // 连续采集控制
+//        if (!isCollecting) {
+//            if (ImGui::Button(u8"开始连续采集")) {
+//                isCollecting = true;
+//                laserSensor->startContinuousCollection();
+//            }
+//        }
+//        else {
+//            if (ImGui::Button(u8"停止采集并保存")) {
+//                isCollecting = false;
+//                collectedData = laserSensor->stopContinuousCollection();
+//
+//                try {
+//                    std::string saveFilePath = generateUniqueFileName("LaserSensor_data");
+//                    //laserSensor->saveDataToExcel(saveFilePath);
+//                    //ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
+//                }
+//                catch (const std::exception& e) {
+//                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
+//                }
+//            }
+//
+//            ImGui::SameLine();
+//            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据...");
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//    ImGui::End();
+//}
+// 在应用程序类中添加激光传感器相关代码
+//void Application::ShowLaserSensor() {
+//    if (!ImGui::Begin("Laser Sensor")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 4;
+//    static bool isConnected = false;
+//    static std::unique_ptr<LaserSensorProtocol> laserSensor;
+//
+//    // 采集控制相关变量
+//    static std::atomic<bool> isCollecting = false;
+//    static std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
+//
+//    // 串口选择
+//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+//    // 波特率选择
+//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+//
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+//                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
+//                isConnected = true;
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            if (isCollecting) {
+//                isCollecting = false;
+//                collectedData = laserSensor->stopContinuousCollection();
+//            }
+//            serialManager.close();
+//            isConnected = false;
+//            laserSensor.reset();
+//        }
+//
+//        // 单次测量
+//        if (ImGui::Button(u8"单次测量")) {
+//            try {
+//                uint16_t distance = laserSensor->getDistance();
+//                ImGui::Text("当前距离: %d mm", distance);
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "测量失败: %s", e.what());
+//            }
+//        }
+//
+//        // 连续采集控制
+//        if (!isCollecting) {
+//            if (ImGui::Button(u8"开始连续采集")) {
+//                isCollecting = true;
+//                laserSensor->startContinuousCollection();
+//            }
+//        }
+//        else {
+//            if (ImGui::Button(u8"停止采集")) {
+//                isCollecting = false;
+//                collectedData = laserSensor->stopContinuousCollection();
+//            }
+//
+//            ImGui::SameLine();
+//            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据...");
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//    ImGui::End();
+//}
+// 
 void Application::ShowLaserSensor() {
     if (!ImGui::Begin("Laser Sensor")) {
         ImGui::End();
@@ -1735,17 +1707,18 @@ void Application::ShowLaserSensor() {
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-    static int selectedBaudIndex = 0;
+    static int selectedBaudIndex = 4;
     static bool isConnected = false;
     static std::unique_ptr<LaserSensorProtocol> laserSensor;
 
-    // 采集控制相关变量
+    
+
+    // 采集状态
     static std::atomic<bool> isCollecting = false;
-    static std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>> collectedData;
+    static std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;
 
     // 串口选择
     ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    // 波特率选择
     ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
 
     if (!isConnected) {
@@ -1765,54 +1738,147 @@ void Application::ShowLaserSensor() {
         if (ImGui::Button(u8"断开")) {
             if (isCollecting) {
                 isCollecting = false;
-                collectedData = laserSensor->stopContinuousCollection();
+                collectedDataMap = laserSensor->stopContinuousCollection();
             }
             serialManager.close();
             isConnected = false;
             laserSensor.reset();
         }
 
-        // 单次测量
-        if (ImGui::Button(u8"单次测量")) {
-            try {
-                uint16_t distance = laserSensor->getDistance();
-                ImGui::Text("当前距离: %d mm", distance);
-            }
-            catch (const std::exception& e) {
-                ImGui::TextColored(ImVec4(1, 0, 0, 1), "测量失败: %s", e.what());
-            }
+        ImGui::SameLine();
+
+        // 显示设备地址
+        for (auto addr : laserDeviceAddresses) {
+            ImGui::Text(u8"发现设备: 0x%02X", addr);
         }
 
-        // 连续采集控制
+        // 采集按钮
         if (!isCollecting) {
-            if (ImGui::Button(u8"开始连续采集")) {
+            if (ImGui::Button(u8"开始采集所有设备")) {
                 isCollecting = true;
-                laserSensor->startContinuousCollection();
+                laserSensor->startContinuousCollection(laserDeviceAddresses);
             }
         }
         else {
-            if (ImGui::Button(u8"停止采集并保存")) {
+            if (ImGui::Button(u8"停止采集")) {
                 isCollecting = false;
-                collectedData = laserSensor->stopContinuousCollection();
-
-                try {
-                    std::string saveFilePath = generateUniqueFileName("LaserSensor_data");
-                    laserSensor->saveDataToExcel(saveFilePath);
-                    ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"数据已保存到: %s", saveFilePath.c_str());
-                }
-                catch (const std::exception& e) {
-                    ImGui::TextColored(ImVec4(1, 0, 0, 1), u8"保存失败: %s", e.what());
-                }
+                collectedDataMap = laserSensor->stopContinuousCollection();
             }
-
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"正在采集数据...");
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+        }
+
+        // 实时显示每台设备的最后一条数据
+        ImGui::Separator();
+        for (auto addr : laserDeviceAddresses) {
+            auto& dataVec = collectedDataMap[addr];
+            if (!dataVec.empty()) {
+                auto lastVal = dataVec.back().second;
+                ImGui::Text(u8"设备 0x%02X: %d mm", addr, lastVal);
+            }
+            else {
+                ImGui::Text(u8"设备 0x%02X: 无数据", addr);
+            }
         }
     }
 
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
     ImGui::End();
 }
+//void Application::ShowLaserSensor() {
+//    if (!ImGui::Begin("Laser Sensor")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 4;
+//    static bool isConnected = false;
+//
+//    // 设备地址列表（扫描后更新）
+//    static std::vector<uint8_t> laserDeviceAddresses;
+//
+//    // 协议类实例
+//    static std::unique_ptr<LaserSensorProtocol> laserSensor;
+//
+//    // 采集状态
+//    static std::atomic<bool> isCollecting = false;
+//
+//    // 串口选择 UI
+//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+//
+//    // 连接按钮
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+//                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
+//                isConnected = true;
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            if (isCollecting) {
+//                isCollecting = false;
+//                laserSensor->stopContinuousCollection();
+//            }
+//            serialManager.close();
+//            isConnected = false;
+//            laserSensor.reset();
+//            laserDeviceAddresses.clear();
+//        }
+//
+//        ImGui::SameLine();
+//
+//        
+//
+//        // 显示扫描到的设备地址
+//        for (auto addr : laserDeviceAddresses) {
+//            ImGui::Text(u8"发现设备: 0x%02X", addr);
+//        }
+//
+//        // 开始/停止采集
+//        if (!isCollecting) {
+//            if (ImGui::Button(u8"开始采集所有设备") && !laserDeviceAddresses.empty()) {
+//                isCollecting = true;
+//                laserSensor->startContinuousCollection(laserDeviceAddresses);
+//            }
+//        }
+//        else {
+//            if (ImGui::Button(u8"停止采集")) {
+//                isCollecting = false;
+//                laserSensor->stopContinuousCollection();
+//            }
+//            ImGui::SameLine();
+//            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+//        }
+//
+//        // 实时数据显示
+//        ImGui::Separator();
+//        auto latestData = laserSensor->getLatestData();
+//        for (auto addr : laserDeviceAddresses) {
+//            auto it = latestData.find(addr);
+//            if (it != latestData.end() && !it->second.empty()) {
+//                auto lastVal = it->second.back().second;
+//                ImGui::Text(u8"设备 0x%02X: %d mm", addr, lastVal);
+//            }
+//            else {
+//                ImGui::Text(u8"设备 0x%02X: 无数据", addr);
+//            }
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//    ImGui::End();
+//}
 
 
 void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selectedIndex, const char* label) {

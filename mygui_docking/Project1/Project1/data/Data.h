@@ -85,5 +85,8 @@ extern bool dualAxisxlsxing;
 
 extern std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
 
-
 extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;
+
+//lasor
+extern std::vector<uint8_t> laserDeviceAddresses;
+extern std::mutex LasergetMutex;

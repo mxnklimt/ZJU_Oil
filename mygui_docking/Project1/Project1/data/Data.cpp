@@ -57,3 +57,8 @@ bool dualAxisxlsxing = false; // 是否正在保存数据到XLSX文件
 std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
 // 在 dualAxisDataMap 定义附近添加这个：
 std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;
+
+
+//laser数据
+std::vector<uint8_t>  laserDeviceAddresses= { 0x01 };
+std::mutex LasergetMutex;
