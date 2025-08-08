@@ -268,7 +268,8 @@ void Application::ShowSynchronizedCapture() {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, DualAxisSensorParser::AngleData>>> dualAxisBuffer;
-                //std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t,
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>> laserBuffer;
+
                 while (isSyncCollecting) {
                     auto now = std::chrono::system_clock::now();
 
@@ -302,10 +303,20 @@ void Application::ShowSynchronizedCapture() {
                         dualAxisBuffer.emplace_back(now, snapshot);
                         dualAxisCount = static_cast<int>(dualAxisBuffer.size());
                     }
+                    //laser
+                    {
+                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> snapshot;
+                        {
+                            std::lock_guard<std::mutex> lock(LasergetMutex);
+                            snapshot = collectedLasorMap;  // 直接赋值
+                        }
+                        laserBuffer.emplace_back(now, snapshot);
+                        laserCount = static_cast<int>(laserBuffer.size());
+                    }
                     
 
-                    //std::this_thread::sleep_for(std::chrono::seconds(1)); 10HZ
-                    std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
+                    std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
+                    //std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
 
                 }
 
@@ -318,6 +329,7 @@ void Application::ShowSynchronizedCapture() {
                     "DualAxis_sync",
                     dataMutex
                 );
+				SaveLaserToXLSX(laserBuffer);
                 });
         }
     }

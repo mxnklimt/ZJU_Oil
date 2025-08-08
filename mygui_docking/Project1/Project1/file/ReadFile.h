@@ -41,3 +41,6 @@ void StopAndSaveDualAxisData(
     std::mutex& collectedDataMutex,
     const std::string& baseFileName = "DualAxis_data"
 );
+void SaveLaserToXLSX(
+    const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>>& data);

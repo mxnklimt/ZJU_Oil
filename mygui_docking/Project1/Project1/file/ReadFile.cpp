@@ -512,58 +512,59 @@ void SaveDualAxisToXLSX(
     }
     
 }
+void SaveLaserToXLSX(
+    const std::vector<std::pair<std::chrono::system_clock::time_point,
+    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>>& data)
+{
+    std::string saveFilePath = generateUniqueFileName("Laser_sync");
+    OpenXLSX::XLDocument doc;
+    doc.create(saveFilePath, false);
+    doc.open(saveFilePath);
+    auto wks = doc.workbook().worksheet("Sheet1");
 
-//void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
-//    std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
-//    std::string saveFilePath = generateUniqueFileName("JY61P_sync");
-//    OpenXLSX::XLDocument doc;
-//    doc.create(saveFilePath, false);
-//    doc.open(saveFilePath);
-//    auto wks = doc.workbook().worksheet("Sheet1");
-//
-//    wks.cell(1, 1).value() = "Time";
-//    int col = 2;
-//    for (uint8_t addr : jy61pDeviceAddresses) {
-//        std::stringstream ss;
-//        ss << "Device 0x" << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << (int)addr;
-//        wks.cell(1, col++) = ss.str() + " Accel X";
-//        wks.cell(1, col++) = ss.str() + " Accel Y";
-//        wks.cell(1, col++) = ss.str() + " Accel Z";
-//        wks.cell(1, col++) = ss.str() + " Gyro X";
-//        wks.cell(1, col++) = ss.str() + " Gyro Y";
-//        wks.cell(1, col++) = ss.str() + " Gyro Z";
-//        wks.cell(1, col++) = ss.str() + " Angle X";
-//        wks.cell(1, col++) = ss.str() + " Angle Y";
-//        wks.cell(1, col++) = ss.str() + " Angle Z";
-//    }
-//
-//    for (size_t row = 0; row < data.size(); ++row) {
-//        auto time_t = std::chrono::system_clock::to_time_t(data[row].first);
-//        std::tm tm; localtime_s(&tm, &time_t);
-//        std::ostringstream oss; oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-//        wks.cell(row + 2, 1).value() = oss.str();
-//
-//        int col = 2;
-//        for (uint8_t addr : jy61pDeviceAddresses) {
-//            if (data[row].second.count(addr)) {
-//                auto& angle = data[row].second.at(addr);
-//                wks.cell(row + 2, col++) = angle.a[0];
-//                wks.cell(row + 2, col++) = angle.a[1];
-//                wks.cell(row + 2, col++) = angle.a[2];
-//                wks.cell(row + 2, col++) = angle.w[0];
-//                wks.cell(row + 2, col++) = angle.w[1];
-//                wks.cell(row + 2, col++) = angle.w[2];
-//                wks.cell(row + 2, col++) = angle.Angle[0];
-//                wks.cell(row + 2, col++) = angle.Angle[1];
-//                wks.cell(row + 2, col++) = angle.Angle[2];
-//            }
-//            else col += 9;
-//        }
-//    }
-//    doc.save(); doc.close();
+    // 写表头
+    wks.cell(1, 1).value() = "Snapshot Time";        // 快照采集时间
+    wks.cell(1, 2).value() = "Device Addr";          // 设备地址
+    wks.cell(1, 3).value() = "Data Value";           // 数据值
+
+    int row = 2;
+    for (const auto& [snapshotTime, deviceMap] : data) {
+        // 格式化快照采集时间
+        auto snap_t = std::chrono::system_clock::to_time_t(snapshotTime);
+        std::tm snap_tm;
+        localtime_s(&snap_tm, &snap_t);
+        std::ostringstream snap_oss;
+        snap_oss << std::put_time(&snap_tm, "%Y-%m-%d %H:%M:%S");
+        std::string snapTimeStr = snap_oss.str();
+
+        for (const auto& [addr, dataVec] : deviceMap) {
+            // 设备地址格式化
+            std::ostringstream addr_ss;
+            addr_ss << "0x" << std::uppercase << std::hex
+                << std::setw(2) << std::setfill('0') << (int)addr;
+            std::string addrStr = addr_ss.str();
+
+            for (const auto& [/*dataTime*/_, value] : dataVec) {
+                // 写入数据行
+                wks.cell(row, 1).value() = snapTimeStr;
+                wks.cell(row, 2).value() = addrStr;
+                wks.cell(row, 3).value() = value;
+
+                row++;
+            }
+        }
+    }
+
+    doc.save();
+    doc.close();
+}
+
+//void SaveLaserToXLSX(
+//    const std::vector<std::pair<std::chrono::system_clock::time_point,
+//    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>>& data)
+//{
+//    // 这里写具体保存代码
 //}
-
-
 void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
 
