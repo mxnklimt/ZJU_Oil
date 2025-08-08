@@ -231,6 +231,7 @@ void Application::ShowSynchronizedCapture() {
     static std::atomic<int> jy61pCount = 0;
     static std::atomic<int> adxl355Count = 0;
     static std::atomic<int> dualAxisCount = 0;
+	static std::atomic<int> laserCount = 0;
 
     //  显示状态栏
     {
@@ -261,13 +262,13 @@ void Application::ShowSynchronizedCapture() {
 			emaFilterManager.clearAll(); // 清除EMA状态
            
             for (auto addr : adxl355DeviceAddresses) {
-                adxl355NeedInitEMASet.insert(addr); // ✅ 添加这行
+                adxl355NeedInitEMASet.insert(addr); // 
             }
             syncCollectionThread = std::thread([] {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, DualAxisSensorParser::AngleData>>> dualAxisBuffer;
-
+                //std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t,
                 while (isSyncCollecting) {
                     auto now = std::chrono::system_clock::now();
 
@@ -301,6 +302,7 @@ void Application::ShowSynchronizedCapture() {
                         dualAxisBuffer.emplace_back(now, snapshot);
                         dualAxisCount = static_cast<int>(dualAxisBuffer.size());
                     }
+                    
 
                     //std::this_thread::sleep_for(std::chrono::seconds(1)); 10HZ
                     std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
@@ -332,7 +334,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8" 同步采集中...");
         ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", 10 * jy61pCount.load());
         ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10*adxl355Count.load());
-        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8"双轴传感器 已记录 %d 条", 10 *dualAxisCount.load());
+        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8" 双轴传感器 已记录 %d 条", 10 *dualAxisCount.load());
     }
 
     //  操作说明
@@ -1663,7 +1665,7 @@ void Application::ShowLaserSensor() {
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
                     ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("距离: 1234 mm").x) * 0.5f);
 
-                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %d mm", lastData.second);
+                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %d um", lastData.second);
 
                     ImGui::EndChild();
 

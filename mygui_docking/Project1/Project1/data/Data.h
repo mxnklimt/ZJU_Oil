@@ -90,4 +90,5 @@ extern std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer
 //lasor
 extern std::vector<uint8_t> laserDeviceAddresses;
 extern std::mutex LasergetMutex;
+extern bool lasorxlsxing; // 是否正在保存数据到XLSX文件
 extern std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedLasorMap;

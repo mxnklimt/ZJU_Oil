@@ -62,4 +62,5 @@ std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;
 //laser数据
 std::vector<uint8_t>  laserDeviceAddresses= { 0x01 };
 std::mutex LasergetMutex;
+bool lasorxlsxing = false; // 是否正在保存数据到XLSX文件
 std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedLasorMap;
