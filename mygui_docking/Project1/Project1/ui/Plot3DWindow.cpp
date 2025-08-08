@@ -302,7 +302,9 @@ void Application::ShowSynchronizedCapture() {
                         dualAxisCount = static_cast<int>(dualAxisBuffer.size());
                     }
 
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    //std::this_thread::sleep_for(std::chrono::seconds(1)); 10HZ
+                    std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
+
                 }
 
                 SaveJY61PToXLSX(jy61pBuffer);
