@@ -42,6 +42,7 @@ void Application::ShowWindow()
     static bool DualAxis = true;
     static bool SynchronizedCapture = true;
 	static bool show_laser_sensor = true; // 激光传感器选项
+	static bool show_laser_sensor2 = true; // 激光传感器选项2
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -55,6 +56,7 @@ void Application::ShowWindow()
             ImGui::MenuItem("JY61P", nullptr, &JY61P);
             ImGui::MenuItem("DualAxis", nullptr, &DualAxis);
 			ImGui::MenuItem("LaserSensor", nullptr, &show_laser_sensor); // 显示激光传感器选项
+            ImGui::MenuItem("LaserSensor2", nullptr, &show_laser_sensor2);
             ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
@@ -76,6 +78,10 @@ void Application::ShowWindow()
 	if (show_laser_sensor) {
 		// 显示激光传感器数据
 		Application::ShowLaserSensor();
+	}
+	if (show_laser_sensor2) {
+		// 显示激光传感器数据2
+		Application::ShowLaserSensor2();
 	}
     
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -1716,4 +1722,145 @@ void ShowBaudRateSelector(const char* const* baudRates, int baudRateCount, int& 
 }
 
 
+void Application::ShowLaserSensor2()
+{
+    if (!ImGui::Begin("Laser Sensor2")) {
+        ImGui::End();
+        return;
+    }
 
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 4;
+    static bool isConnected = false;
+    static std::unique_ptr<LaserSensorProtocol> laserSensor2;
+
+
+
+    // 采集状态
+    static std::atomic<bool> isCollecting = false;
+    /*std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;*/
+
+    // 串口选择
+    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                serialManager2.open(availablePorts[selectedPortIndex], baudRate);
+                laserSensor2 = std::make_unique<LaserSensorProtocol>(serialManager2);
+                isConnected = true;
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            if (isCollecting) {
+                isCollecting = false;
+                //collectedLasorMap = laserSensor->stopContinuousCollection();
+            }
+            serialManager2.close();
+            isConnected = false;
+            //laserSensor.reset();
+        }
+
+        ImGui::SameLine();
+
+
+
+        // 采集按钮
+        if (!isCollecting) {
+            if (ImGui::Button(u8"开始采集所有设备")) {
+                isCollecting = true;
+                laserSensor2->startContinuousCollection2(laserDeviceAddresses);
+
+            }
+
+        }
+        else {
+            if (ImGui::Button(u8"停止采集")) {
+                isCollecting = false;
+
+                //collectedDataMap = laserSensor->stopContinuousCollection();
+            }
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+        }
+        //显示-----------------------------------------------------------
+
+        if (isCollecting) {
+            // 左右分栏布局，左侧20%，右侧80%
+            ImGui::Columns(2, "LaserSensorColumns", false);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);  // 左20%
+            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);  // 右80%
+
+            // -------- 左侧子窗口: 设备选择 --------
+            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
+            ImGui::Separator();
+
+            // 用一个 map<bool> 记录每个设备是否显示，声明为 static 或类成员
+            static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+            for (uint8_t addr : laserDeviceAddresses) {
+                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+                    deviceDisplayFlags[addr] = true;  // 默认显示
+
+                char label[32];
+                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
+                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
+            }
+            ImGui::EndChild();
+
+            // -------- 切换到右侧子窗口: 数据卡片显示 --------
+            ImGui::NextColumn();
+            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+
+            std::lock_guard<std::mutex> lock(LasergetMutex2);
+            for (uint8_t addr : laserDeviceAddresses) {
+                if (!deviceDisplayFlags[addr]) continue;  // 未选中则跳过
+
+                auto it = collectedLasorMap2.find(addr);
+                if (it != collectedLasorMap2.end() && !it->second.empty()) {
+                    auto& lastData = it->second.back();
+
+                    ImGui::Separator();
+                    ImGui::Text(u8"设备 0x%02X", addr);
+                    ImGui::PushID(addr);
+
+                    // 这里做成1列或者多列都可以，示范1列卡片
+                    ImGui::BeginChild("DataCard", ImVec2(0, 60), true);
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("距离: 1234 mm").x) * 0.5f);
+
+                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %d um", lastData.second);
+
+                    ImGui::EndChild();
+
+                    ImGui::PopID();
+                }
+                else {
+                    ImGui::Separator();
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+                }
+            }
+
+            ImGui::EndChild();
+
+            // 恢复单栏
+            ImGui::Columns(1);
+        }
+
+
+
+
+    }
+
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+    ImGui::End();
+}

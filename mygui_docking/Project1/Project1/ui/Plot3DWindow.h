@@ -14,6 +14,7 @@ public:
 	static void ShowSynchronizedCapture();
 	static void ShowExcel();
 	static void ShowLaserSensor();
+	static void ShowLaserSensor2();
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;
 };

@@ -9,6 +9,7 @@ std::mutex dataMutex;
 //adxl355数据
 const size_t MAX_POINTS = 500;  
 RS485Manager serialManager;
+
 ADXL355Parser parser;
 std::mutex ADXL355Mutex;
 std::atomic<bool> collectingADXL355 = false;
@@ -61,5 +62,8 @@ std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;
 //laser数据
 std::vector<uint8_t>  laserDeviceAddresses= { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A};
 std::mutex LasergetMutex;
+std::mutex LasergetMutex2;
 bool lasorxlsxing = false; // 是否正在保存数据到XLSX文件
 std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap;
+std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap2;
+RS485Manager serialManager2;

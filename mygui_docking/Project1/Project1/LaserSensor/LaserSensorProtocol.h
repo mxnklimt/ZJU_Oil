@@ -54,7 +54,29 @@ public:
             }
             });
     }
+    // 开始轮询采集
+    void startContinuousCollection2(const std::vector<uint8_t>& deviceAddresses) {
+        if (isCollecting2) return;
+        isCollecting2 = true;
+        //collectedDataMap.clear();
 
+        collectionThread = std::thread([this, deviceAddresses]() {
+            while (isCollecting2) {
+                auto now = std::chrono::system_clock::now();
+                for (auto addr : deviceAddresses) {
+                    try {
+                        uint32_t dist = getDistance(addr);
+                        std::lock_guard<std::mutex> lock(LasergetMutex2);
+                        collectedLasorMap2[addr].emplace_back(now, dist);
+                    }
+                    catch (const std::exception& e) {
+                        std::cerr << "地址 0x" << std::hex << int(addr) << " 采集失败: " << e.what() << "\n";
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 每台设备间隔
+                }
+            }
+            });
+    }
     // 停止采集并返回所有设备数据
     std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>
         stopContinuousCollection()
@@ -77,6 +99,7 @@ public:
 private:
     RS485Manager& rs485Manager;
     std::atomic<bool> isCollecting{ false };
+	std::atomic<bool> isCollecting2{ false };   
     std::thread collectionThread;
    
     //std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;
