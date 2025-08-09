@@ -77,7 +77,9 @@ namespace nowide
         basic_filebuf* open(char const* s, std::ios_base::openmode mode)
         {
             if (file_) {
-                sync();
+                
+                
+                ();
                 ::fclose(file_);
                 file_ = 0;
             }

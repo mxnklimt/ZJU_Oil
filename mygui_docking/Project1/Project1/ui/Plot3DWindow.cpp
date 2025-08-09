@@ -232,7 +232,7 @@ void Application::ShowSynchronizedCapture() {
     
     static std::atomic<bool> isSyncCollecting = false;
     static std::thread syncCollectionThread;
-
+    
     // 用于显示当前记录条数
     static std::atomic<int> jy61pCount = 0;
     static std::atomic<int> adxl355Count = 0;
@@ -275,6 +275,8 @@ void Application::ShowSynchronizedCapture() {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, DualAxisSensorParser::AngleData>>> dualAxisBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer;
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer2;
+
 
                 while (isSyncCollecting) {
                     auto now = std::chrono::system_clock::now();
@@ -319,7 +321,16 @@ void Application::ShowSynchronizedCapture() {
                         laserBuffer.emplace_back(now, snapshot);
                         laserCount = static_cast<int>(laserBuffer.size());
                     }
-                    
+                    //laser2
+                    {
+                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot;
+                        {
+                            std::lock_guard<std::mutex> lock(LasergetMutex);
+                            snapshot = collectedLasorMap2;  // 直接赋值
+                        }
+                        laserBuffer.emplace_back(now, snapshot);
+                        laserCount = static_cast<int>(laserBuffer.size());
+                    }
 
                     std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
                     //std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
@@ -336,6 +347,7 @@ void Application::ShowSynchronizedCapture() {
                     dataMutex
                 );
 				SaveLaserToXLSX(laserBuffer);
+                SaveLaserToXLSX(laserBuffer2);
                 });
         }
     }
@@ -1666,7 +1678,7 @@ void Application::ShowLaserSensor() {
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
                     ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("距离: 1234 mm").x) * 0.5f);
 
-                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %d um", lastData.second);
+                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %f mm", (float)lastData.second/1000.0f);
 
                     ImGui::EndChild();
 
@@ -1838,7 +1850,7 @@ void Application::ShowLaserSensor2()
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
                     ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("距离: 1234 mm").x) * 0.5f);
 
-                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %d um", lastData.second);
+                    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), u8"距离: %f mm", (float)lastData.second/1000.0f);
 
                     ImGui::EndChild();
 
