@@ -5,7 +5,6 @@
 #include"DualAxisSensor/DualAxisSensorParser.h"
 #include<unordered_set>
 //cpp中定义全局变量
-
 std::mutex dataMutex;
 //adxl355数据
 const size_t MAX_POINTS = 500;  
@@ -38,7 +37,7 @@ std::thread JY61PThread;       //线程
 std::mutex JY61PMutex;
 std::deque<JY61PData> JY61PData_dataQue; // 存储数据的队列
 JY61PData jy61pData;
-std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };
+std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 
@@ -46,7 +45,7 @@ bool jy61xlsxing = false; // 是否正在保存数据到XLSX文件
 //DualAxis数据
 RS485Manager serialDualAxis;
 //std::vector<uint8_t> dualAxisDeviceAddresses = { 0x03, 0x0C };
-std::vector<uint8_t> dualAxisDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };
+std::vector<uint8_t> dualAxisDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B };
 std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisDataMap;
 std::mutex dualAxisMutex;
 //map中的uint8是0x01, 0x02, 0x03等设备地址
@@ -60,7 +59,7 @@ std::map<uint8_t, DualAxisSensorParser::AngleData> dualAxisSnapshotBuffer;
 
 
 //laser数据
-std::vector<uint8_t>  laserDeviceAddresses= { 0x01,0x02,0x03,0x05,0x06,0x07,0x08,0x09,0x0A};
+std::vector<uint8_t>  laserDeviceAddresses= { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A};
 std::mutex LasergetMutex;
 bool lasorxlsxing = false; // 是否正在保存数据到XLSX文件
-std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedLasorMap;
+std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap;

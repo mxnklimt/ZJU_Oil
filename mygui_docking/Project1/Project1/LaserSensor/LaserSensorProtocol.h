@@ -25,7 +25,7 @@ public:
     }
 
     // 获取某个地址的距离（单位：毫米）
-    uint16_t getDistance(uint8_t addr) {
+    uint32_t getDistance(uint8_t addr) {
         sendDistanceCommand(addr);
         auto response = receiveDistanceResponse();
         return parseDistance(response, addr);
@@ -42,7 +42,7 @@ public:
                 auto now = std::chrono::system_clock::now();
                 for (auto addr : deviceAddresses) {
                     try {
-                        uint16_t dist = getDistance(addr);
+                        uint32_t dist = getDistance(addr);
                         std::lock_guard<std::mutex> lock(LasergetMutex);
                         collectedLasorMap[addr].emplace_back(now, dist);
                     }
@@ -67,7 +67,7 @@ public:
         return collectedDataMap;*/
     }
     // 在类里加：
-    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>
+    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>
         getLatestData() {
         std::lock_guard<std::mutex> lock(LasergetMutex);
         return collectedLasorMap; // 返回采集线程里最新的数据
@@ -112,7 +112,7 @@ private:
     }
 
     // 解析响应
-    uint16_t parseDistance(const std::vector<uint8_t>& response, uint8_t addr) {
+    uint32_t parseDistance(const std::vector<uint8_t>& response, uint8_t addr) {
         if (response.size() < 9) throw std::runtime_error("无效的响应长度");
         if (response[0] != addr) throw std::runtime_error("响应地址不匹配");
         if (response[1] != 0x04) throw std::runtime_error("无效的功能码");
@@ -123,7 +123,7 @@ private:
         if (receivedCRC != calculatedCRC) throw std::runtime_error("CRC校验失败");
 
         uint32_t distVal = (response[3] << 24) | (response[4] << 16) | (response[5] << 8) | response[6];
-        return static_cast<uint16_t>(distVal);
+        return static_cast<uint32_t>(distVal);
     }
     
 };

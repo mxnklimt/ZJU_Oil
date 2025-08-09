@@ -268,7 +268,7 @@ void Application::ShowSynchronizedCapture() {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, DualAxisSensorParser::AngleData>>> dualAxisBuffer;
-                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>> laserBuffer;
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer;
 
                 while (isSyncCollecting) {
                     auto now = std::chrono::system_clock::now();
@@ -305,7 +305,7 @@ void Application::ShowSynchronizedCapture() {
                     }
                     //laser
                     {
-                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> snapshot;
+                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot;
                         {
                             std::lock_guard<std::mutex> lock(LasergetMutex);
                             snapshot = collectedLasorMap;  // 直接赋值
@@ -1585,7 +1585,7 @@ void Application::ShowLaserSensor() {
         if (ImGui::Button(u8"断开")) {
             if (isCollecting) {
                 isCollecting = false;
-                collectedLasorMap = laserSensor->stopContinuousCollection();
+                //collectedLasorMap = laserSensor->stopContinuousCollection();
             }
             serialManager.close();
             isConnected = false;
@@ -1602,8 +1602,6 @@ void Application::ShowLaserSensor() {
                 isCollecting = true;
                 laserSensor->startContinuousCollection(laserDeviceAddresses);
 
-                
-                
             }
 
         }

@@ -514,7 +514,7 @@ void SaveDualAxisToXLSX(
 }
 void SaveLaserToXLSX(
     const std::vector<std::pair<std::chrono::system_clock::time_point,
-    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>>& data)
+    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>>& data)
 {
     std::string saveFilePath = generateUniqueFileName("Laser_sync");
     OpenXLSX::XLDocument doc;
