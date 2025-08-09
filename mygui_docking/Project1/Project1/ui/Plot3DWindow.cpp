@@ -1594,10 +1594,7 @@ void Application::ShowLaserSensor() {
 
         ImGui::SameLine();
 
-        // 显示设备地址
-        for (auto addr : laserDeviceAddresses) {
-            ImGui::Text(u8"发现设备: 0x%02X", addr);
-        }
+
 
         // 采集按钮
         if (!isCollecting) {
@@ -1620,19 +1617,7 @@ void Application::ShowLaserSensor() {
             ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
         }
         //显示-----------------------------------------------------------
-        /*if(isCollecting)
-        {
-            std::lock_guard<std::mutex> lock(LasergetMutex);
-            for (auto addr : laserDeviceAddresses) {
-                auto& dataVec = collectedLasorMap[addr];
-                if (!dataVec.empty()) {
-                    ImGui::Text(u8"设备 0x%02X: %d mm", addr, dataVec.back().second);
-                }
-                else {
-                    ImGui::Text(u8"设备 0x%02X: 无数据", addr);
-                }
-            }
-        }*/
+
         if (isCollecting) {
             // 左右分栏布局，左侧20%，右侧80%
             ImGui::Columns(2, "LaserSensorColumns", false);
