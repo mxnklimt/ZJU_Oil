@@ -239,7 +239,23 @@ void Application::ShowSynchronizedCapture() {
     static std::atomic<int> dualAxisCount = 0;
 	static std::atomic<int> laserCount = 0;
 
-    //  显示状态栏
+    ////  显示状态栏
+    //{
+    //    ImGui::Separator();
+    //    ImGui::Text(u8"当前状态：");
+    //    ImGui::SameLine();
+    //    if (isSyncCollecting) {
+    //        ImGui::TextColored(ImVec4(0.0f, 0.8f, 0.0f, 1.0f), u8"同步采集中");
+    //    }
+    //    else {
+    //        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), u8"未采集");
+    //    }
+
+    //    ImGui::Text(u8"采样周期：1 秒");
+    //    ImGui::Separator();
+    //}
+    // 
+   // 显示状态栏 
     {
         ImGui::Separator();
         ImGui::Text(u8"当前状态：");
@@ -251,7 +267,16 @@ void Application::ShowSynchronizedCapture() {
             ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), u8"未采集");
         }
 
-        ImGui::Text(u8"采样周期：1 秒");
+        // 改为输入框形式
+        ImGui::Text(u8"采样周期：");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(120.0f); // 设置输入框宽度
+        if (ImGui::InputFloat("##SamplingPeriodInput", &timeInterval, 0.1f, 20.0f, u8"%.1f")) {
+            // 输入值变化时的处理逻辑
+            timeInterval = std::clamp(timeInterval, 0.1f, 20.0f); // 限制在0.1-10秒范围
+        }
+        ImGui::SameLine();
+        ImGui::Text(u8"秒"); // 单位说明
         ImGui::Separator();
     }
 
@@ -305,35 +330,46 @@ void Application::ShowSynchronizedCapture() {
 
                     // Dual Axis
                     {
-                        std::map<uint8_t, DualAxisSensorParser::AngleData> snapshot;
+                        std::map<uint8_t, DualAxisSensorParser::AngleData> snapshot3;
                         std::lock_guard<std::mutex> lock(dataMutex);
-                        snapshot = dualAxisDataMap;
-                        dualAxisBuffer.emplace_back(now, snapshot);
+                        snapshot3 = dualAxisDataMap;
+                        dualAxisBuffer.emplace_back(now, snapshot3);
                         dualAxisCount = static_cast<int>(dualAxisBuffer.size());
                     }
-                    //laser
+                    // laser
                     {
                         std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot;
                         {
                             std::lock_guard<std::mutex> lock(LasergetMutex);
-                            snapshot = collectedLasorMap;  // 直接赋值
-                        }
-                        laserBuffer.emplace_back(now, snapshot);
-                        laserCount = static_cast<int>(laserBuffer.size());
-                    }
-                    //laser2
-                    {
-                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot;
-                        {
-                            std::lock_guard<std::mutex> lock(LasergetMutex);
-                            snapshot = collectedLasorMap2;  // 直接赋值
+                            for (auto& [addr, vec] : collectedLasorMap) {
+                                if (!vec.empty()) {
+                                    snapshot[addr] = { vec.back() }; // 用 vector 存最后一条
+                                }
+                            }
                         }
                         laserBuffer.emplace_back(now, snapshot);
                         laserCount = static_cast<int>(laserBuffer.size());
                     }
 
-                    std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
+                    // laser2
+                    {
+                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot2;
+                        {
+                            std::lock_guard<std::mutex> lock(LasergetMutex2);
+                            for (auto& [addr, vec] : collectedLasorMap2) {
+                                if (!vec.empty()) {
+                                    snapshot2[addr] = { vec.back() }; // 用 vector 存最后一条
+                                }
+                            }
+                        }
+                        laserBuffer2.emplace_back(now, snapshot2);
+                    }
+
+
+
+                    //std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
                     //std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
+                    std::this_thread::sleep_for(std::chrono::milliseconds((int)(timeInterval*1000)));
 
                 }
 
@@ -363,7 +399,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8" 同步采集中...");
         ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", 10 * jy61pCount.load());
-        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10*adxl355Count.load());
+        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10* adxl355Count.load());
         ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8" 双轴传感器 已记录 %d 条", 10 *dualAxisCount.load());
     }
 
@@ -1266,9 +1302,12 @@ void Application::ShowADXL355() {
                 collectingADXL355 = true;
 
                 for (uint8_t addr : adxl355DeviceAddresses) {
+
                     adxl355Parsers[addr] = ADXL355Parser(addr);
                     adxl355DataMap[addr] = ADXL355Data();
                 }
+
+
                 
         adxl355PollingThread = std::thread([]() {
             while (collectingADXL355) {
@@ -1590,8 +1629,8 @@ void Application::ShowLaserSensor() {
         if (ImGui::Button(u8"连接")) {
             try {
                 DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-                serialManager.open(availablePorts[selectedPortIndex], baudRate);
-                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager);
+                serialManager_laser.open(availablePorts[selectedPortIndex], baudRate);
+                laserSensor = std::make_unique<LaserSensorProtocol>(serialManager_laser);
                 isConnected = true;
             }
             catch (const std::exception& e) {
@@ -1605,7 +1644,7 @@ void Application::ShowLaserSensor() {
                 isCollecting = false;
                 //collectedLasorMap = laserSensor->stopContinuousCollection();
             }
-            serialManager.close();
+            serialManager_laser.close();
             isConnected = false;
             //laserSensor.reset();
         }

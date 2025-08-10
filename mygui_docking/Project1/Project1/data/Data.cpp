@@ -9,6 +9,9 @@ std::mutex dataMutex;
 //adxl355数据
 const size_t MAX_POINTS = 500;  
 RS485Manager serialManager;
+RS485Manager serialManager_Axis;
+RS485Manager serialManager_JY61;
+RS485Manager serialManager_laser;
 
 ADXL355Parser parser;
 std::mutex ADXL355Mutex;
@@ -67,3 +70,7 @@ bool lasorxlsxing = false; // 是否正在保存数据到XLSX文件
 std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap;
 std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap2;
 RS485Manager serialManager2;
+
+
+//采样周期
+float timeInterval = 1; // 默认采样周期为1s

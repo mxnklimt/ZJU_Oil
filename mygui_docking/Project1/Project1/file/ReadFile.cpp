@@ -548,7 +548,7 @@ void SaveLaserToXLSX(
                 // 写入数据行
                 wks.cell(row, 1).value() = snapTimeStr;
                 wks.cell(row, 2).value() = addrStr;
-                wks.cell(row, 3).value() = value;
+                wks.cell(row, 3).value() = (float)value/1000.0f;
 
                 row++;
             }
@@ -559,12 +559,7 @@ void SaveLaserToXLSX(
     doc.close();
 }
 
-//void SaveLaserToXLSX(
-//    const std::vector<std::pair<std::chrono::system_clock::time_point,
-//    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>>>>& data)
-//{
-//    // 这里写具体保存代码
-//}
+
 void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
 

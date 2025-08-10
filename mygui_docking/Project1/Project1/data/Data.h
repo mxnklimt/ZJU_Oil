@@ -12,8 +12,10 @@
 #include"RS485/RS485Manager.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
 
-
-
+//串口管理
+extern RS485Manager serialManager_Axis; // 用于Axis的串口管理
+extern RS485Manager serialManager_JY61; // 用于JY61P的串口管理
+extern RS485Manager serialManager_laser; // 用于激光传感器的串口管理
 extern std::mutex dataMutex;
 //extern声明全局变量
 //ADXL355
@@ -21,6 +23,7 @@ extern const size_t MAX_POINTS;
 extern std::mutex ADXL355Mutex;
 extern std::atomic<bool> collectingADXL355;
 extern RS485Manager serialManager;
+
 extern ADXL355Parser parser;
 extern std::thread adxl355Thread;       //线程
 extern class ADXL355Data adxl355Data;         //数据结构
@@ -95,3 +98,6 @@ extern bool lasorxlsxing; // 是否正在保存数据到XLSX文件
 extern std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap;
 extern std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> collectedLasorMap2;
 extern class RS485Manager serialManager2;
+
+//采样周期
+extern float timeInterval; // 采样周期，单位为毫秒
