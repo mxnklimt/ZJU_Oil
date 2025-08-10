@@ -512,53 +512,108 @@ void SaveDualAxisToXLSX(
     }
     
 }
+//void SaveLaserToXLSX(
+//    const std::vector<std::pair<std::chrono::system_clock::time_point,
+//    std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>>& data)
+//{
+//    std::string saveFilePath = generateUniqueFileName("Laser_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    doc.open(saveFilePath);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    // 写表头
+//    wks.cell(1, 1).value() = "Snapshot Time";        // 快照采集时间
+//    wks.cell(1, 2).value() = "Device Addr";          // 设备地址
+//    wks.cell(1, 3).value() = "Data Value";           // 数据值
+//
+//    int row = 2;
+//    for (const auto& [snapshotTime, deviceMap] : data) {
+//        // 格式化快照采集时间
+//        auto snap_t = std::chrono::system_clock::to_time_t(snapshotTime);
+//        std::tm snap_tm;
+//        localtime_s(&snap_tm, &snap_t);
+//        std::ostringstream snap_oss;
+//        snap_oss << std::put_time(&snap_tm, "%Y-%m-%d %H:%M:%S");
+//        std::string snapTimeStr = snap_oss.str();
+//
+//        for (const auto& [addr, dataVec] : deviceMap) {
+//            // 设备地址格式化
+//            std::ostringstream addr_ss;
+//            addr_ss << "0x" << std::uppercase << std::hex
+//                << std::setw(2) << std::setfill('0') << (int)addr;
+//            std::string addrStr = addr_ss.str();
+//
+//            for (const auto& [/*dataTime*/_, value] : dataVec) {
+//                // 写入数据行
+//                wks.cell(row, 1).value() = snapTimeStr;
+//                wks.cell(row, 2).value() = addrStr;
+//                wks.cell(row, 3).value() = (float)value/1000.0f;
+//
+//                row++;
+//            }
+//        }
+//    }
+//
+//    doc.save();
+//    doc.close();
+//}
+
+
 void SaveLaserToXLSX(
     const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>>& data)
 {
     std::string saveFilePath = generateUniqueFileName("Laser_sync");
     OpenXLSX::XLDocument doc;
-    doc.create(saveFilePath, false);
-    doc.open(saveFilePath);
+    doc.create(saveFilePath,false);
     auto wks = doc.workbook().worksheet("Sheet1");
 
-    // 写表头
-    wks.cell(1, 1).value() = "Snapshot Time";        // 快照采集时间
-    wks.cell(1, 2).value() = "Device Addr";          // 设备地址
-    wks.cell(1, 3).value() = "Data Value";           // 数据值
+    // 1. 收集所有唯一的设备地址用于列标题
+    std::unordered_set<uint8_t> uniqueAddrs;
+    for (const auto& [_, deviceMap] : data) {
+        for (const auto& [addr, _] : deviceMap) {
+            uniqueAddrs.insert(addr);
+        }
+    }
 
+    // 2. 写入表头行
+    wks.cell(1, 1).value() = "Time"; // 时间列标题
+    int col = 2;
+    for (uint8_t addr : uniqueAddrs) {
+        std::ostringstream addr_ss;
+        addr_ss << "0x" << std::uppercase << std::hex
+            << std::setw(2) << std::setfill('0') << static_cast<int>(addr);
+        wks.cell(1, col++).value() = addr_ss.str();
+    }
+
+    // 3. 按时间顺序写入数据
     int row = 2;
     for (const auto& [snapshotTime, deviceMap] : data) {
-        // 格式化快照采集时间
-        auto snap_t = std::chrono::system_clock::to_time_t(snapshotTime);
-        std::tm snap_tm;
-        localtime_s(&snap_tm, &snap_t);
-        std::ostringstream snap_oss;
-        snap_oss << std::put_time(&snap_tm, "%Y-%m-%d %H:%M:%S");
-        std::string snapTimeStr = snap_oss.str();
+        // 格式化时间为字符串 (YYYY-MM-DD HH:MM:SS)
+        auto time_t = std::chrono::system_clock::to_time_t(snapshotTime);
+        std::tm tm;
+        localtime_s(&tm, &time_t);
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        wks.cell(row, 1).value() = oss.str(); // 写入时间戳
 
-        for (const auto& [addr, dataVec] : deviceMap) {
-            // 设备地址格式化
-            std::ostringstream addr_ss;
-            addr_ss << "0x" << std::uppercase << std::hex
-                << std::setw(2) << std::setfill('0') << (int)addr;
-            std::string addrStr = addr_ss.str();
-
-            for (const auto& [/*dataTime*/_, value] : dataVec) {
-                // 写入数据行
-                wks.cell(row, 1).value() = snapTimeStr;
-                wks.cell(row, 2).value() = addrStr;
-                wks.cell(row, 3).value() = (float)value/1000.0f;
-
-                row++;
+        // 填充设备数据列
+        col = 2;
+        for (uint8_t addr : uniqueAddrs) {
+            if (deviceMap.count(addr) > 0 && !deviceMap.at(addr).empty()) {
+                // 取该设备的最后一个数据值（假设需要最新值）
+                uint32_t value = deviceMap.at(addr).back().second;
+                wks.cell(row, col).value() = static_cast<float>(value) / 1000.0f;
             }
+            col++;
         }
+        row++;
     }
 
     doc.save();
     doc.close();
 }
-
 
 void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, JY61PData::angle>>>& data) {
