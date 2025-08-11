@@ -715,15 +715,46 @@ void SaveJY61PToXLSX(const std::vector<std::pair<std::chrono::system_clock::time
     }
 }
 
-
 std::string generateUniqueFileName(const std::string& baseName, const std::string& extension) {
-    std::string filename = baseName + extension;
+    // 获取当前时间
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
+    // 格式化时间为 "YYYYMMDD_HHMMSS"
+    std::tm tm_buf;
+#ifdef _WIN32
+    localtime_s(&tm_buf, &now_c);
+#else
+    localtime_r(&now_c, &tm_buf);
+#endif
+
+    std::ostringstream oss;
+    oss << baseName << "_"
+        << std::put_time(&tm_buf, "%Y_%m_%d__%H_%M_%S")
+        << extension;
+
+    std::string filename = oss.str();
+
+    // 如果存在同名文件，加后缀数字避免冲突
     int counter = 1;
     while (std::filesystem::exists(filename)) {
-        filename = baseName + "_" + std::to_string(counter++) + extension;
+        std::ostringstream oss2;
+        oss2 << baseName << "_"
+            << std::put_time(&tm_buf, "%Y_%m_%d__%H_%M_%S")
+            << "_" << counter++ << extension;
+        filename = oss2.str();
     }
+
     return filename;
 }
+//std::string generateUniqueFileName(const std::string& baseName, const std::string& extension) {
+//    std::string filename = baseName + extension;
+//    int counter = 1;
+//    while (std::filesystem::exists(filename)) {
+//        filename = baseName + "_" + std::to_string(counter++) + extension;
+//    }
+//    return filename;
+//}
  void ReadFile::readColumnsDandEFloat(
     const std::string& filePath,
     const std::string& sheetName,
