@@ -47,5 +47,5 @@ void StopAndSaveDualAxisData(
 void SaveLaserToXLSX(
     const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>>& data);
-void MoveLatestFiles(const std::filesystem::path& basePath, int n);
+void MoveLatestFiles(const std::filesystem::path& basePath, size_t count);
 std::string generateTimestampFolderName();

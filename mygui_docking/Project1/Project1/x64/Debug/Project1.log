@@ -1,9 +1,1 @@
-﻿  Com.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(85,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“JY61P/Com.cpp”)
-  
-  CollectData.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(85,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“data/CollectData.cpp”)
-  
-  Data.cpp
+﻿

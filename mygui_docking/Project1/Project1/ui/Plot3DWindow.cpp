@@ -385,6 +385,7 @@ void Application::ShowSynchronizedCapture() {
 				SaveLaserToXLSX(laserBuffer);
                 SaveLaserToXLSX(laserBuffer2);
                 MoveLatestFiles(std::filesystem::current_path(), 5);
+
                 });
         }
     }

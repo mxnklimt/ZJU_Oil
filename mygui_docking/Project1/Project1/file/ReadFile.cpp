@@ -866,48 +866,120 @@ std::string generateUniqueFileName(const std::string& baseName, const std::strin
      return oss.str();
  }
 
- // 移动最新 N 个文件
- void MoveLatestFiles(const std::filesystem::path& basePath, int n) {
-     try {
-         // 收集目录下的所有文件
-         std::vector<std::filesystem::directory_entry> files;
-         for (const auto& entry : std::filesystem::directory_iterator(basePath)) {
-             if (entry.is_regular_file()) {
-                 files.push_back(entry);
+
+ void MoveLatestFiles(const std::filesystem::path& directory, size_t count) {
+     // 需要的文件夹列表
+     const std::vector<std::string> requiredFolders = { "jy61", "adxl355", "DualAsix", "V-LDS", "H-LDS" };
+
+     // 创建文件夹（如果不存在）
+     for (const auto& folder : requiredFolders) {
+         std::filesystem::path folderPath = directory / folder;
+         if (!std::filesystem::exists(folderPath)) {
+             if (!std::filesystem::create_directory(folderPath)) {
+                 std::cerr << "创建文件夹失败: " << folderPath << "\n";
+                 // 根据需求可选择返回或继续
              }
          }
-
-         if (files.empty()) {
-             std::cout << "No files found in: " << basePath << "\n";
-             return;
-         }
-
-         // 按修改时间降序排序
-         std::sort(files.begin(), files.end(),
-             [](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
-                 return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
-             });
-
-         // 取最新 n 个文件
-         if (files.size() > static_cast<size_t>(n)) {
-             files.resize(n);
-         }
-
-         // 创建目标文件夹
-         std::filesystem::path newFolder = basePath / generateTimestampFolderName();
-         std::filesystem::create_directories(newFolder);
-
-         // 移动文件
-         for (const auto& file : files) {
-             std::filesystem::path target = newFolder / file.path().filename();
-             std::filesystem::rename(file.path(), target);
-             std::cout << "Moved: " << file.path() << " -> " << target << "\n";
-         }
-
      }
-     catch (const std::exception& e) {
-         std::cerr << "Error moving latest files: " << e.what() << "\n";
+
+     // 遍历目录，收集所有文件（排除文件夹）
+     std::vector<std::filesystem::directory_entry> files;
+     for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+         if (entry.is_regular_file()) {
+             files.push_back(entry);
+         }
+     }
+
+     // 按最后写入时间排序，最新的放前面
+     std::sort(files.begin(), files.end(), [](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
+         return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
+         });
+
+     // 取最新的count个文件
+     size_t toProcess = std::min(count, files.size());
+
+     for (size_t i = 0; i < toProcess; ++i) {
+         const auto& file = files[i];
+         std::string filename = file.path().filename().string();
+
+         std::filesystem::path targetFolder;
+
+         if (filename.find("JY61") == 0) {
+             targetFolder = directory / "jy61";
+         }
+         else if (filename.find("ADXL") == 0) {
+             targetFolder = directory / "adxl355";
+         }
+         else if (filename.find("Dual") == 0) {
+             targetFolder = directory / "DualAsix";
+         }
+         else if (filename.find("Laser") == 0) {
+             // 判断是否以"_1"结尾（不含扩展名）
+             std::string stem = file.path().stem().string();
+             if (stem.size() >= 2 && stem.substr(stem.size() - 2) == "_1") {
+                 targetFolder = directory / "V-LDS";
+             }
+             else {
+                 targetFolder = directory / "H-LDS";
+             }
+         }
+         else {
+             // 不符合规则，跳过
+             continue;
+         }
+
+         std::filesystem::path targetPath = targetFolder / file.path().filename();
+
+         std::error_code ec;
+         std::filesystem::rename(file.path(), targetPath, ec);
+         if (ec) {
+             std::cerr << "移动文件失败: " << filename << " 到 " << targetFolder << " 错误: " << ec.message() << "\n";
+         }
      }
  }
+
+ //// 移动最新 N 个文件
+ //void MoveLatestFiles(const std::filesystem::path& basePath, int n) {
+ //    try {
+ //        // 收集目录下的所有文件
+ //        std::vector<std::filesystem::directory_entry> files;
+ //        for (const auto& entry : std::filesystem::directory_iterator(basePath)) {
+ //            if (entry.is_regular_file()) {
+ //                files.push_back(entry);
+ //            }
+ //        }
+
+ //        if (files.empty()) {
+ //            std::cout << "No files found in: " << basePath << "\n";
+ //            return;
+ //        }
+
+ //        // 按修改时间降序排序
+ //        std::sort(files.begin(), files.end(),
+ //            [](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
+ //                return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
+ //            });
+
+ //        // 取最新 n 个文件
+ //        if (files.size() > static_cast<size_t>(n)) {
+ //            files.resize(n);
+ //        }
+
+ //        // 创建目标文件夹
+ //        std::filesystem::path newFolder = basePath / generateTimestampFolderName();
+ //        std::filesystem::create_directories(newFolder);
+
+ //        // 移动文件
+ //        for (const auto& file : files) {
+ //            std::filesystem::path target = newFolder / file.path().filename();
+ //            std::filesystem::rename(file.path(), target);
+ //            std::cout << "Moved: " << file.path() << " -> " << target << "\n";
+ //        }
+
+ //    }
+ //    catch (const std::exception& e) {
+ //        std::cerr << "Error moving latest files: " << e.what() << "\n";
+ //    }
+ //}
 
 
