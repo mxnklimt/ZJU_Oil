@@ -3,7 +3,10 @@
 #include<chrono>
 #include<map>
 #include<unordered_map>
+#include <filesystem>
+
 #include"data/Data.h"
+
 class ReadFile
 {
 public:
@@ -44,3 +47,5 @@ void StopAndSaveDualAxisData(
 void SaveLaserToXLSX(
     const std::vector<std::pair<std::chrono::system_clock::time_point,
     std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>>& data);
+void MoveLatestFiles(const std::filesystem::path& basePath, int n);
+std::string generateTimestampFolderName();

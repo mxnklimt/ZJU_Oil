@@ -851,3 +851,63 @@ std::string generateUniqueFileName(const std::string& baseName, const std::strin
  }
 
 
+ // 生成当前时间的文件夹名：YYYYMMDD_HHMMSS
+ std::string generateTimestampFolderName() {
+     auto now = std::chrono::system_clock::now();
+     auto t = std::chrono::system_clock::to_time_t(now);
+     std::tm tm_local{};
+#ifdef _WIN32
+     localtime_s(&tm_local, &t);
+#else
+     localtime_r(&t, &tm_local);
+#endif
+     std::ostringstream oss;
+     oss << std::put_time(&tm_local, "%Y%m%d_%H%M%S");
+     return oss.str();
+ }
+
+ // 移动最新 N 个文件
+ void MoveLatestFiles(const std::filesystem::path& basePath, int n) {
+     try {
+         // 收集目录下的所有文件
+         std::vector<std::filesystem::directory_entry> files;
+         for (const auto& entry : std::filesystem::directory_iterator(basePath)) {
+             if (entry.is_regular_file()) {
+                 files.push_back(entry);
+             }
+         }
+
+         if (files.empty()) {
+             std::cout << "No files found in: " << basePath << "\n";
+             return;
+         }
+
+         // 按修改时间降序排序
+         std::sort(files.begin(), files.end(),
+             [](const std::filesystem::directory_entry& a, const std::filesystem::directory_entry& b) {
+                 return std::filesystem::last_write_time(a) > std::filesystem::last_write_time(b);
+             });
+
+         // 取最新 n 个文件
+         if (files.size() > static_cast<size_t>(n)) {
+             files.resize(n);
+         }
+
+         // 创建目标文件夹
+         std::filesystem::path newFolder = basePath / generateTimestampFolderName();
+         std::filesystem::create_directories(newFolder);
+
+         // 移动文件
+         for (const auto& file : files) {
+             std::filesystem::path target = newFolder / file.path().filename();
+             std::filesystem::rename(file.path(), target);
+             std::cout << "Moved: " << file.path() << " -> " << target << "\n";
+         }
+
+     }
+     catch (const std::exception& e) {
+         std::cerr << "Error moving latest files: " << e.what() << "\n";
+     }
+ }
+
+
