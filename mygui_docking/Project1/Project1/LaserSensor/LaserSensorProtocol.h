@@ -32,28 +32,59 @@ public:
     }
 
     // 开始轮询采集
-    void startContinuousCollection(const std::vector<uint8_t>& deviceAddresses) {
-        if (isCollecting) return;
-        isCollecting = true;
-        //collectedDataMap.clear();
+     void startContinuousCollection(const std::vector<uint8_t>& deviceAddresses) {
+    if (isCollecting) return;
+    isCollecting = true;
 
-        collectionThread = std::thread([this, deviceAddresses]() {
-            while (isCollecting) {
-                auto now = std::chrono::system_clock::now();
-                for (auto addr : deviceAddresses) {
-                    try {
-                        uint32_t dist = getDistance(addr);
+    const size_t MAX_SIZE = 1000;  // 最大缓存条数，根据需求调整
+
+    collectionThread = std::thread([this, deviceAddresses, MAX_SIZE]() {
+        while (isCollecting) {
+            auto now = std::chrono::system_clock::now();
+            for (auto addr : deviceAddresses) {
+                try {
+                    uint32_t dist = getDistance(addr);
+                    {
                         std::lock_guard<std::mutex> lock(LasergetMutex);
-                        collectedLasorMap[addr].emplace_back(now, dist);
+                        auto& vec = collectedLasorMap[addr];
+                        if (vec.size() >= MAX_SIZE) {
+                            // 删除最旧数据，保持最大长度
+                            vec.erase(vec.begin());
+                        }
+                        vec.emplace_back(now, dist);
                     }
-                    catch (const std::exception& e) {
-                        std::cerr << "地址 0x" << std::hex << int(addr) << " 采集失败: " << e.what() << "\n";
-                    }
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 每台设备间隔
                 }
+                catch (const std::exception& e) {
+                    std::cerr << "地址 0x" << std::hex << int(addr) << " 采集失败: " << e.what() << "\n";
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(300)); // 每台设备间隔
             }
-            });
-    }
+        }
+        });
+}
+
+    //void startContinuousCollection(const std::vector<uint8_t>& deviceAddresses) {
+    //    if (isCollecting) return;
+    //    isCollecting = true;
+    //    //collectedDataMap.clear();
+
+    //    collectionThread = std::thread([this, deviceAddresses]() {
+    //        while (isCollecting) {
+    //            auto now = std::chrono::system_clock::now();
+    //            for (auto addr : deviceAddresses) {
+    //                try {
+    //                    uint32_t dist = getDistance(addr);
+    //                    std::lock_guard<std::mutex> lock(LasergetMutex);
+    //                    collectedLasorMap[addr].emplace_back(now, dist);
+    //                }
+    //                catch (const std::exception& e) {
+    //                    std::cerr << "地址 0x" << std::hex << int(addr) << " 采集失败: " << e.what() << "\n";
+    //                }
+    //                std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 每台设备间隔
+    //            }
+    //        }
+    //        });
+    //}
     // 开始轮询采集
     void startContinuousCollection2(const std::vector<uint8_t>& deviceAddresses) {
         if (isCollecting2) return;
@@ -131,13 +162,20 @@ private:
 
     // 接收距离响应
     std::vector<uint8_t> receiveDistanceResponse() {
-        return rs485Manager.receive(9, 1000); // 9字节，1秒超时
+        //return rs485Manager.receive(9); // 9字节，1秒超时
+        return rs485Manager.receiveLaser(400);
+
     }
 
     // 解析响应
     uint32_t parseDistance(const std::vector<uint8_t>& response, uint8_t addr) {
         if (response.size() < 9) throw std::runtime_error("无效的响应长度");
-        if (response[0] != addr) throw std::runtime_error("响应地址不匹配");
+        
+            if (response[0] != addr) {
+                std::cerr << "响应地址不匹配，期望: " << (int)addr << "，实际: " << (int)response[0] << std::endl;
+                throw std::runtime_error("响应地址不匹配");
+            }
+        
         if (response[1] != 0x04) throw std::runtime_error("无效的功能码");
         if (response[2] != 0x04) throw std::runtime_error("无效的字节数");
 
