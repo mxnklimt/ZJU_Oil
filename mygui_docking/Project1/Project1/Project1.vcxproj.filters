@@ -416,6 +416,12 @@
     <ClCompile Include="EMA\EmaFilter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="AMT\AMTParser.h">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BSQJN\BSQJNParser.h">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Implot\implot-master.zip" />

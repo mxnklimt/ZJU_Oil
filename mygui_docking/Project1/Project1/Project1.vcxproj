@@ -219,6 +219,7 @@
     <ClInclude Include="ui\sheetdata.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AMT\AMTParser.h" />
     <ClCompile Include="data\Data.cpp" />
     <ClCompile Include="EMA\EmaFilter.cpp" />
     <ClCompile Include="file\ReadFile.cpp" />
@@ -239,6 +240,7 @@
     <ClCompile Include="JY61P\Com.cpp" />
     <ClCompile Include="JY61P\wit_c_sdk.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="BSQJN\BSQJNParser.h" />
     <ClCompile Include="OpenXLSX\external\pugixml\pugixml.cpp" />
     <ClCompile Include="OpenXLSX\sources\XLCell.cpp" />
     <ClCompile Include="OpenXLSX\sources\XLCellIterator.cpp" />
