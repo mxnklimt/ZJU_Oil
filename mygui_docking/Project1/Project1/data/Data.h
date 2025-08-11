@@ -12,6 +12,8 @@
 #include"RS485/RS485Manager.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
 
+//#define rightdevice // #define leftdevice
+
 //串口管理
 extern RS485Manager serialManager_Axis; // 用于Axis的串口管理
 extern RS485Manager serialManager_JY61; // 用于JY61P的串口管理
