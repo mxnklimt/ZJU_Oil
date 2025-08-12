@@ -15,6 +15,7 @@ public:
 	static void ShowExcel();
 	static void ShowLaserSensor();
 	static void ShowLaserSensor2();
+	static void ShowAMT();
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;
 };

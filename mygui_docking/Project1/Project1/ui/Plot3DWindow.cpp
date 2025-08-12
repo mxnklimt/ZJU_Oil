@@ -32,6 +32,7 @@
 #include"data/CollectData.h"
 #include"LaserSensor/LaserSensorProtocol.h"
 #include"EMA/EmaFilter.h"
+#include"AMT/AMTParser.h"
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -43,6 +44,7 @@ void Application::ShowWindow()
     static bool SynchronizedCapture = true;
 	static bool show_laser_sensor = true; // 激光传感器选项
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
+	static bool show_AMT = true;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -60,6 +62,7 @@ void Application::ShowWindow()
             ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
+			ImGui::MenuItem("Show AMT", nullptr, &show_AMT);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Style")) {
@@ -83,6 +86,10 @@ void Application::ShowWindow()
 		// 显示激光传感器数据2
 		Application::ShowLaserSensor2();
 	}
+    if (show_AMT)
+    {
+		Application::ShowAMT();
+    }
     
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
@@ -1912,6 +1919,165 @@ void Application::ShowLaserSensor2()
 
 
 
+    }
+
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+    ImGui::End();
+}
+
+
+
+
+void Application::ShowAMT() {
+    if (!ImGui::Begin("AMT")) {
+        ImGui::End();
+        return;
+    }
+
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 0; // 默认 9600
+    static bool isConnected = false;
+    static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+
+    // 数据缓存
+    struct AMTData {
+        double position = 0.0;
+        double temperature = 0.0;
+    };
+    static std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
+    static std::mutex amtDataMutex;
+
+    // 串口选择
+    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+
+    // 连接按钮
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                isConnected = true;
+
+                // 启动采集线程
+                std::thread([]() {
+                    std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你实际的地址列表
+                    std::unordered_map<uint8_t, AMTParser> parsers;
+                    for (auto addr : amtAddresses) {
+                        parsers[addr] = AMTParser(addr);
+                    }
+
+                    while (isConnected) {
+                        for (uint8_t addr : amtAddresses) {
+                            try {
+                                std::vector<uint8_t> cmd = parsers[addr].makeReadPos1Temp1Cmd();
+                                std::vector<uint8_t> resp;
+                                {
+                                    std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
+                                    serialManager.send(cmd);
+                                    resp = serialManager.receive(11); // 地址+功能码+字节数+6字节数据+CRC
+                                }
+
+                                // 解析位移和温度
+                                double pos = parsers[addr].parsePosition(resp, 3, 5);
+                                double temp = parsers[addr].parseTemperature(resp, 7);
+
+                                {
+                                    std::lock_guard<std::mutex> lock(amtDataMutex);
+                                    auto& dq = amtDataMap[addr];
+                                    dq.push_back({ pos, temp });
+                                    if (dq.size() > 200) dq.pop_front();
+                                }
+                            }
+                            catch (const std::exception& e) {
+                                // 采集异常
+                            }
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        }
+                    }
+                    }).detach();
+
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            isConnected = false;
+            serialManager.close();
+            deviceDisplayFlags.clear();
+            amtDataMap.clear();
+        }
+
+        // 显示设备
+        std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你的地址列表
+        if (!amtAddresses.empty()) {
+            ImGui::Columns(2, "AMTDisplayColumns", false);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);
+            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);
+
+            // 左侧设备选择
+            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
+            ImGui::Separator();
+            for (uint8_t addr : amtAddresses) {
+                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+                    deviceDisplayFlags[addr] = false;
+                char label[32];
+                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
+                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
+            }
+            ImGui::EndChild();
+
+            ImGui::NextColumn();
+
+            // 右侧数据显示
+            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+            {
+                std::lock_guard<std::mutex> lock(amtDataMutex);
+                for (uint8_t addr : amtAddresses) {
+                    if (!deviceDisplayFlags[addr]) continue;
+                    auto it = amtDataMap.find(addr);
+                    if (it != amtDataMap.end() && !it->second.empty()) {
+                        const auto& data = it->second.back();
+                        extern ImFont* DataFont;
+                        ImGui::Separator();
+                        ImGui::Text(u8"设备 0x%02X", addr);
+                        ImGui::PushID(addr);
+                        ImGui::PushFont(DataFont);
+                        ImGui::Columns(2, nullptr, false);
+
+                        auto renderCard = [](const char* label, double value, const char* unit) {
+                            ImGui::BeginChild(label, ImVec2(0, 120), true);
+                            ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0000.000").x) * 0.5f);
+                            ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.0f, 1.0f), "%.3f %s", value, unit);
+                            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+                            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(label).x) * 0.5f);
+                            ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", label);
+                            ImGui::EndChild();
+                            ImGui::NextColumn();
+                            };
+
+                        renderCard(u8"位移", data.position, "mm");
+                        renderCard(u8"温度", data.temperature, u8"°C");
+
+                        ImGui::Columns(1);
+                        ImGui::PopFont();
+                        ImGui::PopID();
+                    }
+                    else {
+                        ImGui::Separator();
+                        ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+                    }
+                }
+            }
+            ImGui::EndChild();
+            ImGui::Columns(1);
+        }
     }
 
     ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
