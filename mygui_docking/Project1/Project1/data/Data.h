@@ -103,3 +103,4 @@ extern class RS485Manager serialManager2;
 
 //采样周期
 extern float timeInterval; // 采样周期，单位为毫秒
+extern std::vector<uint8_t> amtAddresses; 

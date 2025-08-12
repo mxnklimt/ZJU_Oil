@@ -1963,7 +1963,6 @@ void Application::ShowAMT() {
 
                 // 启动采集线程
                 std::thread([]() {
-                    std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你实际的地址列表
                     std::unordered_map<uint8_t, AMTParser> parsers;
                     for (auto addr : amtAddresses) {
                         parsers[addr] = AMTParser(addr);
@@ -2014,7 +2013,7 @@ void Application::ShowAMT() {
         }
 
         // 显示设备
-        std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你的地址列表
+
         if (!amtAddresses.empty()) {
             ImGui::Columns(2, "AMTDisplayColumns", false);
             ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);

@@ -86,3 +86,4 @@ RS485Manager serialManager2;
 
 //采样周期
 float timeInterval = 1; // 默认采样周期为1s
+std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你的地址列表

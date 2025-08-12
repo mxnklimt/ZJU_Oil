@@ -1,4 +1,41 @@
-﻿  Plot3DWindow.cpp
+﻿  Data.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
+  (编译源文件“data/Data.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(87,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“data/Data.cpp”)
+  
+  ReadFile.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(87,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“file/ReadFile.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(843,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(844,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\file\ReadFile.cpp(887,61): warning C4244: “参数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+  Com.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
+  (编译源文件“JY61P/Com.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(87,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“JY61P/Com.cpp”)
+  
+  CollectData.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
+  (编译源文件“data/CollectData.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(87,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“data/CollectData.cpp”)
+  
+  Plot3DWindow.cpp
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
   
@@ -33,7 +70,7 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Pl
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1588,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1589,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1590,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1994,58): warning C4101: “e”: 未引用的局部变量
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1993,58): warning C4101: “e”: 未引用的局部变量
 C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18): warning C4244: “=”: 从“wchar_t”转换到“char”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
       C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18):
@@ -67,10 +104,17 @@ C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.3443
               _SizeTy=unsigned __int64
           ]
   
+  sheetdata.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
+  (编译源文件“ui/sheetdata.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(87,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“ui/sheetdata.cpp”)
+  
   正在生成代码
-  1 of 12561 functions (<0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    178 functions had inline decision re-evaluated but remain unchanged
+  206 of 12563 functions ( 1.6%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    190 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Release\Project1.exe
   'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
