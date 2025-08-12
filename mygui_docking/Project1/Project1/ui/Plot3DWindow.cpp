@@ -2301,12 +2301,13 @@ void Application::ShowBSQJN() {
                                 // 打印解析后浮点值
                                 printf("[BSQJN 0x%02X] Parsed forceValue = %.6f\n", addr, forceValue);
 
-                                std::vector<float> forceValues(4);
-                                for (int ch = 0; ch < 4; ch++) {
-                                    forceValues[ch] = BSQJNParser::parseFloat(response, 3 + ch * 4);//除以1000，变成kg，然后x10
-                                }
+
 
                                 {
+                                    std::vector<float> forceValues(4);
+                                    for (int ch = 0; ch < 4; ch++) {
+                                        forceValues[ch] = BSQJNParser::parseFloat(response, 3 + ch * 4);
+                                    }
                                     std::lock_guard<std::mutex> lock2(BSQJNMutex);
                                     auto& dq = bsqjnDataMap[addr].dataQue;
                                     dq.push_back(forceValues);
@@ -2374,7 +2375,7 @@ void Application::ShowBSQJN() {
                         ImGui::BeginChild("ForceCard", ImVec2(0, 160), true);
                         ImGui::Dummy(ImVec2(0, 10));
                         for (int ch = 0; ch < 4; ch++) {
-                            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"通道 %d: %.1f N", ch + 1, values[ch]);
+                            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"通道 %d: %.6f T", ch + 1, values[ch]);
                         }
                         ImGui::Dummy(ImVec2(0, 5));
                         ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(u8"拉力").x) * 0.5f);
