@@ -16,6 +16,7 @@ public:
 	static void ShowLaserSensor();
 	static void ShowLaserSensor2();
 	static void ShowAMT();
+	static void ShowBSQJN();
 	std::vector<float> dValues, eValues;
 	std::vector<std::tm> times;
 };

@@ -66,15 +66,52 @@ public:
 
     // ====== 数据解析 ======
 
-    // 解析浮点数（Modbus 返回 4 字节 IEEE754，按设备字节序）
+    //// 解析浮点数（Modbus 返回 4 字节 IEEE754，按设备字节序）
+    //static float parseFloat(const std::vector<uint8_t>& data, size_t index) {
+    //    if (data.size() < index + 4) throw std::runtime_error("浮点数据不足");
+    //    float val;
+    //    uint8_t bytes[4] = { data[index], data[index + 1], data[index + 2], data[index + 3] };
+    //    std::memcpy(&val, bytes, sizeof(float));
+    //    return val;
+    
+
+    //static float parseFloat(const std::vector<uint8_t>& data, size_t index) {
+    //    if (data.size() < index + 4) throw std::runtime_error("浮点数据不足");
+
+    //    // 强制大端序处理（文档4.2.2节要求）
+    //    union {
+    //        uint32_t i;
+    //        float f;
+    //    } converter;
+
+    //    converter.i = (static_cast<uint32_t>(data[index]) << 24) |
+    //        (static_cast<uint32_t>(data[index + 1]) << 16) |
+    //        (static_cast<uint32_t>(data[index + 2]) << 8) |
+    //        static_cast<uint32_t>(data[index + 3]);
+
+    //    // 数据有效性检查（文档4.2节输入范围）
+    //    if (abs(converter.f) > 1e6) {  // 假设最大量程1,000,000
+    //        throw std::runtime_error("超出量程的浮点数值");
+    //    }
+    //    return converter.f;
+    //}
     static float parseFloat(const std::vector<uint8_t>& data, size_t index) {
         if (data.size() < index + 4) throw std::runtime_error("浮点数据不足");
-        float val;
-        uint8_t bytes[4] = { data[index], data[index + 1], data[index + 2], data[index + 3] };
-        std::memcpy(&val, bytes, sizeof(float));
-        return val;
-    }
 
+        // 强制大端序处理（文档4.2.2节要求）
+        uint32_t raw = (static_cast<uint32_t>(data[index]) << 24) |
+            (static_cast<uint32_t>(data[index + 1]) << 16) |
+            (static_cast<uint32_t>(data[index + 2]) << 8) |
+            static_cast<uint32_t>(data[index + 3]);
+
+        // 兼容性转换（避免联合体未定义行为）
+        float value;
+        memcpy(&value, &raw, sizeof(float));
+
+        // 量程检查（文档4.2节）
+        if (fabs(value) > 1e6f) throw std::runtime_error("超出量程");
+        return value;
+    }
     // 解析有符号长整型
     static int32_t parseLong(const std::vector<uint8_t>& data, size_t index) {
         if (data.size() < index + 4) throw std::runtime_error("整型数据不足");
@@ -153,4 +190,5 @@ private:
         cmd.push_back(static_cast<uint8_t>(crc & 0xFF)); // 低字节
         cmd.push_back(static_cast<uint8_t>(crc >> 8));   // 高字节
     }
+
 };

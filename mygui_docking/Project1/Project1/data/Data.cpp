@@ -4,6 +4,7 @@
 #include<unordered_map>
 #include"DualAxisSensor/DualAxisSensorParser.h"
 #include<unordered_set>
+#include"BSQJN/BSQJNParser.h"
 //cpp中定义全局变量
 std::mutex dataMutex;
 
@@ -36,6 +37,7 @@ std::map<uint8_t, std::thread> adxl355Threads;
 std::map<uint8_t, ADXL355Data> adxl355DataMap;
 std::map<uint8_t, ADXL355Parser> adxl355Parsers;
 std::mutex RS485SendRecvMutex;
+std::mutex RS485BSQMutex;
 std::thread adxl355PollingThread;
 
 std::unordered_set<uint8_t> adxl355NeedInitEMASet;  // 保存开始时初始化的地址
@@ -86,4 +88,15 @@ RS485Manager serialManager2;
 
 //采样周期
 float timeInterval = 1; // 默认采样周期为1s
+
+//AMT
 std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你的地址列表
+
+// ===== Application.cpp =====
+std::vector<uint8_t> bsqjnDeviceAddresses = { 0x01 };
+std::unordered_map<uint8_t, BSQJNParser> bsqjnParsers;
+std::unordered_map<uint8_t, BSQJNData> bsqjnDataMap;
+std::mutex BSQJNMutex;
+std::atomic<bool> collectingBSQJN = false;
+std::thread bsqjnPollingThread;
+bool bsqjnSavingFlag = false;

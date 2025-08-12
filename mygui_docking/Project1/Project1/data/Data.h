@@ -11,6 +11,7 @@
 #include"ADXL355/ADXL355Parser.h"
 #include"RS485/RS485Manager.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
+#include"BSQJN/BSQJNParser.h"
 
 //#define rightdevice // #define leftdevice
 
@@ -41,6 +42,7 @@ extern std::map<uint8_t, std::thread> adxl355Threads;
 extern std::map<uint8_t, class ADXL355Data> adxl355DataMap;
 extern std::map<uint8_t, class ADXL355Parser> adxl355Parsers;
 extern std::mutex RS485SendRecvMutex;
+
 
 extern std::unordered_set<uint8_t> adxl355NeedInitEMASet;  // 保存开始时初始化的地址
 extern std::mutex adxl355InitMutex;
@@ -103,4 +105,32 @@ extern class RS485Manager serialManager2;
 
 //采样周期
 extern float timeInterval; // 采样周期，单位为毫秒
+
+//AMT
 extern std::vector<uint8_t> amtAddresses; 
+//BSQJN
+// 设备地址列表
+extern std::vector<uint8_t> bsqjnDeviceAddresses;
+
+// 解析器
+extern std::unordered_map<uint8_t, BSQJNParser> bsqjnParsers;
+
+// 数据结构
+struct BSQJNData {
+	//std::deque<float> dataQue; // 拉力值队列
+	std::deque<std::vector<float>> dataQue;
+};
+
+// 地址 -> 数据
+extern std::unordered_map<uint8_t, BSQJNData> bsqjnDataMap;
+
+// 数据锁
+extern std::mutex BSQJNMutex;
+
+// 采集控制
+extern std::atomic<bool> collectingBSQJN;
+extern std::thread bsqjnPollingThread;
+
+// 保存标志（如果你需要保存 xlsx，可用这个）
+extern bool bsqjnSavingFlag;
+extern std::mutex RS485BSQMutex;

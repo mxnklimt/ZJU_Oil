@@ -33,6 +33,7 @@
 #include"LaserSensor/LaserSensorProtocol.h"
 #include"EMA/EmaFilter.h"
 #include"AMT/AMTParser.h"
+#include"BSQJN/BSQJNParser.h"
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -45,6 +46,7 @@ void Application::ShowWindow()
 	static bool show_laser_sensor = true; // 激光传感器选项
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
 	static bool show_AMT = true;
+    static bool show_BSQJN = true;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -63,6 +65,7 @@ void Application::ShowWindow()
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
 			ImGui::MenuItem("Show AMT", nullptr, &show_AMT);
+			ImGui::MenuItem("Show BSQJN", nullptr, &show_BSQJN);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Style")) {
@@ -90,7 +93,10 @@ void Application::ShowWindow()
     {
 		Application::ShowAMT();
     }
-    
+	if (show_BSQJN)
+	{
+		Application::ShowBSQJN();
+	}
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
     if (ADXL355) {
@@ -2065,6 +2071,316 @@ void Application::ShowAMT() {
                         renderCard(u8"温度", data.temperature, u8"°C");
 
                         ImGui::Columns(1);
+                        ImGui::PopFont();
+                        ImGui::PopID();
+                    }
+                    else {
+                        ImGui::Separator();
+                        ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+                    }
+                }
+            }
+            ImGui::EndChild();
+            ImGui::Columns(1);
+        }
+    }
+
+    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+    ImGui::End();
+}
+
+//void Application::ShowBSQJN() {
+//    if (!ImGui::Begin(u8"BSQJN 拉力传感器")) {
+//        ImGui::End();
+//        return;
+//    }
+//
+//    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+//    static int selectedPortIndex = 0;
+//    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+//    static int selectedBaudIndex = 0; // 这里可以根据设备实际波特率改
+//    static bool isConnected = false;
+//    static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+//
+//    // 串口选择
+//    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+//    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+//
+//    if (!isConnected) {
+//        if (ImGui::Button(u8"连接")) {
+//            try {
+//                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+//                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+//                isConnected = true;
+//                collectingBSQJN = true;
+//
+//                // 初始化解析器
+//                for (uint8_t addr : bsqjnDeviceAddresses) {
+//                    bsqjnParsers[addr] = BSQJNParser(addr);
+//                    bsqjnDataMap[addr] = BSQJNData();
+//                }
+//
+//                // 启动轮询线程
+//                bsqjnPollingThread = std::thread([]() {
+//                    while (collectingBSQJN) {
+//                        for (uint8_t addr : bsqjnDeviceAddresses) {
+//                            try {
+//                                std::vector<uint8_t> cmd = bsqjnParsers[addr].makeReadAllFloatCmd();
+//                                std::vector<uint8_t> response;
+//
+//                                {
+//                                    std::lock_guard<std::mutex> lock(RS485BSQMutex);
+//                                    serialManager.send(cmd);
+//                                    response = serialManager.receive(4 * 4 + 5);
+//                                    // 4通道 * 4字节 + 地址功能字节和CRC
+//                                }
+//
+//                                // 解析通道1为拉力
+//                                float forceValue = BSQJNParser::parseFloat(response, 3); // 偏移3字节（地址+功能码+字节数）
+//
+//                                {
+//                                    std::lock_guard<std::mutex> lock2(BSQJNMutex);
+//                                    auto& dq = bsqjnDataMap[addr].dataQue;
+//                                    dq.push_back(forceValue);
+//                                    if (dq.size() > MAX_POINTS) dq.pop_front();
+//                                }
+//
+//                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//                            }
+//                            catch (const std::exception& e) {
+//                                std::cerr << u8"[BSQJN 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+//                            }
+//                        }
+//                    }
+//                    });
+//
+//            }
+//            catch (const std::exception& e) {
+//                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+//            }
+//        }
+//    }
+//    else {
+//        if (ImGui::Button(u8"断开")) {
+//            collectingBSQJN = false;
+//            if (bsqjnPollingThread.joinable()) bsqjnPollingThread.join();
+//            serialManager.close();
+//            isConnected = false;
+//            bsqjnParsers.clear();
+//            bsqjnDataMap.clear();
+//            deviceDisplayFlags.clear();
+//        }
+//
+//        // 左右布局
+//        if (!bsqjnDeviceAddresses.empty()) {
+//            ImGui::Columns(2, "BSQJNColumns", false);
+//            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);
+//            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);
+//
+//            // 左侧 - 设备选择
+//            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
+//            ImGui::Separator();
+//            for (uint8_t addr : bsqjnDeviceAddresses) {
+//                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+//                    deviceDisplayFlags[addr] = false;
+//                char label[32];
+//                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
+//                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
+//            }
+//            ImGui::EndChild();
+//
+//            // 右侧 - 数据显示
+//            ImGui::NextColumn();
+//            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+//            {
+//                std::lock_guard<std::mutex> lock(BSQJNMutex);
+//                for (uint8_t addr : bsqjnDeviceAddresses) {
+//                    if (!deviceDisplayFlags[addr]) continue;
+//                    auto it = bsqjnDataMap.find(addr);
+//                    if (it != bsqjnDataMap.end() && !it->second.dataQue.empty()) {
+//                        float value = it->second.dataQue.back();
+//                        extern ImFont* DataFont;
+//                        ImGui::Separator();
+//                        ImGui::Text(u8"设备 0x%02X", addr);
+//                        ImGui::PushID(addr);
+//                        ImGui::PushFont(DataFont);
+//
+//                        // 单卡片显示拉力
+//                        ImGui::BeginChild("ForceCard", ImVec2(0, 120), true);
+//                        ImGui::Dummy(ImVec2(0, 10));
+//                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize("0000.000 N").x) * 0.5f);
+//                        ImGui::TextColored(ImVec4(0, 1, 0, 1), "%.3f N", value);
+//                        ImGui::Dummy(ImVec2(0, 5));
+//                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(u8"拉力").x) * 0.5f);
+//                        ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"拉力");
+//                        ImGui::EndChild();
+//
+//                        ImGui::PopFont();
+//                        ImGui::PopID();
+//                    }
+//                    else {
+//                        ImGui::Separator();
+//                        ImGui::TextColored(ImVec4(1, 1, 0, 1), "设备 0x%02X 无数据", addr);
+//                    }
+//                }
+//            }
+//            ImGui::EndChild();
+//            ImGui::Columns(1);
+//        }
+//    }
+//
+//    ImGui::Text(u8"连接状态: %s", isConnected ? u8"已连接" : u8"未连接");
+//    ImGui::End();
+//}
+
+
+// Application::ShowBSQJN 完整函数
+void Application::ShowBSQJN() {
+    if (!ImGui::Begin(u8"BSQJN 拉力传感器")) {
+        ImGui::End();
+        return;
+    }
+
+    static std::vector<std::string> availablePorts = listAvailableSerialPorts();
+    static int selectedPortIndex = 0;
+    static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudIndex = 0; // 这里可根据设备波特率调整
+    static bool isConnected = false;
+    static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
+
+    // 串口选择UI
+    ShowSerialPortSelector(availablePorts, selectedPortIndex);
+    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+
+    if (!isConnected) {
+        if (ImGui::Button(u8"连接")) {
+            try {
+                DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
+                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                isConnected = true;
+                collectingBSQJN = true;
+
+                // 初始化解析器和数据结构
+                for (uint8_t addr : bsqjnDeviceAddresses) {
+                    bsqjnParsers[addr] = BSQJNParser(addr);
+                    bsqjnDataMap[addr] = BSQJNData();
+                }
+
+                // 启动轮询线程采集4通道数据
+                bsqjnPollingThread = std::thread([]() {
+                    while (collectingBSQJN) {
+                        for (uint8_t addr : bsqjnDeviceAddresses) {
+                            try {
+                                std::vector<uint8_t> cmd = bsqjnParsers[addr].makeReadAllFloatCmd();
+                                std::vector<uint8_t> response;
+
+                                {
+                                    std::lock_guard<std::mutex> lock(RS485BSQMutex);
+                                    serialManager.send(cmd);
+                                    response = serialManager.receive(4 * 4 + 5); // 4通道 * 4字节 + 地址+功能码+CRC
+
+                                    // 打印原始字节数据（16进制）
+                                    std::cout << u8"[BSQJN 0x" << std::hex << (int)addr << "] 原始数据: ";
+                                    for (auto b : response) {
+                                        printf("%02X ", b);
+                                    }
+                                    std::cout << std::endl;
+
+                                }
+
+                                // 打印收到的原始字节（可选）
+                                printf("[BSQJN 0x%02X] Raw bytes:", addr);
+                                for (auto b : response) {
+                                    printf(" %02X", b);
+                                }
+                                printf("\n");
+
+                                // 解析通道1为拉力
+                                float forceValue = BSQJNParser::parseFloat(response, 3); // 偏移3字节（地址+功能码+字节数）
+
+                                // 打印解析后浮点值
+                                printf("[BSQJN 0x%02X] Parsed forceValue = %.6f\n", addr, forceValue);
+
+                                std::vector<float> forceValues(4);
+                                for (int ch = 0; ch < 4; ch++) {
+                                    forceValues[ch] = BSQJNParser::parseFloat(response, 3 + ch * 4);//除以1000，变成kg，然后x10
+                                }
+
+                                {
+                                    std::lock_guard<std::mutex> lock2(BSQJNMutex);
+                                    auto& dq = bsqjnDataMap[addr].dataQue;
+                                    dq.push_back(forceValues);
+                                    if (dq.size() > MAX_POINTS) dq.pop_front();
+                                }
+
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            }
+                            catch (const std::exception& e) {
+                                std::cerr << u8"[BSQJN 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+                            }
+                        }
+                    }
+                    });
+            }
+            catch (const std::exception& e) {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "连接失败: %s", e.what());
+            }
+        }
+    }
+    else {
+        if (ImGui::Button(u8"断开")) {
+            collectingBSQJN = false;
+            if (bsqjnPollingThread.joinable()) bsqjnPollingThread.join();
+            serialManager.close();
+            isConnected = false;
+            bsqjnParsers.clear();
+            bsqjnDataMap.clear();
+            deviceDisplayFlags.clear();
+        }
+
+        if (!bsqjnDeviceAddresses.empty()) {
+            ImGui::Columns(2, "BSQJNColumns", false);
+            ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.2f);
+            ImGui::SetColumnWidth(1, ImGui::GetWindowWidth() * 0.8f);
+
+            // 左侧设备选择
+            ImGui::BeginChild("LeftPanel", ImVec2(0, 0), true);
+            ImGui::Separator();
+            for (uint8_t addr : bsqjnDeviceAddresses) {
+                if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
+                    deviceDisplayFlags[addr] = false;
+                char label[32];
+                sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
+                ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
+            }
+            ImGui::EndChild();
+
+            // 右侧数据显示4通道
+            ImGui::NextColumn();
+            ImGui::BeginChild("RightPanel", ImVec2(0, 0), true);
+            {
+                std::lock_guard<std::mutex> lock(BSQJNMutex);
+                for (uint8_t addr : bsqjnDeviceAddresses) {
+                    if (!deviceDisplayFlags[addr]) continue;
+                    auto it = bsqjnDataMap.find(addr);
+                    if (it != bsqjnDataMap.end() && !it->second.dataQue.empty()) {
+                        const auto& values = it->second.dataQue.back();
+                        extern ImFont* DataFont;
+                        ImGui::Separator();
+                        ImGui::Text(u8"设备 0x%02X", addr);
+                        ImGui::PushID(addr);
+                        ImGui::PushFont(DataFont);
+
+                        ImGui::BeginChild("ForceCard", ImVec2(0, 160), true);
+                        ImGui::Dummy(ImVec2(0, 10));
+                        for (int ch = 0; ch < 4; ch++) {
+                            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"通道 %d: %.1f N", ch + 1, values[ch]);
+                        }
+                        ImGui::Dummy(ImVec2(0, 5));
+                        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(u8"拉力").x) * 0.5f);
+                        ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"拉力");
+                        ImGui::EndChild();
+
                         ImGui::PopFont();
                         ImGui::PopID();
                     }
