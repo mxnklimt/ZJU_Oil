@@ -108,6 +108,13 @@ extern float timeInterval; // 采样周期，单位为毫秒
 
 //AMT
 extern std::vector<uint8_t> amtAddresses; 
+// 数据缓存
+struct AMTData {
+	double position = 0.0;
+	double temperature = 0.0;
+};
+extern std::mutex amtDataMutex;
+extern std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
 //BSQJN
 // 设备地址列表
 extern std::vector<uint8_t> bsqjnDeviceAddresses;

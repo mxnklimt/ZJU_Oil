@@ -252,21 +252,7 @@ void Application::ShowSynchronizedCapture() {
     static std::atomic<int> dualAxisCount = 0;
 	static std::atomic<int> laserCount = 0;
 
-    ////  显示状态栏
-    //{
-    //    ImGui::Separator();
-    //    ImGui::Text(u8"当前状态：");
-    //    ImGui::SameLine();
-    //    if (isSyncCollecting) {
-    //        ImGui::TextColored(ImVec4(0.0f, 0.8f, 0.0f, 1.0f), u8"同步采集中");
-    //    }
-    //    else {
-    //        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), u8"未采集");
-    //    }
 
-    //    ImGui::Text(u8"采样周期：1 秒");
-    //    ImGui::Separator();
-    //}
     // 
    // 显示状态栏 
     {
@@ -315,6 +301,12 @@ void Application::ShowSynchronizedCapture() {
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer;
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer2;
 
+                /* -------------------- 新增：AMT 缓存 -------------------- */
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, AMTData>>> amtBuffer;
+                /* ------------------------------------------------------ */
+                 /* -------------------- 新增：BSQJN 缓存 -------------------- */
+                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, std::vector<float>>>> bsqjnBuffer;
+                /* ------------------------------------------------------- */
 
                 while (isSyncCollecting) {
                     auto now = std::chrono::system_clock::now();
@@ -377,7 +369,26 @@ void Application::ShowSynchronizedCapture() {
                         }
                         laserBuffer2.emplace_back(now, snapshot2);
                     }
-
+                    /* -------------------- 新增：AMT 同步采集 -------------------- */
+                    {
+                        std::map<uint8_t, AMTData> snapshot;
+                        std::lock_guard<std::mutex> lock(amtDataMutex);
+                        for (auto& [addr, dq] : amtDataMap) {
+                            if (!dq.empty()) snapshot[addr] = dq.back();
+                        }
+                        amtBuffer.emplace_back(now, snapshot);
+                    }
+                    /* ---------------------------------------------------------- */
+                      /* -------------------- 新增：BSQJN 同步采集 -------------------- */
+                    {
+                        std::map<uint8_t, std::vector<float>> snapshot;
+                        std::lock_guard<std::mutex> lock(BSQJNMutex);
+                        for (auto& [addr, data] : bsqjnDataMap) {
+                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
+                        }
+                        bsqjnBuffer.emplace_back(now, snapshot);
+                    }
+                    /* ---------------------------------------------------------- */
 
 
                     //std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
@@ -397,8 +408,14 @@ void Application::ShowSynchronizedCapture() {
                 );
 				SaveLaserToXLSX(laserBuffer);
                 SaveLaserToXLSX(laserBuffer2);
-                MoveLatestFiles(std::filesystem::current_path(), 5);
 
+                MoveLatestFiles(std::filesystem::current_path(), 5);
+                /* -------------------- 新增：保存 AMT 数据 -------------------- */
+                SaveAMTToXLSX(amtBuffer); // 此函数实现你暂时不需要写
+                /* ----------------------------------------------------------- */
+                 /* -------------------- 新增：保存 BSQJN 数据 -------------------- */
+                SaveBSQJNToXLSX(bsqjnBuffer); // 此函数实现你暂时不需要写
+                /* ----------------------------------------------------------- */
                 });
         }
     }
@@ -1947,13 +1964,9 @@ void Application::ShowAMT() {
     static bool isConnected = false;
     static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
 
-    // 数据缓存
-    struct AMTData {
-        double position = 0.0;
-        double temperature = 0.0;
-    };
-    static std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
-    static std::mutex amtDataMutex;
+
+    //static std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
+   // static std::mutex amtDataMutex;
 
     // 串口选择
     ShowSerialPortSelector(availablePorts, selectedPortIndex);

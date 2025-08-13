@@ -91,6 +91,8 @@ float timeInterval = 1; // 默认采样周期为1s
 
 //AMT
 std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你的地址列表
+std::mutex amtDataMutex;
+std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
 
 // ===== Application.cpp =====
 std::vector<uint8_t> bsqjnDeviceAddresses = { 0x01 };
