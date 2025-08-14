@@ -380,14 +380,42 @@ void Application::ShowSynchronizedCapture() {
                     }
                     /* ---------------------------------------------------------- */
                       /* -------------------- 新增：BSQJN 同步采集 -------------------- */
-                    {
+                    /*{
+
                         std::map<uint8_t, std::vector<float>> snapshot;
                         std::lock_guard<std::mutex> lock(BSQJNMutex);
+
+
+                        for (auto& [addr, data] : bsqjnDataMap) {
+                            if (!data.dataQue.empty()) {
+                                auto vec = data.dataQue.back();
+                                std::cout << "BSQJN addr " << int(addr) << " last data: ";
+                                for (auto v : vec) std::cout << v << " ";
+                                std::cout << std::endl;
+                                snapshot[addr] = vec;
+                            }
+                        }
+
                         for (auto& [addr, data] : bsqjnDataMap) {
                             if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
                         }
                         bsqjnBuffer.emplace_back(now, snapshot);
+                    }*/
+                    {
+                        std::map<uint8_t, std::vector<float>> snapshot;
+                        std::lock_guard<std::mutex> lock(BSQJNMutex);
+                        for (auto& [addr, data] : bsqjnDataMap) {
+                            if (!data.dataQue.empty()) {
+                                const auto& vec = data.dataQue.back(); // 直接引用
+                                snapshot[addr] = vec; // 完整保存所有通道
+                                std::cout << "BSQJN addr " << int(addr) << " last data: ";
+                                for (auto v : vec) std::cout << v << " ";
+                                std::cout << std::endl;
+                            }
+                        }
+                        bsqjnBuffer.emplace_back(now, snapshot);
                     }
+
                     /* ---------------------------------------------------------- */
 
 
@@ -2081,7 +2109,7 @@ void Application::ShowAMT() {
                             };
 
                         renderCard(u8"位移", data.position, "mm");
-                        renderCard(u8"温度", data.temperature, u8"°C");
+                        //renderCard(u8"温度", data.temperature, u8"°C");
 
                         ImGui::Columns(1);
                         ImGui::PopFont();
@@ -2293,26 +2321,26 @@ void Application::ShowBSQJN() {
                                     response = serialManager.receive(4 * 4 + 5); // 4通道 * 4字节 + 地址+功能码+CRC
 
                                     // 打印原始字节数据（16进制）
-                                    std::cout << u8"[BSQJN 0x" << std::hex << (int)addr << "] 原始数据: ";
+                                    /*std::cout << u8"[BSQJN 0x" << std::hex << (int)addr << "] 原始数据: ";
                                     for (auto b : response) {
                                         printf("%02X ", b);
                                     }
-                                    std::cout << std::endl;
+                                    std::cout << std::endl;*/
 
                                 }
 
-                                // 打印收到的原始字节（可选）
-                                printf("[BSQJN 0x%02X] Raw bytes:", addr);
-                                for (auto b : response) {
-                                    printf(" %02X", b);
-                                }
-                                printf("\n");
+                                //// 打印收到的原始字节（可选）
+                                //printf("[BSQJN 0x%02X] Raw bytes:", addr);
+                                //for (auto b : response) {
+                                //    printf(" %02X", b);
+                                //}
+                                //printf("\n");
 
-                                // 解析通道1为拉力
-                                float forceValue = BSQJNParser::parseFloat(response, 3); // 偏移3字节（地址+功能码+字节数）
+                                //// 解析通道1为拉力
+                                //float forceValue = BSQJNParser::parseFloat(response, 3); // 偏移3字节（地址+功能码+字节数）
 
-                                // 打印解析后浮点值
-                                printf("[BSQJN 0x%02X] Parsed forceValue = %.6f\n", addr, forceValue);
+                                //// 打印解析后浮点值
+                                //printf("[BSQJN 0x%02X] Parsed forceValue = %.6f\n", addr, forceValue);
 
 
 

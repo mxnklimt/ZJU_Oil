@@ -735,7 +735,7 @@ void SaveAMTToXLSX(
             if (deviceMap.count(addr) > 0) {
                 const auto& amt = deviceMap.at(addr);
                 wks.cell(row, col++).value() = amt.position;     // 位移
-                wks.cell(row, col++).value() = amt.temperature; // 温度
+                //wks.cell(row, col++).value() = amt.temperature; // 温度
             }
             else {
                 col += 2; // 该设备无数据，跳过两列
@@ -1179,6 +1179,144 @@ std::string generateUniqueFileName(const std::string& baseName, const std::strin
 //     doc.save();
 //     doc.close();
 // }
+
+//void SaveBSQJNToXLSX(
+//    const std::vector<std::pair<
+//    std::chrono::system_clock::time_point,
+//    std::map<uint8_t, std::vector<float>>
+//    >> &data)
+//{
+//    std::string saveFilePath = generateUniqueFileName("BSQJN_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    // 1. 收集所有唯一设备地址
+//    std::unordered_set<uint8_t> uniqueAddrsSet;
+//    for (const auto& entry : data) {
+//        const auto& deviceMap = entry.second;
+//        for (const auto& dev : deviceMap) {
+//            uniqueAddrsSet.insert(dev.first);
+//        }
+//    }
+//
+//    // 2. 排序
+//    std::vector<uint8_t> uniqueAddrs(uniqueAddrsSet.begin(), uniqueAddrsSet.end());
+//#ifdef rightdevice
+//    std::sort(uniqueAddrs.begin(), uniqueAddrs.end(), std::greater<uint8_t>());
+//#else
+//    std::sort(uniqueAddrs.begin(), uniqueAddrs.end());
+//#endif
+//
+//    // 3. 写表头
+//    wks.cell(1, 1).value() = "Time";
+//    int col = 2;
+//    for (uint8_t addr : uniqueAddrs) {
+//        std::ostringstream addr_ss;
+//        addr_ss << "0x" << std::uppercase << std::hex
+//            << std::setw(2) << std::setfill('0') << static_cast<int>(addr);
+//        wks.cell(1, col++).value() = addr_ss.str();
+//    }
+//
+//    // 4. 写入数据
+//    int row = 2;
+//    for (const auto& entry : data) {
+//        const auto& snapshotTime = entry.first;
+//        const auto& deviceMap = entry.second;
+//
+//        // 时间格式 YYYY-MM-DD HH:MM:SS
+//        auto time_t = std::chrono::system_clock::to_time_t(snapshotTime);
+//        std::tm tm;
+//        localtime_s(&tm, &time_t);
+//        std::ostringstream oss;
+//        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+//        wks.cell(row, 1).value() = oss.str();
+//
+//        col = 2;
+//        for (uint8_t addr : uniqueAddrs) {
+//            auto it = deviceMap.find(addr);
+//            if (it != deviceMap.end() && !it->second.empty()) {
+//                //float value = it->second.back(); // 直接取 float 值
+//                float value = deviceMap.at(addr).back();
+//
+//                wks.cell(row, col).value() = value;
+//            }
+//            col++;
+//        }
+//        row++;
+//    }
+//
+//    doc.save();
+//    doc.close();
+//}
+//void SaveBSQJNToXLSX(
+//    const std::vector<std::pair<
+//        std::chrono::system_clock::time_point,
+//        std::map<uint8_t, std::vector<float>>
+//    >> &data)
+//{
+//    std::string saveFilePath = generateUniqueFileName("BSQJN_sync");
+//    OpenXLSX::XLDocument doc;
+//    doc.create(saveFilePath, false);
+//    auto wks = doc.workbook().worksheet("Sheet1");
+//
+//    // 1. 收集所有唯一设备地址
+//    std::unordered_set<uint8_t> uniqueAddrsSet;
+//    for (const auto& entry : data) {
+//        for (const auto& dev : entry.second) {
+//            uniqueAddrsSet.insert(dev.first);
+//        }
+//    }
+//
+//    // 2. 排序
+//    std::vector<uint8_t> uniqueAddrs(uniqueAddrsSet.begin(), uniqueAddrsSet.end());
+//#ifdef rightdevice
+//    std::sort(uniqueAddrs.begin(), uniqueAddrs.end(), std::greater<uint8_t>());
+//#else
+//    std::sort(uniqueAddrs.begin(), uniqueAddrs.end());
+//#endif
+//
+//    // 3. 写表头
+//    wks.cell(1, 1).value() = "Time";
+//    int col = 2;
+//    for (uint8_t addr : uniqueAddrs) {
+//        std::ostringstream addr_ss;
+//        addr_ss << "0x" << std::uppercase << std::hex
+//                << std::setw(2) << std::setfill('0')
+//                << static_cast<int>(addr);
+//        wks.cell(1, col++).value() = addr_ss.str();
+//    }
+//
+//    // 4. 写入数据
+//    int row = 2;
+//    for (const auto& entry : data) {
+//        const auto& snapshotTime = entry.first;
+//        const auto& deviceMap = entry.second;
+//
+//        // 时间格式 YYYY-MM-DD HH:MM:SS
+//        auto time_t = std::chrono::system_clock::to_time_t(snapshotTime);
+//        std::tm tm;
+//        localtime_s(&tm, &time_t);
+//        std::ostringstream oss;
+//        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+//        wks.cell(row, 1).value() = oss.str();
+//
+//        col = 2;
+//        for (uint8_t addr : uniqueAddrs) {
+//            auto it = deviceMap.find(addr);
+//            if (it != deviceMap.end() && !it->second.empty()) {
+//                float value = it->second.back(); // 安全取最后一个 float
+//                wks.cell(row, col).value() = value;
+//            }
+//            col++;
+//        }
+//        row++;
+//    }
+//
+//    doc.save();
+//    doc.close();
+//}
+
 void SaveBSQJNToXLSX(
     const std::vector<std::pair<
     std::chrono::system_clock::time_point,
@@ -1193,8 +1331,7 @@ void SaveBSQJNToXLSX(
     // 1. 收集所有唯一设备地址
     std::unordered_set<uint8_t> uniqueAddrsSet;
     for (const auto& entry : data) {
-        const auto& deviceMap = entry.second;
-        for (const auto& dev : deviceMap) {
+        for (const auto& dev : entry.second) {
             uniqueAddrsSet.insert(dev.first);
         }
     }
@@ -1207,14 +1344,17 @@ void SaveBSQJNToXLSX(
     std::sort(uniqueAddrs.begin(), uniqueAddrs.end());
 #endif
 
-    // 3. 写表头
+    // 3. 写表头，每个设备 4 通道
     wks.cell(1, 1).value() = "Time";
     int col = 2;
     for (uint8_t addr : uniqueAddrs) {
-        std::ostringstream addr_ss;
-        addr_ss << "0x" << std::uppercase << std::hex
-            << std::setw(2) << std::setfill('0') << static_cast<int>(addr);
-        wks.cell(1, col++).value() = addr_ss.str();
+        for (int ch = 1; ch <= 4; ch++) { // 假设每个设备4通道
+            std::ostringstream oss;
+            oss << "0x" << std::uppercase << std::hex
+                << std::setw(2) << std::setfill('0') << int(addr)
+                << "_CH" << ch;
+            wks.cell(1, col++).value() = oss.str();
+        }
     }
 
     // 4. 写入数据
@@ -1235,10 +1375,13 @@ void SaveBSQJNToXLSX(
         for (uint8_t addr : uniqueAddrs) {
             auto it = deviceMap.find(addr);
             if (it != deviceMap.end() && !it->second.empty()) {
-                float value = it->second.back(); // 直接取 float 值
-                wks.cell(row, col).value() = value;
+                for (float v : it->second) {
+                    wks.cell(row, col++).value() = v;
+                }
             }
-            col++;
+            else {
+                col += 4; // 没数据就空出4列
+            }
         }
         row++;
     }
