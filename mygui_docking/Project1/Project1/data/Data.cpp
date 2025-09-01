@@ -55,9 +55,14 @@ std::thread JY61PThread;       //线程
 std::mutex JY61PMutex;
 std::deque<JY61PData> JY61PData_dataQue; // 存储数据的队列
 JY61PData jy61pData;
-std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
+//std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
+std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C,0x0D};
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
+
+//CHANGE
+RS485Manager jy61pSerial;
+
 
 bool jy61xlsxing = false; // 是否正在保存数据到XLSX文件
 //DualAxis数据

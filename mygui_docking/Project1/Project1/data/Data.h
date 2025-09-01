@@ -58,6 +58,7 @@ public:
 		double EMA_a[3] = { 0.0f, 0.0f, 0.0f }; // EMA 加速度
 		double EMA_w[3] = { 0.0f, 0.0f, 0.0f }; // EMA 角速度
 		double EMA_Angle[3] = { 0.0f, 0.0f, 0.0f }; // EMA 姿态角
+		double temperature = 0.0f;//温度
 	};
 
 	std::deque<angle> dataQue;//使用别的类里的结构体要加上作用域
@@ -74,6 +75,9 @@ extern std::mutex jy61pDataMutex;
 extern std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 extern std::vector<uint8_t> jy61pDeviceAddresses;
 extern bool jy61xlsxing; // 是否正在保存数据到XLSX文件
+
+//CHANGE
+extern RS485Manager jy61pSerial;
 
 struct Vec3 {
 	float x, y, z;

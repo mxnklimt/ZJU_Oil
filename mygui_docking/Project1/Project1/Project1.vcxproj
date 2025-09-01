@@ -156,6 +156,7 @@
     <ClInclude Include="Implot\implot.h" />
     <ClInclude Include="Implot\implot_internal.h" />
     <ClInclude Include="JY61P\Com.h" />
+    <ClInclude Include="JY61P\JY61Parser.h" />
     <ClInclude Include="JY61P\REG.h" />
     <ClInclude Include="JY61P\wit_c_sdk.h" />
     <ClInclude Include="LaserSensor\LaserSensorProtocol.h" />

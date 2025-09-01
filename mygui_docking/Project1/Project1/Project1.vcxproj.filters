@@ -261,6 +261,9 @@
     <ClInclude Include="EMA\EmaFilter.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="JY61P\JY61Parser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">
