@@ -13,7 +13,8 @@
 #include"DualAxisSensor/DualAxisSensorParser.h"
 #include"BSQJN/BSQJNParser.h"
 
-//#define rightdevice // #define leftdevice
+//#define rightdevice // #define 
+// device
 
 //串口管理
 extern RS485Manager serialManager_Axis; // 用于Axis的串口管理
@@ -26,7 +27,7 @@ extern const size_t MAX_POINTS;
 extern std::mutex ADXL355Mutex;
 extern std::atomic<bool> collectingADXL355;
 extern RS485Manager serialManager;
-
+extern RS485Manager serialManager_AMT;
 extern ADXL355Parser parser;
 extern std::thread adxl355Thread;       //线程
 extern class ADXL355Data adxl355Data;         //数据结构

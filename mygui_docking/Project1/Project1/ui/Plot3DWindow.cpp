@@ -2527,7 +2527,7 @@ void Application::ShowAMT() {
         if (ImGui::Button(u8"连接")) {
             try {
                 DWORD baudRate = std::stoi(baudRates[selectedBaudIndex]);
-                serialManager.open(availablePorts[selectedPortIndex], baudRate);
+                serialManager_AMT.open(availablePorts[selectedPortIndex], baudRate);
                 isConnected = true;
 
                 // 启动采集线程
@@ -2544,8 +2544,8 @@ void Application::ShowAMT() {
                                 std::vector<uint8_t> resp;
                                 {
                                     std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
-                                    serialManager.send(cmd);
-                                    resp = serialManager.receive(11); // 地址+功能码+字节数+6字节数据+CRC
+                                    serialManager_AMT.send(cmd);
+                                    resp = serialManager_AMT.receive(11); // 地址+功能码+字节数+6字节数据+CRC
                                 }
 
                                 // 解析位移和温度
@@ -2576,7 +2576,7 @@ void Application::ShowAMT() {
     else {
         if (ImGui::Button(u8"断开")) {
             isConnected = false;
-            serialManager.close();
+            serialManager_AMT.close();
             deviceDisplayFlags.clear();
             amtDataMap.clear();
         }
@@ -2807,7 +2807,7 @@ void Application::ShowBSQJN() {
     static std::vector<std::string> availablePorts = listAvailableSerialPorts();
     static int selectedPortIndex = 0;
     static const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
-    static int selectedBaudIndex = 0; // 这里可根据设备波特率调整
+    static int selectedBaudIndex = 4; // 这里可根据设备波特率调整
     static bool isConnected = false;
     static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
 
@@ -2942,7 +2942,7 @@ void Application::ShowBSQJN() {
                         }
                         ImGui::Dummy(ImVec2(0, 5));
                         ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(u8"拉力").x) * 0.5f);
-                        ImGui::TextColored(ImVec4(1, 1, 1, 1), u8"拉力");
+                        
                         ImGui::EndChild();
 
                         ImGui::PopFont();

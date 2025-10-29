@@ -11,6 +11,7 @@ std::mutex dataMutex;
 //adxl355数据
 const size_t MAX_POINTS = 500;  
 RS485Manager serialManager;
+RS485Manager serialManager_AMT;
 RS485Manager serialManager_Axis;
 RS485Manager serialManager_JY61;
 RS485Manager serialManager_laser;
@@ -25,7 +26,9 @@ ADXL355Data adxl355Data;         //数据结构
 std::vector<uint8_t> adxl355DeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B };//RIGHT
 std::vector<uint8_t> dualAxisDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A };//RIGHT
 #else
-std::vector<uint8_t> adxl355DeviceAddresses = { 0x01,0x02,0x03,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B };//LEFT
+std::vector<uint8_t> adxl355DeviceAddresses = { 0x01,0x02,0x03,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B };//
+
+
 std::vector<uint8_t> dualAxisDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B };// LEFT
 #endif 
 
@@ -55,8 +58,8 @@ std::thread JY61PThread;       //线程
 std::mutex JY61PMutex;
 std::deque<JY61PData> JY61PData_dataQue; // 存储数据的队列
 JY61PData jy61pData;
-//std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
-std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C,0x0D};
+std::vector<uint8_t> jy61pDeviceAddresses = { 0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B};
+//debug 地址//std::vector<uint8_t> jy61pDeviceAddresses = { 0x0C,0x0D};
 std::mutex jy61pDataMutex;
 std::unordered_map<uint8_t, JY61PData> jy61pDataMap;
 
@@ -95,12 +98,12 @@ RS485Manager serialManager2;
 float timeInterval = 1; // 默认采样周期为1s
 
 //AMT
-std::vector<uint8_t> amtAddresses = { 0x01, 0x02, 0x03 }; // 你的地址列表
+std::vector<uint8_t> amtAddresses = { 0x01,0x02}; // 你的地址列表
 std::mutex amtDataMutex;
 std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
 
 // ===== Application.cpp =====
-std::vector<uint8_t> bsqjnDeviceAddresses = { 0x01 };
+std::vector<uint8_t> bsqjnDeviceAddresses = { 0x01 ,0x02 };
 std::unordered_map<uint8_t, BSQJNParser> bsqjnParsers;
 std::unordered_map<uint8_t, BSQJNData> bsqjnDataMap;
 std::mutex BSQJNMutex;
