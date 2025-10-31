@@ -264,6 +264,12 @@
     <ClInclude Include="JY61P\JY61Parser.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="udp\FiberGratingAnalyzer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="udp\FibreGratingManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">
@@ -423,6 +429,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="BSQJN\BSQJNParser.h">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="udp\FiberGratingAnalyzer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

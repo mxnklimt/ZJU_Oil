@@ -13,9 +13,11 @@
 #include<algorithm>
 #include<filesystem>
 #include <atomic>
+#include <iomanip>
 #include <map>
 #include <unordered_map>
 #include <chrono>
+#include <csignal>
 #include "Plot3DWindow.h"
 #include"ImPlot3d/implot3d.h"
 #include"ImPlot/implot.h"
@@ -35,6 +37,17 @@
 #include"AMT/AMTParser.h"
 #include"BSQJN/BSQJNParser.h"
 #include"JY61P/JY61Parser.h"
+
+std::atomic<bool> running{ true };
+
+void signalHandler(int signal) {
+	//<csignal>
+    if (signal == SIGINT) {
+        std::cout << "\n接收到中断信号，停止接收..." << std::endl;
+        running = false;
+    }
+}
+
 void Application::ShowWindow()
 {
     static bool show_plot2d = true;
@@ -48,6 +61,7 @@ void Application::ShowWindow()
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
 	static bool show_AMT = true;
     static bool show_BSQJN = true;
+	static bool show_fibre = true;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -67,6 +81,7 @@ void Application::ShowWindow()
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
 			ImGui::MenuItem("Show AMT", nullptr, &show_AMT);
 			ImGui::MenuItem("Show BSQJN", nullptr, &show_BSQJN);
+			ImGui::MenuItem("Show Fibre", nullptr, &show_fibre);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Style")) {
@@ -82,6 +97,10 @@ void Application::ShowWindow()
     Application::ShowExcel();
 
     //-------------------------------------------------------------------------------
+	if (show_fibre)
+	{
+		Application::ShowFibreGratingAnalyzer();
+	}
 	if (show_laser_sensor) {
 		// 显示激光传感器数据
 		Application::ShowLaserSensor();
@@ -1850,7 +1869,10 @@ void Application::JY61PInit(const std::string& portName)
     WitDelayMsRegister(DelayMs);
     AutoScanSensor();
 }
-
+void Application::ShowFibreGratingAnalyzerUI()
+{
+    Application::ShowFibreGratingAnalyzer();
+}
 void Application::ShowADXL355() {
     if (!ImGui::Begin("ADXL355")) {
         ImGui::End();

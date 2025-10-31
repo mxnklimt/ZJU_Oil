@@ -12,6 +12,7 @@
 #include"RS485/RS485Manager.h"
 #include"DualAxisSensor/DualAxisSensorParser.h"
 #include"BSQJN/BSQJNParser.h"
+#include"FiberGratingAnalyzer.h"
 
 //#define rightdevice // #define 
 // device

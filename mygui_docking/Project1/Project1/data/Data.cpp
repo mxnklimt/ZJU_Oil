@@ -103,7 +103,7 @@ std::mutex amtDataMutex;
 std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
 
 // ===== Application.cpp =====
-std::vector<uint8_t> bsqjnDeviceAddresses = { 0x01 ,0x02 };
+std::vector<uint8_t> bsqjnDeviceAddresses = { 0x01 };
 std::unordered_map<uint8_t, BSQJNParser> bsqjnParsers;
 std::unordered_map<uint8_t, BSQJNData> bsqjnDataMap;
 std::mutex BSQJNMutex;
