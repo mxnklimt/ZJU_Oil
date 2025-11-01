@@ -99,7 +99,7 @@ void Application::ShowWindow()
     //-------------------------------------------------------------------------------
 	if (show_fibre)
 	{
-		Application::ShowFibreGratingAnalyzer();
+		Application::ShowFibreGratingAnalyzerUI();
 	}
 	if (show_laser_sensor) {
 		// 显示激光传感器数据

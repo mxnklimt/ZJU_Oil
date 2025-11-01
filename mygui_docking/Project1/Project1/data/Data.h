@@ -147,3 +147,8 @@ extern std::thread bsqjnPollingThread;
 // 保存标志（如果你需要保存 xlsx，可用这个）
 extern bool bsqjnSavingFlag;
 extern std::mutex RS485BSQMutex;
+
+//fiber
+// 定义全局变量（在源文件中）
+extern std::vector<FiberGratingAnalyzer::SensorData> g_sensorDataCollection;
+extern std::mutex g_sensorDataMutex;

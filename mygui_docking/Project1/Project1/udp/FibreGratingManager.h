@@ -6,6 +6,8 @@
 #include <condition_variable>
 #include <chrono>
 #include <iomanip>
+#include<algorithm>
+#include "data/Data.h"
 #include"FiberGratingAnalyzer.h"
 
 class FibreGratingManager {
@@ -31,7 +33,7 @@ public:
     // 启动光纤光栅分析器（非阻塞）
     bool start() {
         if (dataReceiving_.load()) {
-            std::cout << "光纤光栅分析器已在运行中..." << std::endl;
+            //std::cout << "光纤光栅分析器已在运行中..." << std::endl;
             return false;
         }
 
@@ -202,6 +204,27 @@ private:
                     std::cout << std::setw(10) << "正常";
                 }
                 std::cout << std::endl;
+                std::lock_guard<std::mutex> lock(g_sensorDataMutex);
+                g_sensorDataCollection.insert(g_sensorDataCollection.end(), sensors.begin(), sensors.end());
+                // 打印最近添加的数据（可选：只打印最后几条）
+                int showCount = 1; // 显示最近3条或更少
+                std::cout << "最近添加的 " << showCount << " 条数据:" << std::endl;
+
+                for (int i = sensors.size() - showCount; i < sensors.size(); ++i) {
+                    const auto& sensor = sensors[i];
+                    std::cout << "  通道:" << sensor.channel
+                        << " 序列号:" << static_cast<int>(sensor.sequence)
+                        << " 波长:" << std::fixed << std::setprecision(3) << sensor.wavelength << "nm";
+
+                    if (sensor.hasPhysicalValue) {
+                        std::cout << " 物理量:" << std::setprecision(4) << sensor.physicalValue;
+                    }
+                    else {
+                        std::cout << " 物理量:N/A";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << "==========================" << std::endl;
             }
         }
 

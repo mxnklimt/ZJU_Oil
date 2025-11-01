@@ -110,3 +110,7 @@ std::mutex BSQJNMutex;
 std::atomic<bool> collectingBSQJN = false;
 std::thread bsqjnPollingThread;
 bool bsqjnSavingFlag = false;
+
+// Fibre
+std::vector<FiberGratingAnalyzer::SensorData> g_sensorDataCollection;
+std::mutex g_sensorDataMutex;
