@@ -1,9 +1,9 @@
 SavePath:\\Mac\Home\Desktop\123
 SaveInterval:1
-SaveType:0
+SaveType:1
 SaveNumPerCh:1
 FileChange:3
-ServerIp: 192.168.80.1
+ServerIp:192.168.80.1
 ServerPort:8071
 AutoRun:0
 AutoSave:0

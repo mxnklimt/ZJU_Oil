@@ -216,7 +216,9 @@
     <ClInclude Include="OpenXLSX\OpenXLSX.hpp" />
     <ClInclude Include="OpenXLSX\sources\utilities\XLUtilities.hpp" />
     <ClInclude Include="RS485\RS485Manager.h" />
+    <ClInclude Include="udp\CSVDataLogger.h" />
     <ClInclude Include="udp\FiberGratingAnalyzer.h" />
+    <ClInclude Include="udp\FiberGratingAnalyzerUI.h" />
     <ClInclude Include="udp\FibreGratingManager.h" />
     <ClInclude Include="ui\Plot3DWindow.h" />
     <ClInclude Include="ui\sheetdata.h" />
@@ -273,7 +275,9 @@
     <ClCompile Include="OpenXLSX\sources\XLXmlParser.cpp" />
     <ClCompile Include="OpenXLSX\sources\XLZipArchive.cpp" />
     <ClCompile Include="data\CollectData.cpp" />
+    <ClCompile Include="udp\CSVDataLogger.cpp" />
     <ClCompile Include="udp\FiberGratingAnalyzer.cpp" />
+    <ClCompile Include="udp\FiberGratingAnalyzerUI.cpp" />
     <ClCompile Include="ui\Plot3DWindow.cpp" />
     <ClCompile Include="ui\sheetdata.cpp" />
   </ItemGroup>

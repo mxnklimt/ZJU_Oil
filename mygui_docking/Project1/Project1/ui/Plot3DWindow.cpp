@@ -37,6 +37,11 @@
 #include"AMT/AMTParser.h"
 #include"BSQJN/BSQJNParser.h"
 #include"JY61P/JY61Parser.h"
+#include "udp/FiberGratingAnalyzerUI.h"
+// 添加全局变量
+static FiberGratingAnalyzer fiberGratingAnalyzer;
+static FiberGratingAnalyzerUI fiberGratingUI;
+static bool isFiberGratingUIInitialized = false;
 
 std::atomic<bool> running{ true };
 
@@ -1871,7 +1876,14 @@ void Application::JY61PInit(const std::string& portName)
 }
 void Application::ShowFibreGratingAnalyzerUI()
 {
-    Application::ShowFibreGratingAnalyzer();
+    //Application::ShowFibreGratingAnalyzer();
+    if (!isFiberGratingUIInitialized) {
+        fiberGratingUI.SetAnalyzer(&fiberGratingAnalyzer);
+        isFiberGratingUIInitialized = true;
+    }
+
+    // 显示UI
+    fiberGratingUI.ShowUI();
 }
 void Application::ShowADXL355() {
     if (!ImGui::Begin("ADXL355")) {
