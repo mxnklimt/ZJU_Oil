@@ -1,4 +1,5 @@
-// BSQJNParser.h
+// 
+// Parser.h
 #pragma once
 #include <cstdint>
 #include <vector>

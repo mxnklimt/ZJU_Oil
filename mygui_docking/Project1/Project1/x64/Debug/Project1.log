@@ -45,14 +45,20 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\
   (编译源文件“JY61P/Com.cpp”)
   
   main.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267: “参数”: 从“size_t”转换到“const _Ty”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:         with
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:         [
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:             _Ty=int
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
   (编译源文件“main.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(205,17): error C2065: “latestFiberData”: 未声明的标识符
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“main.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267: “参数”: 从“size_t”转换到“const _Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:             _Ty=int
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         ]
+  (编译源文件“main.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(214,28): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
   (编译源文件“main.cpp”)
   
   正在生成代码...
@@ -219,20 +225,37 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
   (编译源文件“data/CollectData.cpp”)
   
+  CSVDataLogger.cpp
   FiberGratingAnalyzer.cpp
   Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
   - add -D_WIN32_WINNT=0x0601 to the compiler command line; or
   - add _WIN32_WINNT=0x0601 to your project's Preprocessor Definitions.
   Assuming _WIN32_WINNT=0x0601 (i.e. Windows 7 target).
+  FiberGratingAnalyzerUI.cpp
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(413,34): warning C4267: “+=”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(429,54): warning C4244: “参数”: 从“const double”转换到“_Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(429,54): warning C4244:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(429,54): warning C4244:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(429,54): warning C4244:             _Ty=float
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(429,54): warning C4244:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(625,74): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(643,88): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FiberGratingAnalyzerUI.cpp(659,31): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
   Plot3DWindow.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267: “参数”: 从“size_t”转换到“const _Ty”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:         with
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:         [
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:             _Ty=int
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(162,38): warning C4267:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
   (编译源文件“ui/Plot3DWindow.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(205,17): error C2065: “latestFiberData”: 未声明的标识符
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
+  (编译源文件“ui/Plot3DWindow.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267: “参数”: 从“size_t”转换到“const _Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:             _Ty=int
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         ]
+  (编译源文件“ui/Plot3DWindow.cpp”)
+  
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(214,28): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
   
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLCellValue.hpp(87,53): warning C4244: “return”: 从“int64_t”转换到“double”，可能丢失数据
@@ -241,31 +264,62 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenX
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“ui/Plot3DWindow.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(217,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(650,30): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(650,30): warning C4244:         with
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(650,30): warning C4244:         [
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(650,30): warning C4244:             _Ty=float
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(650,30): warning C4244:         ]
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(868,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(869,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(870,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(871,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1835,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1836,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1837,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1838,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1839,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(222,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(655,30): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(655,30): warning C4244:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(655,30): warning C4244:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(655,30): warning C4244:             _Ty=float
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(655,30): warning C4244:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(873,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(874,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(875,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(876,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1840,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1841,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1842,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1843,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2183,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2184,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2185,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1841,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1842,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1843,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1844,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1845,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1846,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1847,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1848,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2195,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2196,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2197,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2596,58): warning C4101: “e”: 未引用的局部变量
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18): warning C4244: “=”: 从“wchar_t”转换到“char”，可能丢失数据
+  (编译源文件“ui/Plot3DWindow.cpp”)
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(919,44):
+          查看对正在编译的函数 模板 实例化“std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,0>(_Iter,_Iter,const _Alloc &)”的引用
+          with
+          [
+              _Elem=wchar_t,
+              _Iter=std::_String_iterator<std::_String_val<std::_Simple_types<wchar_t>>>,
+              _Alloc=std::allocator<char>
+          ]
+              C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(919,32):
+              请参阅 "Application::listAvailableSerialPorts" 中对 "std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string" 的第一个引用
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xstring(793,17):
+          查看对正在编译的函数 模板 实例化“void std::basic_string<char,std::char_traits<char>,std::allocator<char>>::_Construct_from_iter<wchar_t*,wchar_t*,_Size_type>(_Iter,const _Sent,_Size)”的引用
+          with
+          [
+              _Size_type=unsigned __int64,
+              _Iter=wchar_t *,
+              _Sent=wchar_t *,
+              _Size=unsigned __int64
+          ]
+          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xstring(949,18):
+          查看对正在编译的函数 模板 实例化“_OutIt *std::_Copy_n_unchecked4<wchar_t*,_Size,char*>(_InIt,_SizeTy,_OutIt)”的引用
+          with
+          [
+              _OutIt=char *,
+              _Size=unsigned __int64,
+              _InIt=wchar_t *,
+              _SizeTy=unsigned __int64
+          ]
+  
   sheetdata.cpp
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
   (编译源文件“ui/sheetdata.cpp”)
@@ -274,3 +328,10 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\
   (编译源文件“ui/sheetdata.cpp”)
   
   正在生成代码...
+  wit_c_sdk.c
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\JY61P\wit_c_sdk.c(181,35): warning C4018: “<”: 有符号/无符号不匹配
+LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/PROFILE”规范)
+AMTParser.obj : warning LNK4075: 忽略“/EDITANDCONTINUE”(由于“/OPT:REF”规范)
+  Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Debug\Project1.exe
+  'pwsh.exe' 不是内部或外部命令，也不是可运行的程序
+  或批处理文件。

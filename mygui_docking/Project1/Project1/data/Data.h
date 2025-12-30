@@ -14,7 +14,7 @@
 #include"BSQJN/BSQJNParser.h"
 #include"FiberGratingAnalyzer.h"
 
-//#define rightdevice // #define 
+#define rightdevice // #define 
 // device
 
 //´®¿Ú¹ÜÀí

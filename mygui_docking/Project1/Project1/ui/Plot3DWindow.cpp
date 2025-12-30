@@ -64,9 +64,9 @@ void Application::ShowWindow()
     static bool SynchronizedCapture = true;
 	static bool show_laser_sensor = true; // 激光传感器选项
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
-	static bool show_AMT = true;
-    static bool show_BSQJN = true;
-	static bool show_fibre = true;
+	static bool show_AMT = false;
+    static bool show_BSQJN = false;
+	static bool show_fibre = false;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
