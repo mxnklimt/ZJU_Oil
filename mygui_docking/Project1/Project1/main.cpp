@@ -88,7 +88,8 @@ int main(int, char**)
     wglMakeCurrent(g_MainWindow.hDC, g_hRC);
 
     // Show the window
-    ::ShowWindow(hwnd, SW_SHOWMAXIMIZED);  // 强制最大化
+    //::ShowWindow(hwnd, SW_SHOWMAXIMIZED);  // 强制最大化
+    ::ShowWindow(hwnd, SW_HIDE);
     ::UpdateWindow(hwnd);
 
     // Setup Dear ImGui context
@@ -103,6 +104,7 @@ int main(int, char**)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;       // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;     // Enable Multi-Viewport / Platform Windows
+	io.ConfigViewportsNoAutoMerge = true; //窗口不自动合 并
     ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\simkai.ttf", 20.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     DataFont = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\simkai.ttf", 25.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
     // Setup Dear ImGui style

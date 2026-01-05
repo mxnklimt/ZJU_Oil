@@ -14,9 +14,9 @@
 #include"BSQJN/BSQJNParser.h"
 #include"FiberGratingAnalyzer.h"
 
-#define rightdevice // #define 
+//#define rightdevice // #define 
 // device
-
+extern bool devicechoice;
 //串口管理
 extern RS485Manager serialManager_Axis; // 用于Axis的串口管理
 extern RS485Manager serialManager_JY61; // 用于JY61P的串口管理

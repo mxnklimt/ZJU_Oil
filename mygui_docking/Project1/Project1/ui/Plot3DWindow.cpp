@@ -64,6 +64,7 @@ void Application::ShowWindow()
     static bool SynchronizedCapture = true;
 	static bool show_laser_sensor = true; // 激光传感器选项
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
+    static bool show_laser_sensor3 = true;
 	static bool show_AMT = false;
     static bool show_BSQJN = false;
 	static bool show_fibre = false;
@@ -114,6 +115,10 @@ void Application::ShowWindow()
 		// 显示激光传感器数据2
 		Application::ShowLaserSensor2();
 	}
+    if (show_laser_sensor3)
+    {
+       
+    }
     if (show_AMT)
     {
 		Application::ShowAMT();
@@ -471,6 +476,10 @@ void Application::ShowSynchronizedCapture() {
                 /* ----------------------------------------------------------- */
                 });
         }
+		static bool useless = false;
+        ImGui::Checkbox("Left",&devicechoice);
+        ImGui::Checkbox("Right", &useless);
+
     }
     else {
         if (ImGui::Button(u8" 停止采集并保存", ImVec2(200, 40))) {
@@ -1467,8 +1476,11 @@ void Application::ShowJY61P() {
         std::unordered_map<uint8_t, JY61PData::angle>>> collectedData;
     static std::mutex collectedDataMutex;
 
+
+
+    
     // 串口选择
-    if (ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+    if (!availablePorts.empty() && ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
         for (int n = 0; n < availablePorts.size(); n++) {
             bool isSelected = (selectedPortIndex == n);
             if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
@@ -1571,7 +1583,7 @@ void Application::ShowJY61P() {
                                 Sleep(20);
                                 WitReadReg(AX, 15); // 读取 9 个寄存器
                                 
-
+                                std::this_thread::sleep_for(std::chrono::milliseconds(40));
                                 JY61PData::angle temp;
                                 for (int i = 0; i < 3; ++i) {
                                     temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
@@ -1600,7 +1612,6 @@ void Application::ShowJY61P() {
                                 }
 
                                 angleDataMap[addr] = temp;
-                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                             }
                             catch (const std::exception& e) {
                                 std::cerr << "JY61P 设备 0x" << std::hex << (int)addr << " 采集失败: " << e.what() << std::endl;
@@ -1905,6 +1916,7 @@ void Application::ShowADXL355() {
     static std::mutex adxl355CollectedDataMutex;
 
     // 串口选择
+    
     ShowSerialPortSelector(availablePorts, selectedPortIndex);
     // 波特率选择
     ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
@@ -2363,6 +2375,13 @@ void Application::ShowLaserSensor() {
 
 
 void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selectedIndex, const char* label) {
+	if (ports.empty()) {
+		ImGui::BeginDisabled();
+		ImGui::Combo(label, nullptr, "No serial ports\0");
+		ImGui::EndDisabled();
+		selectedIndex = -1;
+		return;
+	}
     if (ImGui::BeginCombo(label, ports[selectedIndex].c_str())) {
         for (int i = 0; i < ports.size(); ++i) {
             bool isSelected = (selectedIndex == i);
@@ -2374,6 +2393,39 @@ void ShowSerialPortSelector(const std::vector<std::string>& ports, int& selected
         ImGui::EndCombo();
     }
 }
+//void ShowSerialPortSelector(
+//    const std::vector<std::string>& ports,
+//    int& selectedIndex,
+//    const char* label)
+//{
+//    // 1. 没有串口
+//    if (ports.empty())
+//    {
+//        ImGui::BeginDisabled();
+//        ImGui::Combo(label, nullptr, "No serial ports\0");
+//        ImGui::EndDisabled();
+//        selectedIndex = -1;
+//        return;
+//    }
+//
+//    // 2. 索引越界保护
+//    if (selectedIndex < 0 || selectedIndex >= (int)ports.size())
+//        selectedIndex = 0;
+//
+//    if (ImGui::BeginCombo(label, ports[selectedIndex].c_str()))
+//    {
+//        for (int i = 0; i < (int)ports.size(); ++i)
+//        {
+//            bool isSelected = (selectedIndex == i);
+//            if (ImGui::Selectable(ports[i].c_str(), isSelected))
+//                selectedIndex = i;
+//
+//            if (isSelected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//}
 
 void ShowBaudRateSelector(const char* const* baudRates, int baudRateCount, int& selectedIndex, const char* label) {
     if (ImGui::BeginCombo(label, baudRates[selectedIndex])) {
@@ -2534,7 +2586,10 @@ void Application::ShowLaserSensor2()
 
 
 
+void Application::ShowLaserSensor3()
+{
 
+}
 void Application::ShowAMT() {
     if (!ImGui::Begin("AMT")) {
         ImGui::End();

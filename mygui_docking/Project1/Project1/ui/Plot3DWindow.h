@@ -20,6 +20,7 @@ public:
 	static void ShowExcel();
 	static void ShowLaserSensor();
 	static void ShowLaserSensor2();
+    static void ShowLaserSensor3();
 	static void ShowAMT();
 	static void ShowBSQJN();
 	static void ShowFibreGratingAnalyzerUI();

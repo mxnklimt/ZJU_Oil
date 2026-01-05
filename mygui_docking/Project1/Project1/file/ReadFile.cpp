@@ -634,13 +634,28 @@ void SaveLaserToXLSX(
     // 2. 转换为 vector 方便排序
     std::vector<uint8_t> uniqueAddrs(uniqueAddrsSet.begin(), uniqueAddrsSet.end());
 
-#ifdef rightdevice
-    // 按地址降序排序
-    std::sort(uniqueAddrs.begin(), uniqueAddrs.end(), std::greater<uint8_t>());
-#else
-    // 默认升序排序
-    std::sort(uniqueAddrs.begin(), uniqueAddrs.end());
-#endif
+//#ifdef rightdevice
+//    // 按地址降序排序
+//    std::sort(uniqueAddrs.begin(), uniqueAddrs.end(), std::greater<uint8_t>());
+//#else
+//    // 默认升序排序
+//    std::sort(uniqueAddrs.begin(), uniqueAddrs.end());
+//#endif
+    if (devicechoice)//left
+    {
+        // 默认升序排序
+        std::sort(uniqueAddrs.begin(), uniqueAddrs.end());
+    }
+    else
+    {
+        // 按地址降序排序
+        std::sort(uniqueAddrs.begin(), uniqueAddrs.end(), std::greater<uint8_t>());
+
+    }
+
+   
+
+
 
     // 3. 写入表头行
     wks.cell(1, 1).value() = "Time"; // 时间列标题
