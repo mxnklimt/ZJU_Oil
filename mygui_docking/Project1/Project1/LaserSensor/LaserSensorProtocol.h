@@ -3,6 +3,7 @@
 
 #pragma once
 #include "RS485/RS485Manager.h"
+#include "clock/clock.h"
 #include "data/Data.h"
 #include <vector>
 #include <cstdint>
@@ -40,6 +41,7 @@ public:
 
     collectionThread = std::thread([this, deviceAddresses, MAX_SIZE]() {
         while (isCollecting) {
+            auto lastTime = std::chrono::high_resolution_clock::now();
             auto now = std::chrono::system_clock::now();
             for (auto addr : deviceAddresses) {
                 try {
@@ -57,8 +59,11 @@ public:
                 catch (const std::exception& e) {
                     std::cerr << "地址 0x" << std::hex << int(addr) << " 采集失败: " << e.what() << "\n";
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(300)); // 每台设备间隔
+                std::this_thread::sleep_for(std::chrono::milliseconds(3)); // 每台设备间隔
             }
+            ensureMinInterval(lastTime);
+            // 使用格式化的时间字符串
+            std::cout << u8"Dual_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
         }
         });
 }

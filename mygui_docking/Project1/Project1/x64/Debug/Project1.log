@@ -1,44 +1,4 @@
-﻿  BSQJNParser.h
-  Com.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
-  (编译源文件“JY61P/Com.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“JY61P/Com.cpp”)
-  
-  pugixml.cpp
-  CollectData.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
-  (编译源文件“data/CollectData.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“data/CollectData.cpp”)
-  
-  Data.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
-  (编译源文件“data/Data.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“data/Data.cpp”)
-  
-  main.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
-  (编译源文件“main.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“main.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267: “参数”: 从“size_t”转换到“const _Ty”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         with
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         [
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:             _Ty=int
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(165,38): warning C4267:         ]
-  (编译源文件“main.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\udp\FibreGratingManager.h(214,28): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
-  (编译源文件“main.cpp”)
-  
-  Plot3DWindow.cpp
+﻿  Plot3DWindow.cpp
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
   (编译源文件“ui/Plot3DWindow.cpp”)
   
@@ -61,34 +21,35 @@ C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenX
 C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\OpenXLSX\headers\XLSharedStrings.hpp(136,65): warning C4267: “return”: 从“size_t”转换到“int32_t”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
   
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(227,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(660,30): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(660,30): warning C4244:         with
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(660,30): warning C4244:         [
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(660,30): warning C4244:             _Ty=float
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(660,30): warning C4244:         ]
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(878,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(879,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(880,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(881,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1845,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1846,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1847,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1848,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1849,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1850,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1851,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1852,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1853,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2200,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2201,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2202,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2637,58): warning C4101: “e”: 未引用的局部变量
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(228,31): warning C4244: “初始化”: 从“int”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(666,30): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(666,30): warning C4244:         with
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(666,30): warning C4244:         [
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(666,30): warning C4244:             _Ty=float
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(666,30): warning C4244:         ]
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(893,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(894,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(895,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(896,61): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1864,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1865,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1866,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1867,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1868,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1869,56): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1870,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1871,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(1872,57): warning C4244: “参数”: 从“double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2031,50): warning C4101: “e”: 未引用的局部变量
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2227,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2228,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2229,61): warning C4244: “参数”: 从“const double”转换到“float”，可能丢失数据
+C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(2671,58): warning C4101: “e”: 未引用的局部变量
 C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18): warning C4244: “=”: 从“wchar_t”转换到“char”，可能丢失数据
   (编译源文件“ui/Plot3DWindow.cpp”)
       C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xutility(4710,18):
       模板实例化上下文(最早的实例化上下文)为
-          C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(924,44):
+          C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(939,44):
           查看对正在编译的函数 模板 实例化“std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,0>(_Iter,_Iter,const _Alloc &)”的引用
           with
           [
@@ -96,7 +57,7 @@ C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.3443
               _Iter=std::_String_iterator<std::_String_val<std::_Simple_types<wchar_t>>>,
               _Alloc=std::allocator<char>
           ]
-              C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(924,32):
+              C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\ui\Plot3DWindow.cpp(939,32):
               请参阅 "Application::listAvailableSerialPorts" 中对 "std::basic_string<char,std::char_traits<char>,std::allocator<char>>::basic_string" 的第一个引用
           C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\xstring(793,17):
           查看对正在编译的函数 模板 实例化“void std::basic_string<char,std::char_traits<char>,std::allocator<char>>::_Construct_from_iter<wchar_t*,wchar_t*,_Size_type>(_Iter,const _Sent,_Size)”的引用
@@ -117,14 +78,6 @@ C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.3443
               _SizeTy=unsigned __int64
           ]
   
-  sheetdata.cpp
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\RS485\RS485Manager.h(133,42): warning C4101: “e”: 未引用的局部变量
-  (编译源文件“ui/sheetdata.cpp”)
-  
-C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\Project1\data\Data.h(95,15): warning C4091: “extern ”: 没有声明变量时忽略“save”的左侧
-  (编译源文件“ui/sheetdata.cpp”)
-  
-  正在生成代码...
 LINK : warning LNK4075: 忽略“/INCREMENTAL”(由于“/PROFILE”规范)
 AMTParser.obj : warning LNK4075: 忽略“/EDITANDCONTINUE”(由于“/OPT:REF”规范)
   Project1.vcxproj -> C:\Users\mxnkilmt\Documents\GitHub\ZJU_Oil\mygui_docking\Project1\x64\Debug\Project1.exe

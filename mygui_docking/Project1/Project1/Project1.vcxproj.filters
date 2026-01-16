@@ -276,6 +276,9 @@
     <ClInclude Include="udp\CSVDataLogger.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="clock\clock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui.cpp">

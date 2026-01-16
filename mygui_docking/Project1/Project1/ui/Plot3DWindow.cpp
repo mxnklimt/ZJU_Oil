@@ -38,6 +38,7 @@
 #include"BSQJN/BSQJNParser.h"
 #include"JY61P/JY61Parser.h"
 #include "udp/FiberGratingAnalyzerUI.h"
+#include"clock/clock.h"
 // 添加全局变量
 static FiberGratingAnalyzer fiberGratingAnalyzer;
 static FiberGratingAnalyzerUI fiberGratingUI;
@@ -478,6 +479,7 @@ void Application::ShowSynchronizedCapture() {
         }
 		static bool useless = false;
         ImGui::Checkbox("Left",&devicechoice);
+
         ImGui::Checkbox("Right", &useless);
 
     }
@@ -710,6 +712,15 @@ void Application::ShowDualAxisSensor() {
     // 波特率选择下拉框
     ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
 
+    //rightdevice leftdevice
+    static bool changeadr = false;
+    if (devicechoice && !changeadr)
+    {
+        changeadr = true;
+        dualAxisDeviceAddresses.push_back(0x0B);
+    }
+
+
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
             try {
@@ -729,6 +740,7 @@ void Application::ShowDualAxisSensor() {
        
                     // 采集线程
                     while (collecting) {
+                        auto lastTime = std::chrono::high_resolution_clock::now();
                         std::map<uint8_t, DualAxisSensorParser::AngleData> angleDataMap;
                         for (uint8_t addr : dualAxisDeviceAddresses) {
                             auto& parser = *dualAxisParsers[addr];
@@ -752,9 +764,11 @@ void Application::ShowDualAxisSensor() {
                             }
 
                             angleDataMap[addr] = angles;
-                            std::this_thread::sleep_for(std::chrono::milliseconds(85));
+                            std::this_thread::sleep_for(std::chrono::milliseconds(5));
                         }
-
+                        ensureMinInterval(lastTime);
+                        // 使用格式化的时间字符串
+                        std::cout << u8"JY61_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
                         {
                             std::lock_guard<std::mutex> lock(dataMutex);
                             dualAxisDataMap = std::move(angleDataMap); // 保证数据原子写入
@@ -1573,6 +1587,7 @@ void Application::ShowJY61P() {
 //    });
                 pollingThread = std::thread([] {
                     while (collecting) {
+                        auto lastTime = std::chrono::high_resolution_clock::now();
                         std::unordered_map<uint8_t, JY61PData::angle> angleDataMap;
 
                         for (uint8_t addr : jy61pDeviceAddresses) {
@@ -1583,7 +1598,8 @@ void Application::ShowJY61P() {
                                 Sleep(20);
                                 WitReadReg(AX, 15); // 读取 9 个寄存器
                                 
-                                std::this_thread::sleep_for(std::chrono::milliseconds(40));
+								//1.8 暂时关闭
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
                                 JY61PData::angle temp;
                                 for (int i = 0; i < 3; ++i) {
                                     temp.a[i] = sReg[AX + i] / 32768.0f * 16.0f;
@@ -1591,6 +1607,7 @@ void Application::ShowJY61P() {
                                     temp.Angle[i] = sReg[Roll + i] / 32768.0f * 180.0f;
                                 }
 
+								//1.8 暂时关闭
                                 if (jy61xlsxing) {
                                     // 正常 EMA 更新
                                     if (!emaFilterManager.has9Axis(addr)) {
@@ -1617,6 +1634,9 @@ void Application::ShowJY61P() {
                                 std::cerr << "JY61P 设备 0x" << std::hex << (int)addr << " 采集失败: " << e.what() << std::endl;
                             }
                         }
+                        ensureMinInterval_jy61(lastTime);
+                        // 使用格式化的时间字符串
+                        std::cout << u8"ADXL_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
 
                         // 原子写入最新一轮数据
                         {
@@ -1939,15 +1959,19 @@ void Application::ShowADXL355() {
                 
         adxl355PollingThread = std::thread([]() {
             while (collectingADXL355) {
+                auto lastTime = std::chrono::high_resolution_clock::now();
                 for (uint8_t addr : adxl355DeviceAddresses) {
                     try {
                         std::vector<uint8_t> cmd;
                         std::vector<uint8_t> response;
                         ADXL355Parser::AccelerationData data;
-
+						
                         {
                             std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
                             cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
+                            
+                            //std::cout << u8"ADXL_TIME "<<"_"<<addr << getFormattedTimeWithMs() << std::endl;
+                            ensureMinInterval(lastTime);
                             serialManager.send(cmd);
                             response = serialManager.receiveADXL355Response();
                             data = adxl355Parsers[addr].parseAccelerationResponse(response);
@@ -2009,12 +2033,16 @@ void Application::ShowADXL355() {
                                 dq.pop_front();
                         }
 
-                        std::this_thread::sleep_for(std::chrono::milliseconds(75));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));//修改前75
                     }
                     catch (const std::exception& e) {
-                        std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
+                        //std::cerr << u8"[设备 0x" << std::hex << (int)addr << "] 采集异常: " << e.what() << std::endl;
                     }
                 }
+                
+                ensureMinInterval(lastTime);
+                // 使用格式化的时间字符串
+                std::cout << u8"ADXL_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
             }
             });
 
