@@ -17,6 +17,7 @@ public:
 	static void JY61PInit(const std::string& portName);
 	static std::vector<std::string> listAvailableSerialPorts();
 	static void ShowSynchronizedCapture();
+    static void ShowSynchronizedCapture_new();
 	static void ShowExcel();
 	static void ShowLaserSensor();
 	static void ShowLaserSensor2();

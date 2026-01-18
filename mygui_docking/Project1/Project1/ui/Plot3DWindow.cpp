@@ -157,6 +157,10 @@ void Application::ShowWindow()
     {
         Application::ShowSynchronizedCapture();
     }
+    if (SynchronizedCapture)
+    {
+        //Application::ShowSynchronizedCapture_new();
+    }
     //try
     //{
     //    RS485Manager rs485_DualAxis;
@@ -268,6 +272,7 @@ void Application::ShowExcel()
 
     ImGui::End();
 }
+
 void Application::ShowSynchronizedCapture() {
     if (!ImGui::Begin(u8"同步采集控制")) {
         ImGui::End();
@@ -470,10 +475,10 @@ void Application::ShowSynchronizedCapture() {
 
                 MoveLatestFiles(std::filesystem::current_path(), 5);
                 /* -------------------- 新增：保存 AMT 数据 -------------------- */
-                SaveAMTToXLSX(amtBuffer); // 此函数实现你暂时不需要写
+                SaveAMTToXLSX(amtBuffer); 
                 /* ----------------------------------------------------------- */
                  /* -------------------- 新增：保存 BSQJN 数据 -------------------- */
-                SaveBSQJNToXLSX(bsqjnBuffer); // 此函数实现你暂时不需要写
+                SaveBSQJNToXLSX(bsqjnBuffer);
                 /* ----------------------------------------------------------- */
                 });
         }
@@ -768,7 +773,7 @@ void Application::ShowDualAxisSensor() {
                         }
                         ensureMinInterval(lastTime);
                         // 使用格式化的时间字符串
-                        std::cout << u8"JY61_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
+                        std::cout << u8"Dual_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
                         {
                             std::lock_guard<std::mutex> lock(dataMutex);
                             dualAxisDataMap = std::move(angleDataMap); // 保证数据原子写入
@@ -1636,7 +1641,7 @@ void Application::ShowJY61P() {
                         }
                         ensureMinInterval_jy61(lastTime);
                         // 使用格式化的时间字符串
-                        std::cout << u8"ADXL_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
+                        std::cout << u8"JY61_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
 
                         // 原子写入最新一轮数据
                         {
@@ -1969,9 +1974,6 @@ void Application::ShowADXL355() {
                         {
                             std::lock_guard<std::mutex> lock(RS485SendRecvMutex);
                             cmd = adxl355Parsers[addr].generateReadAccelerationCommand();
-                            
-                            //std::cout << u8"ADXL_TIME "<<"_"<<addr << getFormattedTimeWithMs() << std::endl;
-                            ensureMinInterval(lastTime);
                             serialManager.send(cmd);
                             response = serialManager.receiveADXL355Response();
                             data = adxl355Parsers[addr].parseAccelerationResponse(response);
