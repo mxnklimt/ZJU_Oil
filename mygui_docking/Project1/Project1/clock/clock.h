@@ -30,7 +30,18 @@ std::string getFormattedTimeWithMs() {
 void ensureMinInterval(std::chrono::steady_clock::time_point& startTime) {
     auto end = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime);
-    const int minIntervalMs = 300;
+#ifdef rightdevice
+    const int minIntervalMs = 250;
+#else
+    const int minIntervalMs = 250;
+#endif
+
+
+{
+
+}
+
+    
 
     if (elapsed.count() < minIntervalMs) {
         auto remainingTime = std::chrono::milliseconds(minIntervalMs) - elapsed;
@@ -43,7 +54,7 @@ void ensureMinInterval(std::chrono::steady_clock::time_point& startTime) {
 void ensureMinInterval_jy61(std::chrono::steady_clock::time_point& startTime) {
     auto end = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime);
-    const int minIntervalMs = 2000;
+    const int minIntervalMs = 2500;
 
     if (elapsed.count() < minIntervalMs) {
         auto remainingTime = std::chrono::milliseconds(minIntervalMs) - elapsed;

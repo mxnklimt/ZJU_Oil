@@ -278,19 +278,17 @@ void Application::ShowSynchronizedCapture() {
         ImGui::End();
         return;
     }
-    
+
     static std::atomic<bool> isSyncCollecting = false;
     static std::thread syncCollectionThread;
-    
+
     // 用于显示当前记录条数
     static std::atomic<int> jy61pCount = 0;
     static std::atomic<int> adxl355Count = 0;
     static std::atomic<int> dualAxisCount = 0;
-	static std::atomic<int> laserCount = 0;
+    static std::atomic<int> laserCount = 0;
 
-
-    // 
-   // 显示状态栏 
+    // 显示状态栏 
     {
         ImGui::Separator();
         ImGui::Text(u8"当前状态：");
@@ -306,7 +304,7 @@ void Application::ShowSynchronizedCapture() {
         ImGui::Text(u8"采样周期：");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(120.0f); // 设置输入框宽度
-        if (ImGui::InputFloat("##SamplingPeriodInput", &timeInterval, 0.1f, 20.0f, u8"%.1f")) {
+        if (ImGui::InputFloat("##SamplingPeriodInput", &timeInterval, 0.001f, 20.0f, u8"%.3f")) {
             // 输入值变化时的处理逻辑
             timeInterval = std::clamp(timeInterval, 0.1f, 20.0f); // 限制在0.1-10秒范围
         }
@@ -324,9 +322,9 @@ void Application::ShowSynchronizedCapture() {
             isSyncCollecting = true;
             adxlxlsxing = true;
             jy61xlsxing = true;
-			dualAxisxlsxing = true;
-			emaFilterManager.clearAll(); // 清除EMA状态
-           
+            dualAxisxlsxing = true;
+            emaFilterManager.clearAll(); // 清除EMA状态
+
             for (auto addr : adxl355DeviceAddresses) {
                 adxl355NeedInitEMASet.insert(addr); // 
             }
@@ -340,12 +338,14 @@ void Application::ShowSynchronizedCapture() {
                 /* -------------------- 新增：AMT 缓存 -------------------- */
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, AMTData>>> amtBuffer;
                 /* ------------------------------------------------------ */
-                 /* -------------------- 新增：BSQJN 缓存 -------------------- */
+                /* -------------------- 新增：BSQJN 缓存 -------------------- */
                 std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, std::vector<float>>>> bsqjnBuffer;
                 /* ------------------------------------------------------- */
 
                 while (isSyncCollecting) {
-                    auto now = std::chrono::system_clock::now();
+                    // 修改1：将now改为lasttime，并提升到毫秒级精度
+                    auto lasttime = std::chrono::time_point_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now());
 
                     // JY61P
                     {
@@ -353,30 +353,29 @@ void Application::ShowSynchronizedCapture() {
                         std::lock_guard<std::mutex> lock(jy61pDataMutex);
                         for (auto& [addr, data] : jy61pDataMap)
                             if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
-                        jy61pBuffer.emplace_back(now, snapshot);
+                        jy61pBuffer.emplace_back(lasttime, snapshot);
                         jy61pCount = static_cast<int>(jy61pBuffer.size());
                     }
 
                     // ADXL355
-                  
                     {
                         std::map<uint8_t, ADXL355Parser::AccelerationData> snapshot;
                         std::lock_guard<std::mutex> lock(ADXL355Mutex);
                         for (auto& [addr, data] : adxl355DataMap)
                             if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
-                        adxl355Buffer.emplace_back(now, snapshot);
+                        adxl355Buffer.emplace_back(lasttime, snapshot);
                         adxl355Count = static_cast<int>(adxl355Buffer.size());
                     }
-
 
                     // Dual Axis
                     {
                         std::map<uint8_t, DualAxisSensorParser::AngleData> snapshot3;
                         std::lock_guard<std::mutex> lock(dataMutex);
                         snapshot3 = dualAxisDataMap;
-                        dualAxisBuffer.emplace_back(now, snapshot3);
+                        dualAxisBuffer.emplace_back(lasttime, snapshot3);
                         dualAxisCount = static_cast<int>(dualAxisBuffer.size());
                     }
+
                     // laser
                     {
                         std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot;
@@ -388,7 +387,7 @@ void Application::ShowSynchronizedCapture() {
                                 }
                             }
                         }
-                        laserBuffer.emplace_back(now, snapshot);
+                        laserBuffer.emplace_back(lasttime, snapshot);
                         laserCount = static_cast<int>(laserBuffer.size());
                     }
 
@@ -403,8 +402,9 @@ void Application::ShowSynchronizedCapture() {
                                 }
                             }
                         }
-                        laserBuffer2.emplace_back(now, snapshot2);
+                        laserBuffer2.emplace_back(lasttime, snapshot2);
                     }
+
                     /* -------------------- 新增：AMT 同步采集 -------------------- */
                     {
                         std::map<uint8_t, AMTData> snapshot;
@@ -412,31 +412,11 @@ void Application::ShowSynchronizedCapture() {
                         for (auto& [addr, dq] : amtDataMap) {
                             if (!dq.empty()) snapshot[addr] = dq.back();
                         }
-                        amtBuffer.emplace_back(now, snapshot);
+                        amtBuffer.emplace_back(lasttime, snapshot);
                     }
                     /* ---------------------------------------------------------- */
-                      /* -------------------- 新增：BSQJN 同步采集 -------------------- */
-                    /*{
 
-                        std::map<uint8_t, std::vector<float>> snapshot;
-                        std::lock_guard<std::mutex> lock(BSQJNMutex);
-
-
-                        for (auto& [addr, data] : bsqjnDataMap) {
-                            if (!data.dataQue.empty()) {
-                                auto vec = data.dataQue.back();
-                                std::cout << "BSQJN addr " << int(addr) << " last data: ";
-                                for (auto v : vec) std::cout << v << " ";
-                                std::cout << std::endl;
-                                snapshot[addr] = vec;
-                            }
-                        }
-
-                        for (auto& [addr, data] : bsqjnDataMap) {
-                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
-                        }
-                        bsqjnBuffer.emplace_back(now, snapshot);
-                    }*/
+                    /* -------------------- 新增：BSQJN 同步采集 -------------------- */
                     {
                         std::map<uint8_t, std::vector<float>> snapshot;
                         std::lock_guard<std::mutex> lock(BSQJNMutex);
@@ -449,16 +429,12 @@ void Application::ShowSynchronizedCapture() {
                                 std::cout << std::endl;
                             }
                         }
-                        bsqjnBuffer.emplace_back(now, snapshot);
+                        bsqjnBuffer.emplace_back(lasttime, snapshot);
                     }
-
                     /* ---------------------------------------------------------- */
 
-
-                    //std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
-                    //std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
-                    std::this_thread::sleep_for(std::chrono::milliseconds((int)(timeInterval*1000)));
-
+                    // 修改2：将休眠时间也改为毫秒级精度
+                    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(timeInterval * 1000)));
                 }
 
                 SaveJY61PToXLSX(jy61pBuffer);
@@ -470,41 +446,39 @@ void Application::ShowSynchronizedCapture() {
                     "DualAxis_sync",
                     dataMutex
                 );
-				SaveLaserToXLSX(laserBuffer);
+                SaveLaserToXLSX(laserBuffer);
                 SaveLaserToXLSX(laserBuffer2);
 
                 MoveLatestFiles(std::filesystem::current_path(), 5);
                 /* -------------------- 新增：保存 AMT 数据 -------------------- */
-                SaveAMTToXLSX(amtBuffer); 
+                SaveAMTToXLSX(amtBuffer);
                 /* ----------------------------------------------------------- */
-                 /* -------------------- 新增：保存 BSQJN 数据 -------------------- */
+                /* -------------------- 新增：保存 BSQJN 数据 -------------------- */
                 SaveBSQJNToXLSX(bsqjnBuffer);
                 /* ----------------------------------------------------------- */
                 });
         }
-		static bool useless = false;
-        ImGui::Checkbox("Left",&devicechoice);
-
+        static bool useless = false;
+        ImGui::Checkbox("Left", &devicechoice);
         ImGui::Checkbox("Right", &useless);
-
     }
     else {
         if (ImGui::Button(u8" 停止采集并保存", ImVec2(200, 40))) {
             isSyncCollecting = false;
             jy61xlsxing = false;
-			adxlxlsxing = false;
-			dualAxisxlsxing = false;
+            adxlxlsxing = false;
+            dualAxisxlsxing = false;
             if (syncCollectionThread.joinable()) syncCollectionThread.join();
         }
 
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
         ImGui::TextColored(ImVec4(0, 1, 0, 1), u8" 同步采集中...");
         ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", 10 * jy61pCount.load());
-        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10* adxl355Count.load());
-        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8" 双轴传感器 已记录 %d 条", 10 *dualAxisCount.load());
+        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10 * adxl355Count.load());
+        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8" 双轴传感器 已记录 %d 条", 10 * dualAxisCount.load());
     }
 
-    //  操作说明
+    // 操作说明
     ImGui::Separator();
     ImGui::Text(u8"操作说明：");
     ImGui::BulletText(u8"每秒同步采集所有模块数据");
@@ -512,6 +486,245 @@ void Application::ShowSynchronizedCapture() {
 
     ImGui::End();
 }
+//void Application::ShowSynchronizedCapture() {
+//    if (!ImGui::Begin(u8"同步采集控制")) {
+//        ImGui::End();
+//        return;
+//    }
+//    
+//    static std::atomic<bool> isSyncCollecting = false;
+//    static std::thread syncCollectionThread;
+//    
+//    // 用于显示当前记录条数
+//    static std::atomic<int> jy61pCount = 0;
+//    static std::atomic<int> adxl355Count = 0;
+//    static std::atomic<int> dualAxisCount = 0;
+//	static std::atomic<int> laserCount = 0;
+//
+//
+//    // 
+//   // 显示状态栏 
+//    {
+//        ImGui::Separator();
+//        ImGui::Text(u8"当前状态：");
+//        ImGui::SameLine();
+//        if (isSyncCollecting) {
+//            ImGui::TextColored(ImVec4(0.0f, 0.8f, 0.0f, 1.0f), u8"同步采集中");
+//        }
+//        else {
+//            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), u8"未采集");
+//        }
+//
+//        // 改为输入框形式
+//        ImGui::Text(u8"采样周期：");
+//        ImGui::SameLine();
+//        ImGui::SetNextItemWidth(120.0f); // 设置输入框宽度
+//        if (ImGui::InputFloat("##SamplingPeriodInput", &timeInterval, 0.1f, 20.0f, u8"%.1f")) {
+//            // 输入值变化时的处理逻辑
+//            timeInterval = std::clamp(timeInterval, 0.1f, 20.0f); // 限制在0.1-10秒范围
+//        }
+//        ImGui::SameLine();
+//        ImGui::Text(u8"秒"); // 单位说明
+//        ImGui::Separator();
+//    }
+//
+//    // 控制按钮区
+//    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+//    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 200) * 0.5f);  // 居中按钮
+//
+//    if (!isSyncCollecting) {
+//        if (ImGui::Button(u8"开始同步采集", ImVec2(200, 40))) {
+//            isSyncCollecting = true;
+//            adxlxlsxing = true;
+//            jy61xlsxing = true;
+//			dualAxisxlsxing = true;
+//			emaFilterManager.clearAll(); // 清除EMA状态
+//           
+//            for (auto addr : adxl355DeviceAddresses) {
+//                adxl355NeedInitEMASet.insert(addr); // 
+//            }
+//            syncCollectionThread = std::thread([] {
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, JY61PData::angle>>> jy61pBuffer;
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355Buffer;
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, DualAxisSensorParser::AngleData>>> dualAxisBuffer;
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer;
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>>>> laserBuffer2;
+//
+//                /* -------------------- 新增：AMT 缓存 -------------------- */
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, AMTData>>> amtBuffer;
+//                /* ------------------------------------------------------ */
+//                 /* -------------------- 新增：BSQJN 缓存 -------------------- */
+//                std::vector<std::pair<std::chrono::system_clock::time_point, std::map<uint8_t, std::vector<float>>>> bsqjnBuffer;
+//                /* ------------------------------------------------------- */
+//
+//                while (isSyncCollecting) {
+//                    auto now = std::chrono::system_clock::now();
+//                    auto lastTime = std::chrono::high_resolution_clock::now();
+//                    // JY61P
+//                    {
+//                        std::unordered_map<uint8_t, JY61PData::angle> snapshot;
+//                        std::lock_guard<std::mutex> lock(jy61pDataMutex);
+//                        for (auto& [addr, data] : jy61pDataMap)
+//                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
+//                        jy61pBuffer.emplace_back(now, snapshot);
+//                        jy61pCount = static_cast<int>(jy61pBuffer.size());
+//                    }
+//
+//                    // ADXL355
+//                  
+//                    {
+//                        std::map<uint8_t, ADXL355Parser::AccelerationData> snapshot;
+//                        std::lock_guard<std::mutex> lock(ADXL355Mutex);
+//                        for (auto& [addr, data] : adxl355DataMap)
+//                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
+//                        adxl355Buffer.emplace_back(now, snapshot);
+//                        adxl355Count = static_cast<int>(adxl355Buffer.size());
+//                    }
+//
+//
+//                    // Dual Axis
+//                    {
+//                        std::map<uint8_t, DualAxisSensorParser::AngleData> snapshot3;
+//                        std::lock_guard<std::mutex> lock(dataMutex);
+//                        snapshot3 = dualAxisDataMap;
+//                        dualAxisBuffer.emplace_back(now, snapshot3);
+//                        dualAxisCount = static_cast<int>(dualAxisBuffer.size());
+//                    }
+//                    // laser
+//                    {
+//                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot;
+//                        {
+//                            std::lock_guard<std::mutex> lock(LasergetMutex);
+//                            for (auto& [addr, vec] : collectedLasorMap) {
+//                                if (!vec.empty()) {
+//                                    snapshot[addr] = { vec.back() }; // 用 vector 存最后一条
+//                                }
+//                            }
+//                        }
+//                        laserBuffer.emplace_back(now, snapshot);
+//                        laserCount = static_cast<int>(laserBuffer.size());
+//                    }
+//
+//                    // laser2
+//                    {
+//                        std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint32_t>>> snapshot2;
+//                        {
+//                            std::lock_guard<std::mutex> lock(LasergetMutex2);
+//                            for (auto& [addr, vec] : collectedLasorMap2) {
+//                                if (!vec.empty()) {
+//                                    snapshot2[addr] = { vec.back() }; // 用 vector 存最后一条
+//                                }
+//                            }
+//                        }
+//                        laserBuffer2.emplace_back(now, snapshot2);
+//                    }
+//                    /* -------------------- 新增：AMT 同步采集 -------------------- */
+//                    {
+//                        std::map<uint8_t, AMTData> snapshot;
+//                        std::lock_guard<std::mutex> lock(amtDataMutex);
+//                        for (auto& [addr, dq] : amtDataMap) {
+//                            if (!dq.empty()) snapshot[addr] = dq.back();
+//                        }
+//                        amtBuffer.emplace_back(now, snapshot);
+//                    }
+//                    /* ---------------------------------------------------------- */
+//                      /* -------------------- 新增：BSQJN 同步采集 -------------------- */
+//                    /*{
+//
+//                        std::map<uint8_t, std::vector<float>> snapshot;
+//                        std::lock_guard<std::mutex> lock(BSQJNMutex);
+//
+//
+//                        for (auto& [addr, data] : bsqjnDataMap) {
+//                            if (!data.dataQue.empty()) {
+//                                auto vec = data.dataQue.back();
+//                                std::cout << "BSQJN addr " << int(addr) << " last data: ";
+//                                for (auto v : vec) std::cout << v << " ";
+//                                std::cout << std::endl;
+//                                snapshot[addr] = vec;
+//                            }
+//                        }
+//
+//                        for (auto& [addr, data] : bsqjnDataMap) {
+//                            if (!data.dataQue.empty()) snapshot[addr] = data.dataQue.back();
+//                        }
+//                        bsqjnBuffer.emplace_back(now, snapshot);
+//                    }*/
+//                    {
+//                        std::map<uint8_t, std::vector<float>> snapshot;
+//                        std::lock_guard<std::mutex> lock(BSQJNMutex);
+//                        for (auto& [addr, data] : bsqjnDataMap) {
+//                            if (!data.dataQue.empty()) {
+//                                const auto& vec = data.dataQue.back(); // 直接引用
+//                                snapshot[addr] = vec; // 完整保存所有通道
+//                                std::cout << "BSQJN addr " << int(addr) << " last data: ";
+//                                for (auto v : vec) std::cout << v << " ";
+//                                std::cout << std::endl;
+//                            }
+//                        }
+//                        bsqjnBuffer.emplace_back(now, snapshot);
+//                    }
+//
+//                    /* ---------------------------------------------------------- */
+//
+//
+//                    //std::this_thread::sleep_for(std::chrono::seconds(1)); //10HZ
+//                    //std::this_thread::sleep_for(std::chrono::seconds(10)); //1HZ
+//                    std::this_thread::sleep_for(std::chrono::milliseconds((int)(timeInterval*1000)));
+//
+//                }
+//
+//                SaveJY61PToXLSX(jy61pBuffer);
+//                SaveADXL355ToXLSX(adxl355Buffer);
+//                /*SaveDualAxisToXLSX(dualAxisBuffer);*/
+//                SaveDualAxisToXLSX(
+//                    dualAxisBuffer,
+//                    dualAxisDeviceAddresses,
+//                    "DualAxis_sync",
+//                    dataMutex
+//                );
+//				SaveLaserToXLSX(laserBuffer);
+//                SaveLaserToXLSX(laserBuffer2);
+//
+//                MoveLatestFiles(std::filesystem::current_path(), 5);
+//                /* -------------------- 新增：保存 AMT 数据 -------------------- */
+//                SaveAMTToXLSX(amtBuffer); 
+//                /* ----------------------------------------------------------- */
+//                 /* -------------------- 新增：保存 BSQJN 数据 -------------------- */
+//                SaveBSQJNToXLSX(bsqjnBuffer);
+//                /* ----------------------------------------------------------- */
+//                });
+//        }
+//		static bool useless = false;
+//        ImGui::Checkbox("Left",&devicechoice);
+//
+//        ImGui::Checkbox("Right", &useless);
+//
+//    }
+//    else {
+//        if (ImGui::Button(u8" 停止采集并保存", ImVec2(200, 40))) {
+//            isSyncCollecting = false;
+//            jy61xlsxing = false;
+//			adxlxlsxing = false;
+//			dualAxisxlsxing = false;
+//            if (syncCollectionThread.joinable()) syncCollectionThread.join();
+//        }
+//
+//        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+//        ImGui::TextColored(ImVec4(0, 1, 0, 1), u8" 同步采集中...");
+//        ImGui::TextColored(ImVec4(1, 1, 0, 1), u8" JY61P 已记录 %d 条", 10 * jy61pCount.load());
+//        ImGui::TextColored(ImVec4(0, 1, 1, 1), u8" ADXL355 已记录 %d 条", 10* adxl355Count.load());
+//        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), u8" 双轴传感器 已记录 %d 条", 10 *dualAxisCount.load());
+//    }
+//
+//    //  操作说明
+//    ImGui::Separator();
+//    ImGui::Text(u8"操作说明：");
+//    ImGui::BulletText(u8"每秒同步采集所有模块数据");
+//    ImGui::BulletText(u8"停止采集后自动保存为 .xlsx 文件");
+//
+//    ImGui::End();
+//}
 
 
 
@@ -1641,7 +1854,7 @@ void Application::ShowJY61P() {
                         }
                         ensureMinInterval_jy61(lastTime);
                         // 使用格式化的时间字符串
-                        std::cout << u8"JY61_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
+                        //std::cout << u8"JY61_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
 
                         // 原子写入最新一轮数据
                         {
@@ -2042,7 +2255,8 @@ void Application::ShowADXL355() {
                     }
                 }
                 
-                ensureMinInterval(lastTime);
+                //ensureMinInterval(lastTime);
+				ensureMinInterval_jy61(lastTime);
                 // 使用格式化的时间字符串
                 std::cout << u8"ADXL_TIME " << "_" << getFormattedTimeWithMs() << std::endl;
             }
