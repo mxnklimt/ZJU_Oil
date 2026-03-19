@@ -66,9 +66,9 @@ void Application::ShowWindow()
 	static bool show_laser_sensor = true; // 激光传感器选项
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
     static bool show_laser_sensor3 = true;
-	static bool show_AMT = false;
-    static bool show_BSQJN = false;
-	static bool show_fibre = false;
+	static bool show_AMT = true;
+    static bool show_BSQJN = true;
+	static bool show_fibre = true;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -110,11 +110,11 @@ void Application::ShowWindow()
 	}
 	if (show_laser_sensor) {
 		// 显示激光传感器数据
-		Application::ShowLaserSensor();
+		//Application::ShowLaserSensor();
 	}
 	if (show_laser_sensor2) {
 		// 显示激光传感器数据2
-		Application::ShowLaserSensor2();
+		//Application::ShowLaserSensor2();
 	}
     if (show_laser_sensor3)
     {
@@ -131,13 +131,13 @@ void Application::ShowWindow()
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
     if (ADXL355) {
-        Application::ShowADXL355();
+        //Application::ShowADXL355();
     }
     //--------------------------------------------------------------------------------------------------------------------------------
     // JY61P
     if (JY61P)
     {
-        Application::ShowJY61P();
+        //Application::ShowJY61P();
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ void Application::ShowWindow()
 
     if (DualAxis)
     {
-        Application::ShowDualAxisSensor();
+        //Application::ShowDualAxisSensor();
     }
     if (SynchronizedCapture)
     {

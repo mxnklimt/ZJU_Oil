@@ -31,7 +31,7 @@ void ensureMinInterval(std::chrono::steady_clock::time_point& startTime) {
     auto end = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - startTime);
 #ifdef rightdevice
-    const int minIntervalMs = 250;
+    const int minIntervalMs = 25;
 #else
     const int minIntervalMs = 250;
 #endif
