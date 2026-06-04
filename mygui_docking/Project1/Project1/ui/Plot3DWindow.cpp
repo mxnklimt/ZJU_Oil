@@ -46,6 +46,296 @@ static bool isFiberGratingUIInitialized = false;
 
 std::atomic<bool> running{ true };
 
+namespace {
+constexpr bool kVirtualDemoMode = true;
+std::atomic<bool> g_virtualDataStarted{ false };
+bool g_showVirtualDemo = kVirtualDemoMode;
+
+template <typename Queue, typename Value>
+void pushLimited(Queue& queue, const Value& value, size_t limit) {
+    queue.push_back(value);
+    while (queue.size() > limit) {
+        queue.pop_front();
+    }
+}
+
+void addVirtualAddresses(std::vector<uint8_t>& addresses, uint8_t first = 0x01, uint8_t last = 0x0B) {
+    for (uint8_t addr = first; addr <= last; ++addr) {
+        if (std::find(addresses.begin(), addresses.end(), addr) == addresses.end()) {
+            addresses.push_back(addr);
+        }
+    }
+    std::sort(addresses.begin(), addresses.end());
+}
+
+void EnsureVirtualAddressCoverage() {
+    addVirtualAddresses(adxl355DeviceAddresses);
+    addVirtualAddresses(jy61pDeviceAddresses);
+    addVirtualAddresses(dualAxisDeviceAddresses);
+    addVirtualAddresses(laserDeviceAddresses);
+    addVirtualAddresses(amtAddresses);
+    addVirtualAddresses(bsqjnDeviceAddresses);
+}
+
+void EnsureVirtualDataFeed() {
+    if (g_virtualDataStarted.exchange(true)) {
+        return;
+    }
+
+    std::thread([] {
+        const auto start = std::chrono::steady_clock::now();
+
+        while (true) {
+            const auto steadyNow = std::chrono::steady_clock::now();
+            const auto systemNow = std::chrono::system_clock::now();
+            const double t = std::chrono::duration<double>(steadyNow - start).count();
+
+            {
+                std::lock_guard<std::mutex> lock(jy61pDataMutex);
+                for (uint8_t addr : jy61pDeviceAddresses) {
+                    const double phase = t * 1.7 + addr * 0.31;
+                    JY61PData::angle sample;
+                    sample.a[0] = std::sin(phase) * 0.04;
+                    sample.a[1] = std::cos(phase * 0.8) * 0.04;
+                    sample.a[2] = 1.0 + std::sin(phase * 0.35) * 0.015;
+                    sample.w[0] = std::sin(phase * 1.4) * 3.5;
+                    sample.w[1] = std::cos(phase * 1.1) * 3.0;
+                    sample.w[2] = std::sin(phase * 0.9) * 2.0;
+                    sample.Angle[0] = std::sin(phase * 0.45) * 8.0;
+                    sample.Angle[1] = std::cos(phase * 0.38) * 6.0;
+                    sample.Angle[2] = std::sin(phase * 0.28) * 12.0;
+                    for (int i = 0; i < 3; ++i) {
+                        sample.EMA_a[i] = sample.a[i] * 0.96;
+                        sample.EMA_w[i] = sample.w[i] * 0.94;
+                        sample.EMA_Angle[i] = sample.Angle[i] * 0.95;
+                    }
+                    sample.temperature = 26.0 + std::sin(phase * 0.2) * 1.2;
+                    pushLimited(jy61pDataMap[addr].dataQue, sample, MAX_POINTS);
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(ADXL355Mutex);
+                for (uint8_t addr : adxl355DeviceAddresses) {
+                    const double phase = t * 2.1 + addr * 0.27;
+                    ADXL355Parser::AccelerationData sample{};
+                    sample.x = std::sin(phase) * 0.035 + addr * 0.0008;
+                    sample.y = std::cos(phase * 0.7) * 0.030;
+                    sample.z = 1.0 + std::sin(phase * 0.33) * 0.012;
+                    sample.EMA_x = sample.x * 0.95;
+                    sample.EMA_y = sample.y * 0.95;
+                    sample.EMA_z = sample.z * 0.98;
+                    pushLimited(adxl355DataMap[addr].dataQue, sample, MAX_POINTS);
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(dataMutex);
+                for (uint8_t addr : dualAxisDeviceAddresses) {
+                    const double phase = t * 1.2 + addr * 0.43;
+                    DualAxisSensorParser::AngleData sample{};
+                    sample.filtered_horizontal = std::sin(phase) * 2.4;
+                    sample.filtered_vertical = std::cos(phase * 0.9) * 1.8;
+                    sample.raw_horizontal = sample.filtered_horizontal + std::sin(phase * 5.0) * 0.08;
+                    sample.raw_vertical = sample.filtered_vertical + std::cos(phase * 4.0) * 0.08;
+                    sample.EMA_horizontal = sample.filtered_horizontal * 0.94;
+                    sample.EMA_vertical = sample.filtered_vertical * 0.94;
+                    dualAxisDataMap[addr] = sample;
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(LasergetMutex);
+                for (uint8_t addr : laserDeviceAddresses) {
+                    const double phase = t * 0.8 + addr * 0.19;
+                    const auto distance = static_cast<uint32_t>((1180.0 + addr * 7.5 + std::sin(phase) * 24.0) * 1000.0);
+                    auto& values = collectedLasorMap[addr];
+                    values.emplace_back(systemNow, distance);
+                    if (values.size() > MAX_POINTS) {
+                        values.erase(values.begin());
+                    }
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(LasergetMutex2);
+                for (uint8_t addr : laserDeviceAddresses) {
+                    const double phase = t * 0.75 + addr * 0.23;
+                    const auto distance = static_cast<uint32_t>((1210.0 + addr * 6.0 + std::cos(phase) * 18.0) * 1000.0);
+                    auto& values = collectedLasorMap2[addr];
+                    values.emplace_back(systemNow, distance);
+                    if (values.size() > MAX_POINTS) {
+                        values.erase(values.begin());
+                    }
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(amtDataMutex);
+                for (uint8_t addr : amtAddresses) {
+                    const double phase = t * 0.9 + addr * 0.4;
+                    AMTData sample;
+                    sample.position = 12.0 + addr * 1.5 + std::sin(phase) * 0.45;
+                    sample.temperature = 25.0 + std::cos(phase * 0.3) * 1.0;
+                    pushLimited(amtDataMap[addr], sample, MAX_POINTS);
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(BSQJNMutex);
+                for (uint8_t addr : bsqjnDeviceAddresses) {
+                    const double phase = t * 1.1 + addr * 0.36;
+                    std::vector<float> channels(4);
+                    for (int ch = 0; ch < 4; ++ch) {
+                        channels[ch] = static_cast<float>(1.8 + ch * 0.35 + std::sin(phase + ch * 0.8) * 0.18);
+                    }
+                    pushLimited(bsqjnDataMap[addr].dataQue, channels, MAX_POINTS);
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        }).detach();
+}
+
+void ShowVirtualDataDashboard() {
+    ImGui::Separator();
+
+    const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+
+    if (ImGui::CollapsingHeader("ADXL355", ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::lock_guard<std::mutex> lock(ADXL355Mutex);
+        if (ImGui::BeginTable("VirtualADXL355Table", 4, tableFlags)) {
+            ImGui::TableSetupColumn(u8"地址");
+            ImGui::TableSetupColumn("X(g)");
+            ImGui::TableSetupColumn("Y(g)");
+            ImGui::TableSetupColumn("Z(g)");
+            ImGui::TableHeadersRow();
+            for (uint8_t addr : adxl355DeviceAddresses) {
+                auto it = adxl355DataMap.find(addr);
+                if (it == adxl355DataMap.end() || it->second.dataQue.empty()) continue;
+                const auto& data = it->second.dataQue.back();
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("0x%02X", addr);
+                ImGui::TableSetColumnIndex(1); ImGui::Text("%.4f", data.x);
+                ImGui::TableSetColumnIndex(2); ImGui::Text("%.4f", data.y);
+                ImGui::TableSetColumnIndex(3); ImGui::Text("%.4f", data.z);
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    if (ImGui::CollapsingHeader("JY61P", ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::lock_guard<std::mutex> lock(jy61pDataMutex);
+        if (ImGui::BeginTable("VirtualJY61PTable", 5, tableFlags)) {
+            ImGui::TableSetupColumn(u8"地址");
+            ImGui::TableSetupColumn(u8"加速度Z(g)");
+            ImGui::TableSetupColumn(u8"角速度X");
+            ImGui::TableSetupColumn(u8"Roll");
+            ImGui::TableSetupColumn(u8"温度");
+            ImGui::TableHeadersRow();
+            for (uint8_t addr : jy61pDeviceAddresses) {
+                auto& queue = jy61pDataMap[addr].dataQue;
+                if (queue.empty()) continue;
+                const auto& data = queue.back();
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("0x%02X", addr);
+                ImGui::TableSetColumnIndex(1); ImGui::Text("%.4f", data.a[2]);
+                ImGui::TableSetColumnIndex(2); ImGui::Text("%.3f", data.w[0]);
+                ImGui::TableSetColumnIndex(3); ImGui::Text("%.3f", data.Angle[0]);
+                ImGui::TableSetColumnIndex(4); ImGui::Text("%.2f", data.temperature);
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    if (ImGui::CollapsingHeader(u8"双轴柔性传感器", ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::lock_guard<std::mutex> lock(dataMutex);
+        if (ImGui::BeginTable("VirtualDualAxisTable", 5, tableFlags)) {
+            ImGui::TableSetupColumn(u8"地址");
+            ImGui::TableSetupColumn(u8"滤波水平");
+            ImGui::TableSetupColumn(u8"滤波垂直");
+            ImGui::TableSetupColumn(u8"原始水平");
+            ImGui::TableSetupColumn(u8"原始垂直");
+            ImGui::TableHeadersRow();
+            for (uint8_t addr : dualAxisDeviceAddresses) {
+                auto it = dualAxisDataMap.find(addr);
+                if (it == dualAxisDataMap.end()) continue;
+                const auto& data = it->second;
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("0x%02X", addr);
+                ImGui::TableSetColumnIndex(1); ImGui::Text("%.4f", data.filtered_horizontal);
+                ImGui::TableSetColumnIndex(2); ImGui::Text("%.4f", data.filtered_vertical);
+                ImGui::TableSetColumnIndex(3); ImGui::Text("%.4f", data.raw_horizontal);
+                ImGui::TableSetColumnIndex(4); ImGui::Text("%.4f", data.raw_vertical);
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    if (ImGui::CollapsingHeader(u8"激光位移", ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::lock_guard<std::mutex> lock(LasergetMutex);
+        if (ImGui::BeginTable("VirtualLaserTable", 2, tableFlags)) {
+            ImGui::TableSetupColumn(u8"地址");
+            ImGui::TableSetupColumn(u8"距离(mm)");
+            ImGui::TableHeadersRow();
+            for (uint8_t addr : laserDeviceAddresses) {
+                auto it = collectedLasorMap.find(addr);
+                if (it == collectedLasorMap.end() || it->second.empty()) continue;
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("0x%02X", addr);
+                ImGui::TableSetColumnIndex(1); ImGui::Text("%.3f", it->second.back().second / 1000.0f);
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    if (ImGui::CollapsingHeader("AMT", ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::lock_guard<std::mutex> lock(amtDataMutex);
+        if (ImGui::BeginTable("VirtualAMTTable", 3, tableFlags)) {
+            ImGui::TableSetupColumn(u8"地址");
+            ImGui::TableSetupColumn(u8"位移(mm)");
+            ImGui::TableSetupColumn(u8"温度");
+            ImGui::TableHeadersRow();
+            for (uint8_t addr : amtAddresses) {
+                auto it = amtDataMap.find(addr);
+                if (it == amtDataMap.end() || it->second.empty()) continue;
+                const auto& data = it->second.back();
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("0x%02X", addr);
+                ImGui::TableSetColumnIndex(1); ImGui::Text("%.3f", data.position);
+                ImGui::TableSetColumnIndex(2); ImGui::Text("%.2f", data.temperature);
+            }
+            ImGui::EndTable();
+        }
+    }
+
+    if (ImGui::CollapsingHeader(u8"BSQJN 拉力传感器", ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::lock_guard<std::mutex> lock(BSQJNMutex);
+        if (ImGui::BeginTable("VirtualBSQJNTable", 5, tableFlags)) {
+            ImGui::TableSetupColumn(u8"地址");
+            ImGui::TableSetupColumn(u8"通道1(T)");
+            ImGui::TableSetupColumn(u8"通道2(T)");
+            ImGui::TableSetupColumn(u8"通道3(T)");
+            ImGui::TableSetupColumn(u8"通道4(T)");
+            ImGui::TableHeadersRow();
+            for (uint8_t addr : bsqjnDeviceAddresses) {
+                auto it = bsqjnDataMap.find(addr);
+                if (it == bsqjnDataMap.end() || it->second.dataQue.empty()) continue;
+                const auto& values = it->second.dataQue.back();
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("0x%02X", addr);
+                for (int ch = 0; ch < 4 && ch < static_cast<int>(values.size()); ++ch) {
+                    ImGui::TableSetColumnIndex(ch + 1);
+                    ImGui::Text("%.6f", values[ch]);
+                }
+            }
+            ImGui::EndTable();
+        }
+    }
+}
+}
+
 void signalHandler(int signal) {
 	//<csignal>
     if (signal == SIGINT) {
@@ -56,6 +346,11 @@ void signalHandler(int signal) {
 
 void Application::ShowWindow()
 {
+    if (kVirtualDemoMode) {
+        EnsureVirtualAddressCoverage();
+        EnsureVirtualDataFeed();
+    }
+
     static bool show_plot2d = true;
     static bool ADXL355 = true;
     static bool JY61P = true; // 默认显示JY61P数据
@@ -66,9 +361,10 @@ void Application::ShowWindow()
 	static bool show_laser_sensor = true; // 激光传感器选项
 	static bool show_laser_sensor2 = true; // 激光传感器选项2
     static bool show_laser_sensor3 = true;
+    static bool show_virtual_demo = kVirtualDemoMode;
 	static bool show_AMT = true;
     static bool show_BSQJN = true;
-	static bool show_fibre = true;
+	static bool show_fibre = !kVirtualDemoMode;
     //--------------------------------------------------------------------------------------------------------------------------------
     // 主窗口
     ImGui::SetNextWindowPos(ImVec2(-1, -1), ImGuiCond_FirstUseEver);
@@ -86,9 +382,10 @@ void Application::ShowWindow()
             ImGui::MenuItem("SynchronizedCapture", nullptr, &SynchronizedCapture);
             ImGui::MenuItem("Show Custom 3D Plot 2", nullptr, &show_plot3d_2);
             ImGui::MenuItem("Show Custom 3D Plot 2 (Separate Window)", nullptr, &show_plot3d_2_window);
-			ImGui::MenuItem("Show AMT", nullptr, &show_AMT);
+            ImGui::MenuItem("Show AMT", nullptr, &show_AMT);
 			ImGui::MenuItem("Show BSQJN", nullptr, &show_BSQJN);
 			ImGui::MenuItem("Show Fibre", nullptr, &show_fibre);
+            ImGui::MenuItem(u8"虚拟数据演示", nullptr, &show_virtual_demo);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Style")) {
@@ -101,6 +398,7 @@ void Application::ShowWindow()
     }
     //--------------------------------------------------------------------------------------------------------------------------------
     //读取Excel数据，显示图
+    g_showVirtualDemo = show_virtual_demo;
     Application::ShowExcel();
 
     //-------------------------------------------------------------------------------
@@ -110,11 +408,11 @@ void Application::ShowWindow()
 	}
 	if (show_laser_sensor) {
 		// 显示激光传感器数据
-		//Application::ShowLaserSensor();
+		Application::ShowLaserSensor();
 	}
 	if (show_laser_sensor2) {
 		// 显示激光传感器数据2
-		//Application::ShowLaserSensor2();
+		Application::ShowLaserSensor2();
 	}
     if (show_laser_sensor3)
     {
@@ -131,13 +429,13 @@ void Application::ShowWindow()
     //--------------------------------------------------------------------------------------------------------------------------------
     // ADXL355
     if (ADXL355) {
-        //Application::ShowADXL355();
+        Application::ShowADXL355();
     }
     //--------------------------------------------------------------------------------------------------------------------------------
     // JY61P
     if (JY61P)
     {
-        //Application::ShowJY61P();
+        Application::ShowJY61P();
     }
 
     //--------------------------------------------------------------------------------------------------------------------------------
@@ -151,7 +449,7 @@ void Application::ShowWindow()
 
     if (DualAxis)
     {
-        //Application::ShowDualAxisSensor();
+        Application::ShowDualAxisSensor();
     }
     if (SynchronizedCapture)
     {
@@ -925,10 +1223,16 @@ void Application::ShowDualAxisSensor() {
     static std::mutex collectedDataMutex;
     static std::string saveFilePath = "DualAxisSensor_data.xlsx";
 
-    // 串口选择下拉框
-    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    // 波特率选择下拉框
-    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+    }
+    else {
+        // 串口选择下拉框
+        ShowSerialPortSelector(availablePorts, selectedPortIndex);
+        // 波特率选择下拉框
+        ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    }
 
     //rightdevice leftdevice
     static bool changeadr = false;
@@ -1003,7 +1307,7 @@ void Application::ShowDualAxisSensor() {
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             collecting = false;
             isCollectingData = false;
             if (pollingThread.joinable()) pollingThread.join();
@@ -1071,7 +1375,7 @@ void Application::ShowDualAxisSensor() {
         //ImGui::Text(u8"选择要显示的数据设备：");
         for (uint8_t addr : dualAxisDeviceAddresses) {
             if (displayFlags.find(addr) == displayFlags.end())
-                displayFlags[addr] = false;
+                displayFlags[addr] = demoMode;
 
             char label[32];
             sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
@@ -1708,11 +2012,15 @@ void Application::ShowJY61P() {
         std::unordered_map<uint8_t, JY61PData::angle>>> collectedData;
     static std::mutex collectedDataMutex;
 
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+    }
 
 
     
     // 串口选择
-    if (!availablePorts.empty() && ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
+    if (!demoMode && !availablePorts.empty() && ImGui::BeginCombo(u8"串口", availablePorts[selectedPortIndex].c_str())) {
         for (int n = 0; n < availablePorts.size(); n++) {
             bool isSelected = (selectedPortIndex == n);
             if (ImGui::Selectable(availablePorts[n].c_str(), isSelected))
@@ -1724,7 +2032,7 @@ void Application::ShowJY61P() {
     }
 
     // 波特率选择
-    if (ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
+    if (!demoMode && ImGui::BeginCombo(u8"波特率", baudRates[selectedBaudIndex])) {
         for (int n = 0; n < IM_ARRAYSIZE(baudRates); n++) {
             bool isSelected = (selectedBaudIndex == n);
             if (ImGui::Selectable(baudRates[n], isSelected))
@@ -1879,7 +2187,7 @@ void Application::ShowJY61P() {
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             collecting = false;
             if (pollingThread.joinable()) pollingThread.join();
 
@@ -2047,7 +2355,7 @@ void Application::ShowJY61P() {
             ImGui::Text(u8"选择要显示的数据设备：");
             for (uint8_t addr : jy61pDeviceAddresses) {
                 if (displayFlags.find(addr) == displayFlags.end())
-                    displayFlags[addr] = false;
+                    displayFlags[addr] = demoMode;
 
                 char label[32];
                 sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
@@ -2153,11 +2461,16 @@ void Application::ShowADXL355() {
     static std::vector<std::pair<std::chrono::system_clock::time_point, std::unordered_map<uint8_t, ADXL355Parser::AccelerationData>>> adxl355CollectedData;
     static std::mutex adxl355CollectedDataMutex;
 
-    // 串口选择
-    
-    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    // 波特率选择
-    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+    }
+    else {
+        // 串口选择
+        ShowSerialPortSelector(availablePorts, selectedPortIndex);
+        // 波特率选择
+        ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    }
 
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
@@ -2270,7 +2583,7 @@ void Application::ShowADXL355() {
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             collectingADXL355 = false;
             if (adxl355PollingThread.joinable())
                 adxl355PollingThread.join();
@@ -2407,7 +2720,7 @@ void Application::ShowADXL355() {
             ImGui::Separator();
             for (uint8_t addr : adxl355DeviceAddresses) {
                 if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
-                    deviceDisplayFlags[addr] = false;
+                    deviceDisplayFlags[addr] = demoMode;
 
                 char label[32];
                 sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
@@ -2493,9 +2806,16 @@ void Application::ShowLaserSensor() {
     static std::atomic<bool> isCollecting = false;
     /*std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;*/
 
-    // 串口选择
-    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+        isCollecting = true;
+    }
+    else {
+        // 串口选择
+        ShowSerialPortSelector(availablePorts, selectedPortIndex);
+        ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    }
 
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
@@ -2511,7 +2831,7 @@ void Application::ShowLaserSensor() {
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             if (isCollecting) {
                 isCollecting = false;
                 //collectedLasorMap = laserSensor->stopContinuousCollection();
@@ -2521,27 +2841,27 @@ void Application::ShowLaserSensor() {
             //laserSensor.reset();
         }
 
-        ImGui::SameLine();
-
-
-
-        // 采集按钮
-        if (!isCollecting) {
-            if (ImGui::Button(u8"开始采集所有设备")) {
-                isCollecting = true;
-                laserSensor->startContinuousCollection(laserDeviceAddresses);
-
-            }
-
-        }
-        else {
-            if (ImGui::Button(u8"停止采集")) {
-                isCollecting = false;
-                
-                //collectedDataMap = laserSensor->stopContinuousCollection();
-            }
+        if (!demoMode) {
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+
+            // 采集按钮
+            if (!isCollecting) {
+                if (ImGui::Button(u8"开始采集所有设备")) {
+                    isCollecting = true;
+                    laserSensor->startContinuousCollection(laserDeviceAddresses);
+
+                }
+
+            }
+            else {
+                if (ImGui::Button(u8"停止采集")) {
+                    isCollecting = false;
+
+                    //collectedDataMap = laserSensor->stopContinuousCollection();
+                }
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+            }
         }
         //显示-----------------------------------------------------------
 
@@ -2705,9 +3025,16 @@ void Application::ShowLaserSensor2()
     static std::atomic<bool> isCollecting = false;
     /*std::unordered_map<uint8_t, std::vector<std::pair<std::chrono::system_clock::time_point, uint16_t>>> collectedDataMap;*/
 
-    // 串口选择
-    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+        isCollecting = true;
+    }
+    else {
+        // 串口选择
+        ShowSerialPortSelector(availablePorts, selectedPortIndex);
+        ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    }
 
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
@@ -2723,7 +3050,7 @@ void Application::ShowLaserSensor2()
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             if (isCollecting) {
                 isCollecting = false;
                 //collectedLasorMap = laserSensor->stopContinuousCollection();
@@ -2733,27 +3060,27 @@ void Application::ShowLaserSensor2()
             //laserSensor.reset();
         }
 
-        ImGui::SameLine();
-
-
-
-        // 采集按钮
-        if (!isCollecting) {
-            if (ImGui::Button(u8"开始采集所有设备")) {
-                isCollecting = true;
-                laserSensor2->startContinuousCollection2(laserDeviceAddresses);
-
-            }
-
-        }
-        else {
-            if (ImGui::Button(u8"停止采集")) {
-                isCollecting = false;
-
-                //collectedDataMap = laserSensor->stopContinuousCollection();
-            }
+        if (!demoMode) {
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+
+            // 采集按钮
+            if (!isCollecting) {
+                if (ImGui::Button(u8"开始采集所有设备")) {
+                    isCollecting = true;
+                    laserSensor2->startContinuousCollection2(laserDeviceAddresses);
+
+                }
+
+            }
+            else {
+                if (ImGui::Button(u8"停止采集")) {
+                    isCollecting = false;
+
+                    //collectedDataMap = laserSensor->stopContinuousCollection();
+                }
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0, 1, 0, 1), u8"采集中...");
+            }
         }
         //显示-----------------------------------------------------------
 
@@ -2851,9 +3178,15 @@ void Application::ShowAMT() {
     //static std::unordered_map<uint8_t, std::deque<AMTData>> amtDataMap;
    // static std::mutex amtDataMutex;
 
-    // 串口选择
-    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+    }
+    else {
+        // 串口选择
+        ShowSerialPortSelector(availablePorts, selectedPortIndex);
+        ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    }
 
     // 连接按钮
     if (!isConnected) {
@@ -2907,7 +3240,7 @@ void Application::ShowAMT() {
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             isConnected = false;
             serialManager_AMT.close();
             deviceDisplayFlags.clear();
@@ -2926,7 +3259,7 @@ void Application::ShowAMT() {
             ImGui::Separator();
             for (uint8_t addr : amtAddresses) {
                 if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
-                    deviceDisplayFlags[addr] = false;
+                    deviceDisplayFlags[addr] = demoMode;
                 char label[32];
                 sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
                 ImGui::Checkbox(label, &deviceDisplayFlags[addr]);
@@ -3144,9 +3477,15 @@ void Application::ShowBSQJN() {
     static bool isConnected = false;
     static std::unordered_map<uint8_t, bool> deviceDisplayFlags;
 
-    // 串口选择UI
-    ShowSerialPortSelector(availablePorts, selectedPortIndex);
-    ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    const bool demoMode = kVirtualDemoMode && g_showVirtualDemo;
+    if (demoMode) {
+        isConnected = true;
+    }
+    else {
+        // 串口选择UI
+        ShowSerialPortSelector(availablePorts, selectedPortIndex);
+        ShowBaudRateSelector(baudRates, IM_ARRAYSIZE(baudRates), selectedBaudIndex);
+    }
 
     if (!isConnected) {
         if (ImGui::Button(u8"连接")) {
@@ -3225,7 +3564,7 @@ void Application::ShowBSQJN() {
         }
     }
     else {
-        if (ImGui::Button(u8"断开")) {
+        if (!demoMode && ImGui::Button(u8"断开")) {
             collectingBSQJN = false;
             if (bsqjnPollingThread.joinable()) bsqjnPollingThread.join();
             serialManager.close();
@@ -3245,7 +3584,7 @@ void Application::ShowBSQJN() {
             ImGui::Separator();
             for (uint8_t addr : bsqjnDeviceAddresses) {
                 if (deviceDisplayFlags.find(addr) == deviceDisplayFlags.end())
-                    deviceDisplayFlags[addr] = false;
+                    deviceDisplayFlags[addr] = demoMode;
                 char label[32];
                 sprintf_s(label, sizeof(label), u8" 0x%02X", addr);
                 ImGui::Checkbox(label, &deviceDisplayFlags[addr]);

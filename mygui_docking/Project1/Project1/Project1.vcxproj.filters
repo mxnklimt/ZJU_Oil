@@ -440,7 +440,7 @@
     <ClCompile Include="BSQJN\BSQJNParser.h">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="udp\FiberGratingAnalyzer.cpp">
+    <ClCompile Include="udp\FiberGratingAnalyzerStub.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="udp\FiberGratingAnalyzerUI.cpp">
